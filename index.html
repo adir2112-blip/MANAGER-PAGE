@@ -13,22 +13,14 @@
     body {
       font-family: 'Heebo', sans-serif;
       direction: rtl;
-      background: #FAFAF8;
+      background: #F0EDE6;
       min-height: 100vh;
     }
 
     .hero {
-      background: #fff;
+      background: #1A1A1A;
       padding: 2.2rem 2.8rem 1.8rem;
-      border-bottom: 1px solid #EBEBEB;
       position: relative;
-      overflow: hidden;
-    }
-
-    .hero-bg {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
       overflow: hidden;
     }
 
@@ -36,18 +28,18 @@
       position: absolute;
       width: 360px; height: 360px;
       border-radius: 50%;
-      background: #F5F3EE;
+      background: #2A2A2A;
       top: -140px; left: -100px;
-      opacity: .7;
+      pointer-events: none;
     }
 
     .hero-circle2 {
       position: absolute;
       width: 200px; height: 200px;
       border-radius: 50%;
-      background: #EEECE6;
+      background: #252525;
       bottom: -100px; right: 80px;
-      opacity: .5;
+      pointer-events: none;
     }
 
     .hero-inner {
@@ -68,7 +60,7 @@
 
     .brand-mark {
       width: 58px; height: 58px;
-      background: #1A1A1A;
+      background: #fff;
       border-radius: 16px;
       display: flex;
       align-items: center;
@@ -81,24 +73,49 @@
     .brand-text h1 {
       font-size: 20px;
       font-weight: 700;
-      color: #1A1A1A;
+      color: #fff;
       letter-spacing: -0.4px;
       line-height: 1.2;
     }
 
     .brand-text p {
       font-size: 13px;
-      color: #A0A0A0;
+      color: #888;
       margin-top: 4px;
       font-weight: 400;
     }
 
-    .live-clock { text-align: left; }
+    .hero-left {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .greeting {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #ccc;
+      animation: greetIn .7s cubic-bezier(.22,.68,0,1.2) both;
+      animation-delay: .25s;
+      opacity: 0;
+    }
+
+    @keyframes greetIn {
+      from { opacity: 0; transform: translateY(-7px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .greeting-emoji {
+      font-size: 15px;
+      margin-left: 5px;
+    }
 
     .clock-digits {
-      font-size: 36px;
+      font-size: 34px;
       font-weight: 700;
-      color: #1A1A1A;
+      color: #fff;
       letter-spacing: -2px;
       line-height: 1;
       font-variant-numeric: tabular-nums;
@@ -106,15 +123,15 @@
 
     .clock-date {
       font-size: 12.5px;
-      color: #B0B0B0;
+      color: #666;
       margin-top: 5px;
       direction: rtl;
       text-align: right;
     }
 
     .status-bar {
-      background: #fff;
-      border-bottom: 1px solid #EBEBEB;
+      background: #222;
+      border-bottom: 1px solid #2E2E2E;
       padding: .8rem 2.8rem;
       display: flex;
       gap: .5rem;
@@ -126,13 +143,13 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: #F5F3EE;
-      border: 1px solid #E5E2DC;
+      background: #2A2A2A;
+      border: 1px solid #333;
       border-radius: 999px;
       padding: 5px 14px;
       font-size: 12.5px;
       font-weight: 500;
-      color: #5A5A5A;
+      color: #aaa;
     }
 
     .pill-green {
@@ -145,7 +162,7 @@
 
     @keyframes blink {
       0%, 100% { opacity: 1; }
-      50% { opacity: .4; }
+      50%       { opacity: .4; }
     }
 
     .section-label {
@@ -153,7 +170,7 @@
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 1.8px;
-      color: #C0BDB6;
+      color: #AAA49C;
       text-transform: uppercase;
     }
 
@@ -165,22 +182,22 @@
     }
 
     @media (max-width: 600px) {
-      .grid { grid-template-columns: 1fr; }
-      .hero { padding: 1.5rem 1.4rem; }
-      .status-bar { padding: .7rem 1.4rem; }
+      .grid          { grid-template-columns: 1fr; padding: 0 1rem 1.5rem; }
+      .hero          { padding: 1.5rem 1.4rem; }
+      .status-bar    { padding: .7rem 1.4rem; }
       .section-label { padding: 1.2rem 1.4rem .5rem; }
-      .grid { padding: 0 1rem 1.5rem; }
+      .site-footer   { padding: 1rem 1.4rem 1.3rem; }
     }
 
     .card {
       background: #fff;
-      border: 1px solid #EBEBEB;
+      border: 1px solid #E8E4DC;
       border-radius: 20px;
       overflow: hidden;
       text-decoration: none;
       display: block;
       cursor: pointer;
-      transition: transform .25s cubic-bezier(.22,.68,0,1.2), border-color .18s, box-shadow .2s;
+      transition: transform .28s cubic-bezier(.22,.68,0,1.2), border-color .18s, box-shadow .22s;
       animation: fadeUp .55s cubic-bezier(.22,.68,0,1.2) both;
     }
 
@@ -195,17 +212,34 @@
     }
 
     .card:hover {
-      transform: translateY(-5px) scale(1.015);
-      border-color: #D8D4CC;
-      box-shadow: 0 12px 40px rgba(0,0,0,.09);
+      transform: translateY(-6px) scale(1.018);
+      border-color: #C8C4BC;
+      box-shadow: 0 14px 44px rgba(0,0,0,.13);
     }
 
     .card-visual {
       height: 140px;
+      position: relative;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+    }
+
+    .card-visual svg {
+      transition: transform .4s cubic-bezier(.22,.68,0,1.2);
+    }
+
+    .card:hover .card-visual svg {
+      transform: scale(1.08) translateY(-5px);
+    }
+
+    .card-visual::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 50%, rgba(255,255,255,.5));
+      pointer-events: none;
     }
 
     .card-body { padding: 1.2rem 1.3rem 1rem; }
@@ -267,19 +301,19 @@
     .card-arrow {
       width: 28px; height: 28px;
       border-radius: 50%;
-      background: #F5F3EE;
+      background: #F0EDE6;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 13px;
       color: #888;
-      transition: background .18s, color .18s, transform .2s;
+      transition: background .18s, color .18s, transform .25s cubic-bezier(.22,.68,0,1.2);
     }
 
     .card:hover .card-arrow {
       background: #1A1A1A;
       color: #fff;
-      transform: scale(1.1);
+      transform: scale(1.15) rotate(-10deg);
     }
 
     .site-footer {
@@ -288,30 +322,29 @@
       align-items: center;
       justify-content: center;
       gap: .5rem;
-      border-top: 1px solid #EBEBEB;
+      background: #F0EDE6;
+      border-top: 1px solid #E0DDD6;
     }
 
     .site-footer span {
       font-size: 12px;
-      color: #C8C5BE;
+      color: #AAA49C;
     }
   </style>
 </head>
 <body>
 
   <div class="hero">
-    <div class="hero-bg">
-      <div class="hero-circle1"></div>
-      <div class="hero-circle2"></div>
-    </div>
+    <div class="hero-circle1"></div>
+    <div class="hero-circle2"></div>
     <div class="hero-inner">
       <div class="brand">
         <div class="brand-mark">
           <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="3" width="10" height="10" rx="2.5" fill="white" opacity=".9"/>
-            <rect x="17" y="3" width="10" height="10" rx="2.5" fill="white" opacity=".6"/>
-            <rect x="3" y="17" width="10" height="10" rx="2.5" fill="white" opacity=".6"/>
-            <rect x="17" y="17" width="10" height="10" rx="2.5" fill="white" opacity=".3"/>
+            <rect x="3"  y="3"  width="10" height="10" rx="2.5" fill="#1A1A1A" opacity=".9"/>
+            <rect x="17" y="3"  width="10" height="10" rx="2.5" fill="#1A1A1A" opacity=".6"/>
+            <rect x="3"  y="17" width="10" height="10" rx="2.5" fill="#1A1A1A" opacity=".6"/>
+            <rect x="17" y="17" width="10" height="10" rx="2.5" fill="#1A1A1A" opacity=".3"/>
           </svg>
         </div>
         <div class="brand-text">
@@ -319,7 +352,8 @@
           <p>מרכז ניהול מרכזי &nbsp;·&nbsp; 4 מערכות פעילות</p>
         </div>
       </div>
-      <div class="live-clock">
+      <div class="hero-left">
+        <div class="greeting" id="greeting"></div>
         <div class="clock-digits" id="clk">--:--</div>
         <div class="clock-date" id="cld">טוען...</div>
       </div>
@@ -328,7 +362,7 @@
 
   <div class="status-bar">
     <div class="pill"><span class="pill-green"></span>כל המערכות פעילות</div>
-    <div class="pill"><i class="ti ti-bolt" style="font-size:14px"></i> גישה מהירה</div>
+    <div class="pill"><i class="ti ti-bolt"  style="font-size:14px"></i> גישה מהירה</div>
     <div class="pill"><i class="ti ti-clock" style="font-size:14px"></i> עדכון בזמן אמת</div>
   </div>
 
@@ -351,9 +385,9 @@
           <rect x="134" y="48" width="22" height="58" rx="4" fill="#FFDDD2"/>
           <rect x="134" y="28" width="22" height="20" rx="2" fill="#FF8B6A"/>
           <polyline points="14,62 44,40 74,50 104,26 134,42 170,20" stroke="#FF5722" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <circle cx="14" cy="62" r="3.5" fill="#FF5722"/>
-          <circle cx="44" cy="40" r="3.5" fill="#FF5722"/>
-          <circle cx="74" cy="50" r="3.5" fill="#FF5722"/>
+          <circle cx="14"  cy="62" r="3.5" fill="#FF5722"/>
+          <circle cx="44"  cy="40" r="3.5" fill="#FF5722"/>
+          <circle cx="74"  cy="50" r="3.5" fill="#FF5722"/>
           <circle cx="104" cy="26" r="3.5" fill="#FF5722"/>
           <circle cx="134" cy="42" r="3.5" fill="#FF5722"/>
           <circle cx="170" cy="20" r="3.5" fill="#FF5722"/>
@@ -387,7 +421,7 @@
           <rect x="38" y="71" width="40" height="6" rx="3" fill="#1D9E75" opacity=".3"/>
           <rect x="38" y="82" width="48" height="6" rx="3" fill="#1D9E75" opacity=".25"/>
           <rect x="120" y="16" width="66" height="46" rx="9" fill="#1D9E75"/>
-          <circle cx="153" cy="30" r="9" fill="white" opacity=".25"/>
+          <circle cx="153" cy="30" r="9"   fill="white" opacity=".25"/>
           <circle cx="153" cy="30" r="4.5" fill="white"/>
           <rect x="131" y="46" width="44" height="4.5" rx="2.2" fill="white" opacity=".5"/>
           <rect x="136" y="55" width="34" height="4.5" rx="2.2" fill="white" opacity=".35"/>
@@ -427,7 +461,7 @@
           <rect x="148" y="36" width="28" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/>
           <rect x="146" y="46" width="32" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/>
           <rect x="34" y="88" width="142" height="8" rx="4" fill="#AFA9EC" opacity=".5"/>
-          <rect x="34" y="88" width="80" height="8" rx="4" fill="#534AB7" opacity=".7"/>
+          <rect x="34" y="88" width="80"  height="8" rx="4" fill="#534AB7" opacity=".7"/>
         </svg>
       </div>
       <div class="card-body">
@@ -451,25 +485,25 @@
           <rect x="20" y="12" width="170" height="92" rx="10" fill="#FAE8C0"/>
           <rect x="28" y="20" width="154" height="20" rx="6" fill="#EF9F27"/>
           <text x="105" y="33.5" font-family="Heebo,sans-serif" font-size="9.5" font-weight="700" fill="white" text-anchor="middle">לוח משמרות — מאי 2026</text>
-          <rect x="28" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
-          <rect x="52" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
-          <rect x="76" y="46" width="20" height="20" rx="4.5" fill="#EF9F27"/>
+          <rect x="28"  y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
+          <rect x="52"  y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
+          <rect x="76"  y="46" width="20" height="20" rx="4.5" fill="#EF9F27"/>
           <rect x="100" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
           <rect x="124" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
           <rect x="148" y="46" width="20" height="20" rx="4.5" fill="#EF9F27"/>
-          <text x="38" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">א</text>
-          <text x="62" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">ב</text>
-          <text x="86" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="700" fill="white" text-anchor="middle">ג</text>
+          <text x="38"  y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">א</text>
+          <text x="62"  y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">ב</text>
+          <text x="86"  y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="700" fill="white"   text-anchor="middle">ג</text>
           <text x="110" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">ד</text>
           <text x="134" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">ה</text>
-          <text x="158" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="700" fill="white" text-anchor="middle">ו</text>
-          <rect x="28" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
-          <rect x="52" y="70" width="20" height="14" rx="3.5" fill="#EF9F27" opacity=".8"/>
-          <rect x="76" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
+          <text x="158" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="700" fill="white"   text-anchor="middle">ו</text>
+          <rect x="28"  y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
+          <rect x="52"  y="70" width="20" height="14" rx="3.5" fill="#EF9F27" opacity=".8"/>
+          <rect x="76"  y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
           <rect x="100" y="70" width="20" height="14" rx="3.5" fill="#EF9F27" opacity=".8"/>
           <rect x="124" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
           <rect x="148" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
-          <rect x="28" y="88" width="68" height="7" rx="3.5" fill="#EF9F27" opacity=".5"/>
+          <rect x="28"  y="88" width="68" height="7" rx="3.5" fill="#EF9F27" opacity=".5"/>
           <rect x="102" y="88" width="44" height="7" rx="3.5" fill="#FAC775" opacity=".7"/>
           <rect x="152" y="88" width="24" height="7" rx="3.5" fill="#EF9F27" opacity=".4"/>
         </svg>
@@ -496,18 +530,30 @@
   </div>
 
   <script>
+    function getGreeting(h) {
+      if (h >= 5  && h < 12) return { text: 'בוקר טוב, אדיר',     emoji: '☀️' };
+      if (h >= 12 && h < 17) return { text: 'צהריים טובים, אדיר', emoji: '🌤️' };
+      if (h >= 17 && h < 21) return { text: 'ערב טוב, אדיר',      emoji: '🌆' };
+      return                         { text: 'לילה טוב, אדיר',     emoji: '🌙' };
+    }
+
     function tick() {
-      const n = new Date();
-      const h = String(n.getHours()).padStart(2, '0');
-      const m = String(n.getMinutes()).padStart(2, '0');
-      document.getElementById('clk').textContent = h + ':' + m;
-      const days = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+      const n  = new Date();
+      const h  = n.getHours();
+      const hh = String(h).padStart(2, '0');
+      const mm = String(n.getMinutes()).padStart(2, '0');
+      document.getElementById('clk').textContent = hh + ':' + mm;
+      const days   = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
       const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
       document.getElementById('cld').textContent =
         'יום ' + days[n.getDay()] + ' · ' + n.getDate() + ' ' + months[n.getMonth()] + ' ' + n.getFullYear();
+      const g = getGreeting(h);
+      document.getElementById('greeting').innerHTML =
+        g.text + '<span class="greeting-emoji">' + g.emoji + '</span>';
     }
+
     tick();
-    setInterval(tick, 10000);
+    setInterval(tick, 30000);
   </script>
 
 </body>
