@@ -9,338 +9,182 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Heebo', sans-serif; direction: rtl; background: #F0EDE6; min-height: 100vh; }
 
-    body {
-      font-family: 'Heebo', sans-serif;
-      direction: rtl;
-      background: #F0EDE6;
-      min-height: 100vh;
+    /* ─── HERO ─── */
+    .hero { background:#1A1A1A; padding:2.2rem 2.8rem 1.8rem; position:relative; overflow:hidden; }
+    .hero-circle1 { position:absolute;width:360px;height:360px;border-radius:50%;background:#2A2A2A;top:-140px;left:-100px;pointer-events:none; }
+    .hero-circle2 { position:absolute;width:200px;height:200px;border-radius:50%;background:#252525;bottom:-100px;right:80px;pointer-events:none; }
+    .hero-inner { position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap; }
+    .brand { display:flex;align-items:center;gap:16px; }
+    .brand-mark { width:58px;height:58px;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+    .brand-mark svg { width:30px;height:30px; }
+    .brand-text h1 { font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.4px;line-height:1.2; }
+    .brand-text p { font-size:13px;color:#888;margin-top:4px;font-weight:400; }
+    .hero-left { text-align:left;display:flex;flex-direction:column;align-items:flex-end;gap:4px; }
+    .greeting { font-size:13.5px;font-weight:600;color:#ccc;animation:greetIn .7s cubic-bezier(.22,.68,0,1.2) both;animation-delay:.25s;opacity:0; }
+    @keyframes greetIn { from{opacity:0;transform:translateY(-7px)} to{opacity:1;transform:none} }
+    .greeting-emoji { font-size:15px;margin-left:5px; }
+    .clock-digits { font-size:34px;font-weight:700;color:#fff;letter-spacing:-2px;line-height:1;font-variant-numeric:tabular-nums; }
+    .clock-date { font-size:12.5px;color:#666;margin-top:5px;direction:rtl;text-align:right; }
+
+    /* ─── STATUS BAR ─── */
+    .status-bar { background:#222;border-bottom:1px solid #2E2E2E;padding:.8rem 2.8rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap; }
+    .pill { display:inline-flex;align-items:center;gap:6px;background:#2A2A2A;border:1px solid #333;border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:500;color:#aaa; }
+    .pill-green { width:7px;height:7px;border-radius:50%;background:#3DB870;animation:blink 2.5s ease-in-out infinite;display:inline-block; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .section-label { padding:1.6rem 2.8rem .7rem;font-size:11px;font-weight:700;letter-spacing:1.8px;color:#AAA49C;text-transform:uppercase; }
+    .grid { display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:0 2.2rem 2.2rem; }
+
+    @media(max-width:600px){
+      .grid{grid-template-columns:1fr;padding:0 1rem 1.5rem;}
+      .hero{padding:1.5rem 1.4rem;}
+      .status-bar{padding:.7rem 1.4rem;}
+      .section-label{padding:1.2rem 1.4rem .5rem;}
     }
 
-    .hero {
-      background: #1A1A1A;
-      padding: 2.2rem 2.8rem 1.8rem;
-      position: relative;
-      overflow: hidden;
-    }
+    /* ─── CARD ─── */
+    .card { background:#fff;border:1px solid #E8E4DC;border-radius:20px;overflow:hidden;text-decoration:none;display:block;cursor:pointer;transition:transform .28s cubic-bezier(.22,.68,0,1.2),border-color .18s,box-shadow .22s;animation:fadeUp .55s cubic-bezier(.22,.68,0,1.2) both; }
+    .card:nth-child(1){animation-delay:.05s} .card:nth-child(2){animation-delay:.12s}
+    .card:nth-child(3){animation-delay:.19s} .card:nth-child(4){animation-delay:.26s}
+    .card:nth-child(5){animation-delay:.33s} .card:nth-child(6){animation-delay:.40s}
+    @keyframes fadeUp { from{opacity:0;transform:translateY(22px) scale(.97)} to{opacity:1;transform:none} }
+    .card:hover { transform:translateY(-6px) scale(1.018);border-color:#C8C4BC;box-shadow:0 14px 44px rgba(0,0,0,.13); }
+    .card-visual { height:140px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center; }
+    .card-visual svg { transition:transform .4s cubic-bezier(.22,.68,0,1.2); }
+    .card:hover .card-visual svg { transform:scale(1.08) translateY(-5px); }
+    .card-visual::after { content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(255,255,255,.5));pointer-events:none; }
+    .card-body { padding:1.2rem 1.3rem 1rem; }
+    .card-meta { display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem; }
+    .card-num { font-size:11px;font-weight:700;letter-spacing:1.4px;color:#BFBCB5; }
+    .card-badge { font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;letter-spacing:.3px; }
+    .card-title { font-size:15px;font-weight:700;color:#1A1A1A;line-height:1.35;margin-bottom:.35rem; }
+    .card-desc { font-size:12.5px;color:#A8A5A0;line-height:1.6;font-weight:400; }
+    .card-footer { display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.3rem .9rem;border-top:1px solid #F2F0EC; }
+    .card-cta { font-size:12.5px;font-weight:600;color:#1A1A1A;display:flex;align-items:center;gap:6px; }
+    .card-arrow { width:28px;height:28px;border-radius:50%;background:#F0EDE6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#888;transition:background .18s,color .18s,transform .25s cubic-bezier(.22,.68,0,1.2); }
+    .card:hover .card-arrow { background:#1A1A1A;color:#fff;transform:scale(1.15) rotate(-10deg); }
 
-    .hero-circle1 {
-      position: absolute;
-      width: 360px; height: 360px;
-      border-radius: 50%;
-      background: #2A2A2A;
-      top: -140px; left: -100px;
-      pointer-events: none;
-    }
+    /* ─── SPLIT CARD ─── */
+    .split-card { background:#fff;border:1px solid #E8E4DC;border-radius:20px;overflow:hidden;display:block;animation:fadeUp .55s cubic-bezier(.22,.68,0,1.2) both;animation-delay:.33s; }
+    .split-card-inner { display:grid;grid-template-columns:1fr 1fr; }
+    .split-half { display:block;text-decoration:none;cursor:pointer;transition:background .18s; }
+    .split-half:hover { background:#FAFAF8; }
+    .split-half:first-child { border-left:1px solid #F2F0EC; }
+    .split-visual { height:110px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative; }
+    .split-visual svg { transition:transform .4s cubic-bezier(.22,.68,0,1.2); }
+    .split-half:hover .split-visual svg { transform:scale(1.08) translateY(-4px); }
+    .split-body { padding:.9rem 1.1rem .75rem; }
+    .split-label { font-size:10px;font-weight:700;letter-spacing:1.2px;color:#BFBCB5;margin-bottom:3px; }
+    .split-title { font-size:13.5px;font-weight:700;color:#1A1A1A;line-height:1.3; }
+    .split-desc { font-size:11.5px;color:#A8A5A0;margin-top:3px; }
+    .split-footer { display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.1rem .75rem;border-top:1px solid #F2F0EC; }
+    .split-cta { font-size:11.5px;font-weight:600;color:#1A1A1A;display:flex;align-items:center;gap:5px; }
+    .split-arrow { width:24px;height:24px;border-radius:50%;background:#F0EDE6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#888;transition:background .18s,color .18s,transform .2s; }
+    .split-half:hover .split-arrow { background:#1A1A1A;color:#fff;transform:scale(1.1) rotate(-10deg); }
+    .split-header { padding:.9rem 1.3rem .6rem;border-bottom:1px solid #F2F0EC;display:flex;align-items:center;gap:8px; }
+    .split-header-title { font-size:13px;font-weight:700;color:#1A1A1A; }
+    .split-tag { font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px; }
 
-    .hero-circle2 {
-      position: absolute;
-      width: 200px; height: 200px;
-      border-radius: 50%;
-      background: #252525;
-      bottom: -100px; right: 80px;
-      pointer-events: none;
-    }
+    .site-footer { padding:1.1rem 2.8rem 1.4rem;display:flex;align-items:center;justify-content:center;gap:.5rem;background:#F0EDE6;border-top:1px solid #E0DDD6; }
+    .site-footer span { font-size:12px;color:#AAA49C; }
 
-    .hero-inner {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
+    /* ══════════════════════════════════════
+       DASHBOARD OVERLAY — LIGHT THEME
+    ══════════════════════════════════════ */
+    .overlay { display:none;position:fixed;inset:0;z-index:1000;background:#F5F3EF;overflow:hidden; }
+    .overlay.active { display:flex;flex-direction:column; }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
+    /* Lock screen */
+    .lock-screen { display:flex;flex-direction:column;align-items:center;justify-content:center;position:absolute;inset:0;gap:1.5rem;animation:fadeIn .4s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+    .lock-icon { width:72px;height:72px;background:#fff;border:1px solid #E0DDD6;border-radius:22px;display:flex;align-items:center;justify-content:center;margin-bottom:.5rem;box-shadow:0 4px 24px rgba(0,0,0,.06); }
+    .lock-icon i { font-size:30px;color:#1A1A1A; }
+    .lock-title { font-size:26px;font-weight:800;color:#1A1A1A;letter-spacing:-0.5px; }
+    .lock-sub { font-size:14px;color:#A0A0A0;text-align:center;margin-top:4px; }
+    .lock-input-wrap { position:relative;width:300px; }
+    .lock-input { width:100%;background:#fff;border:1.5px solid #E0DDD6;border-radius:14px;padding:14px 48px 14px 16px;font-size:17px;color:#1A1A1A;font-family:'Heebo',sans-serif;outline:none;transition:border-color .2s;text-align:center;letter-spacing:3px;box-shadow:0 2px 8px rgba(0,0,0,.04); }
+    .lock-input:focus { border-color:#1A1A1A; }
+    .lock-input.error { border-color:#EF4444;animation:shake .3s ease; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .lock-toggle { position:absolute;left:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#AAA;font-size:18px;transition:color .18s; }
+    .lock-toggle:hover { color:#1A1A1A; }
+    .lock-btn { width:300px;background:#1A1A1A;color:#fff;border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif;transition:background .18s,transform .15s; }
+    .lock-btn:hover { background:#333;transform:scale(1.02); }
+    .lock-error { font-size:13px;color:#EF4444;height:20px; }
 
-    .brand-mark {
-      width: 58px; height: 58px;
-      background: #fff;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
+    /* Dash header */
+    .dash-inner { display:none;flex-direction:column;position:absolute;inset:0;overflow-y:auto;overflow-x:hidden; }
+    .dash-inner.active { display:block; }
+    .dash-header { background:#fff;border-bottom:2px solid #E8E4DC;padding:1rem 2.2rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10; }
+    .dash-header-brand { display:flex;align-items:center;gap:12px; }
+    .dash-dot { width:10px;height:10px;border-radius:50%;background:#3DB870;animation:blink 2.5s ease-in-out infinite; }
+    .dash-header-title { font-size:20px;font-weight:800;color:#1A1A1A;letter-spacing:-0.5px; }
+    .dash-header-sub { font-size:12.5px;color:#AAA;margin-top:2px; }
+    .dash-header-right { display:flex;align-items:center;gap:.75rem; }
+    .dash-countdown { font-size:12px;color:#AAA;background:#F5F3EF;border:1px solid #E0DDD6;border-radius:8px;padding:5px 12px;font-variant-numeric:tabular-nums; }
+    .dash-close { background:#F5F3EF;border:1.5px solid #E0DDD6;border-radius:10px;padding:7px 16px;font-size:13px;font-weight:600;color:#1A1A1A;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:6px;transition:background .18s; }
+    .dash-close:hover { background:#E8E4DC; }
 
-    .brand-mark svg { width: 30px; height: 30px; }
+    /* Dash body */
+    .dash-body { padding:1.5rem 2.2rem;display:flex;flex-direction:column;gap:1.5rem;background:#F5F3EF; }
 
-    .brand-text h1 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.4px;
-      line-height: 1.2;
-    }
+    /* Section */
+    .dash-section { background:#fff;border:1.5px solid #E8E4DC;border-radius:20px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.04); }
+    .dash-section-header { padding:1.1rem 1.6rem;border-bottom:1.5px solid #F0EDE6;display:flex;align-items:center;justify-content:space-between; }
+    .dash-section-title { font-size:18px;font-weight:800;color:#1A1A1A;display:flex;align-items:center;gap:10px;letter-spacing:-0.3px; }
+    .dash-refresh { background:#F5F3EF;border:1px solid #E0DDD6;border-radius:8px;padding:5px 12px;font-size:12px;color:#888;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:5px;transition:color .18s,background .18s; }
+    .dash-refresh:hover { background:#E8E4DC;color:#1A1A1A; }
+    .dash-refresh.spinning i { animation:spin .6s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
 
-    .brand-text p {
-      font-size: 13px;
-      color: #888;
-      margin-top: 4px;
-      font-weight: 400;
-    }
+    /* Stats */
+    .dash-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;padding:1.2rem 1.6rem;border-bottom:1.5px solid #F0EDE6; }
+    .dash-stat { background:#F8F6F2;border:1px solid #EDE9E2;border-radius:14px;padding:1rem 1.2rem; }
+    .dash-stat-label { font-size:12px;color:#AAA;font-weight:600;letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px; }
+    .dash-stat-value { font-size:38px;font-weight:900;color:#1A1A1A;letter-spacing:-2px;line-height:1; }
+    .dash-stat-value.green { color:#16A34A; }
+    .dash-stat-value.orange { color:#D97706; }
+    .dash-stat-value.blue { color:#4F46E5; }
 
-    .hero-left {
-      text-align: left;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
-    }
+    /* Table */
+    .dash-table-wrap { overflow-x:auto;overflow-y:auto;max-height:340px; }
+    .dash-table { width:100%;border-collapse:collapse; }
+    .dash-table th { padding:.9rem 1.6rem;text-align:right;font-size:12px;font-weight:700;letter-spacing:.8px;color:#AAA;text-transform:uppercase;border-bottom:1.5px solid #F0EDE6;white-space:nowrap;position:sticky;top:0;background:#fff;z-index:2; }
+    .dash-table td { padding:1rem 1.6rem;color:#1A1A1A;border-bottom:1px solid #F8F6F2;white-space:nowrap;font-size:16px; }
+    .dash-table tr:last-child td { border-bottom:none; }
+    .dash-table tr:hover td { background:#FAFAF8; }
+    .dash-table .name-cell { font-weight:700;font-size:17px;color:#1A1A1A; }
+    .dash-table .num-cell { font-size:22px;font-weight:800;letter-spacing:-1px; }
+    .dash-table .num-green { color:#16A34A; }
+    .dash-table .num-orange { color:#D97706; }
+    .dash-table .num-gray { color:#888; }
 
-    .greeting {
-      font-size: 13.5px;
-      font-weight: 600;
-      color: #ccc;
-      animation: greetIn .7s cubic-bezier(.22,.68,0,1.2) both;
-      animation-delay: .25s;
-      opacity: 0;
-    }
+    .status-badge { display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;padding:5px 14px;border-radius:999px; }
+    .status-waiting { background:#FEF3C7;color:#92400E; }
+    .status-done    { background:#DCFCE7;color:#166534; }
+    .status-other   { background:#F0EDE6;color:#555; }
 
-    @keyframes greetIn {
-      from { opacity: 0; transform: translateY(-7px); }
-      to   { opacity: 1; transform: none; }
-    }
+    .age-chip { display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:700;padding:4px 12px;border-radius:999px; }
+    .age-urgent { background:#FEE2E2;color:#991B1B; }
+    .age-warn   { background:#FEF3C7;color:#92400E; }
+    .age-ok     { background:#DCFCE7;color:#166534; }
 
-    .greeting-emoji {
-      font-size: 15px;
-      margin-left: 5px;
-    }
-
-    .clock-digits {
-      font-size: 34px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -2px;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .clock-date {
-      font-size: 12.5px;
-      color: #666;
-      margin-top: 5px;
-      direction: rtl;
-      text-align: right;
-    }
-
-    .status-bar {
-      background: #222;
-      border-bottom: 1px solid #2E2E2E;
-      padding: .8rem 2.8rem;
-      display: flex;
-      gap: .5rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: #2A2A2A;
-      border: 1px solid #333;
-      border-radius: 999px;
-      padding: 5px 14px;
-      font-size: 12.5px;
-      font-weight: 500;
-      color: #aaa;
-    }
-
-    .pill-green {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: #3DB870;
-      animation: blink 2.5s ease-in-out infinite;
-      display: inline-block;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: .4; }
-    }
-
-    .section-label {
-      padding: 1.6rem 2.8rem .7rem;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.8px;
-      color: #AAA49C;
-      text-transform: uppercase;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      padding: 0 2.2rem 2.2rem;
-    }
-
-    @media (max-width: 600px) {
-      .grid          { grid-template-columns: 1fr; padding: 0 1rem 1.5rem; }
-      .hero          { padding: 1.5rem 1.4rem; }
-      .status-bar    { padding: .7rem 1.4rem; }
-      .section-label { padding: 1.2rem 1.4rem .5rem; }
-      .site-footer   { padding: 1rem 1.4rem 1.3rem; }
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #E8E4DC;
-      border-radius: 20px;
-      overflow: hidden;
-      text-decoration: none;
-      display: block;
-      cursor: pointer;
-      transition: transform .28s cubic-bezier(.22,.68,0,1.2), border-color .18s, box-shadow .22s;
-      animation: fadeUp .55s cubic-bezier(.22,.68,0,1.2) both;
-    }
-
-    .card:nth-child(1) { animation-delay: .05s; }
-    .card:nth-child(2) { animation-delay: .12s; }
-    .card:nth-child(3) { animation-delay: .19s; }
-    .card:nth-child(4) { animation-delay: .26s; }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(22px) scale(.97); }
-      to   { opacity: 1; transform: none; }
-    }
-
-    .card:hover {
-      transform: translateY(-6px) scale(1.018);
-      border-color: #C8C4BC;
-      box-shadow: 0 14px 44px rgba(0,0,0,.13);
-    }
-
-    .card-visual {
-      height: 140px;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .card-visual svg {
-      transition: transform .4s cubic-bezier(.22,.68,0,1.2);
-    }
-
-    .card:hover .card-visual svg {
-      transform: scale(1.08) translateY(-5px);
-    }
-
-    .card-visual::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to bottom, transparent 50%, rgba(255,255,255,.5));
-      pointer-events: none;
-    }
-
-    .card-body { padding: 1.2rem 1.3rem 1rem; }
-
-    .card-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: .5rem;
-    }
-
-    .card-num {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.4px;
-      color: #BFBCB5;
-    }
-
-    .card-badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 999px;
-      letter-spacing: .3px;
-    }
-
-    .card-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #1A1A1A;
-      line-height: 1.35;
-      margin-bottom: .35rem;
-    }
-
-    .card-desc {
-      font-size: 12.5px;
-      color: #A8A5A0;
-      line-height: 1.6;
-      font-weight: 400;
-    }
-
-    .card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: .75rem 1.3rem .9rem;
-      border-top: 1px solid #F2F0EC;
-    }
-
-    .card-cta {
-      font-size: 12.5px;
-      font-weight: 600;
-      color: #1A1A1A;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .card-arrow {
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      background: #F0EDE6;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      color: #888;
-      transition: background .18s, color .18s, transform .25s cubic-bezier(.22,.68,0,1.2);
-    }
-
-    .card:hover .card-arrow {
-      background: #1A1A1A;
-      color: #fff;
-      transform: scale(1.15) rotate(-10deg);
-    }
-
-    .site-footer {
-      padding: 1.1rem 2.8rem 1.4rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: .5rem;
-      background: #F0EDE6;
-      border-top: 1px solid #E0DDD6;
-    }
-
-    .site-footer span {
-      font-size: 12px;
-      color: #AAA49C;
-    }
+    .empty-row td,.loading-row td { text-align:center;color:#AAA;padding:2.5rem;font-size:15px; }
   </style>
 </head>
 <body>
 
+<!-- ════════ MAIN HUB ════════ -->
+<div id="hub">
   <div class="hero">
     <div class="hero-circle1"></div>
     <div class="hero-circle2"></div>
     <div class="hero-inner">
       <div class="brand">
         <div class="brand-mark">
-          <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 30 30" fill="none">
             <rect x="3"  y="3"  width="10" height="10" rx="2.5" fill="#1A1A1A" opacity=".9"/>
             <rect x="17" y="3"  width="10" height="10" rx="2.5" fill="#1A1A1A" opacity=".6"/>
             <rect x="3"  y="17" width="10" height="10" rx="2.5" fill="#1A1A1A" opacity=".6"/>
@@ -349,7 +193,7 @@
         </div>
         <div class="brand-text">
           <h1>מערכות עבודה אדיר לוי</h1>
-          <p>מרכז ניהול מרכזי &nbsp;·&nbsp; 4 מערכות פעילות</p>
+          <p>מרכז ניהול מרכזי &nbsp;·&nbsp; 5 מערכות פעילות</p>
         </div>
       </div>
       <div class="hero-left">
@@ -362,7 +206,7 @@
 
   <div class="status-bar">
     <div class="pill"><span class="pill-green"></span>כל המערכות פעילות</div>
-    <div class="pill"><i class="ti ti-bolt"  style="font-size:14px"></i> גישה מהירה</div>
+    <div class="pill"><i class="ti ti-bolt" style="font-size:14px"></i> גישה מהירה</div>
     <div class="pill"><i class="ti ti-clock" style="font-size:14px"></i> עדכון בזמן אמת</div>
   </div>
 
@@ -370,36 +214,24 @@
 
   <div class="grid">
 
-    <!-- דשבורד מכירות -->
+    <!-- 01 -->
     <a class="card" href="https://adir2112-blip.github.io/Dashbord-Freefit/" target="_blank">
       <div class="card-visual" style="background:#FFF5F0">
-        <svg width="210" height="120" viewBox="0 0 210 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="14" y="68" width="22" height="38" rx="4" fill="#FFDDD2"/>
-          <rect x="14" y="50" width="22" height="18" rx="2" fill="#FF8B6A"/>
-          <rect x="44" y="46" width="22" height="60" rx="4" fill="#FFDDD2"/>
-          <rect x="44" y="28" width="22" height="18" rx="2" fill="#FF6B3D"/>
-          <rect x="74" y="56" width="22" height="50" rx="4" fill="#FFDDD2"/>
-          <rect x="74" y="36" width="22" height="20" rx="2" fill="#FF8B6A"/>
-          <rect x="104" y="34" width="22" height="72" rx="4" fill="#FFDDD2"/>
-          <rect x="104" y="14" width="22" height="20" rx="2" fill="#FF5722"/>
-          <rect x="134" y="48" width="22" height="58" rx="4" fill="#FFDDD2"/>
-          <rect x="134" y="28" width="22" height="20" rx="2" fill="#FF8B6A"/>
+        <svg width="210" height="120" viewBox="0 0 210 120" fill="none">
+          <rect x="14" y="68" width="22" height="38" rx="4" fill="#FFDDD2"/><rect x="14" y="50" width="22" height="18" rx="2" fill="#FF8B6A"/>
+          <rect x="44" y="46" width="22" height="60" rx="4" fill="#FFDDD2"/><rect x="44" y="28" width="22" height="18" rx="2" fill="#FF6B3D"/>
+          <rect x="74" y="56" width="22" height="50" rx="4" fill="#FFDDD2"/><rect x="74" y="36" width="22" height="20" rx="2" fill="#FF8B6A"/>
+          <rect x="104" y="34" width="22" height="72" rx="4" fill="#FFDDD2"/><rect x="104" y="14" width="22" height="20" rx="2" fill="#FF5722"/>
+          <rect x="134" y="48" width="22" height="58" rx="4" fill="#FFDDD2"/><rect x="134" y="28" width="22" height="20" rx="2" fill="#FF8B6A"/>
           <polyline points="14,62 44,40 74,50 104,26 134,42 170,20" stroke="#FF5722" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <circle cx="14"  cy="62" r="3.5" fill="#FF5722"/>
-          <circle cx="44"  cy="40" r="3.5" fill="#FF5722"/>
-          <circle cx="74"  cy="50" r="3.5" fill="#FF5722"/>
-          <circle cx="104" cy="26" r="3.5" fill="#FF5722"/>
-          <circle cx="134" cy="42" r="3.5" fill="#FF5722"/>
-          <circle cx="170" cy="20" r="3.5" fill="#FF5722"/>
+          <circle cx="14" cy="62" r="3.5" fill="#FF5722"/><circle cx="44" cy="40" r="3.5" fill="#FF5722"/><circle cx="74" cy="50" r="3.5" fill="#FF5722"/>
+          <circle cx="104" cy="26" r="3.5" fill="#FF5722"/><circle cx="134" cy="42" r="3.5" fill="#FF5722"/><circle cx="170" cy="20" r="3.5" fill="#FF5722"/>
           <rect x="158" y="12" width="40" height="20" rx="6" fill="#FF5722"/>
           <text x="178" y="25" font-family="Heebo,sans-serif" font-size="10" font-weight="700" fill="white" text-anchor="middle">+14%</text>
         </svg>
       </div>
       <div class="card-body">
-        <div class="card-meta">
-          <span class="card-num">01</span>
-          <span class="card-badge" style="background:#FFF0EB;color:#C94A1A">דשבורד</span>
-        </div>
+        <div class="card-meta"><span class="card-num">01</span><span class="card-badge" style="background:#FFF0EB;color:#C94A1A">דשבורד</span></div>
         <div class="card-title">דשבורד מכירות פריפיט</div>
         <div class="card-desc">מדדי ביצועים, יעדי מכירות ונתוני צוות בזמן אמת</div>
       </div>
@@ -409,22 +241,17 @@
       </div>
     </a>
 
-    <!-- תדריכים וסוכן חכם -->
+    <!-- 02 -->
     <a class="card" href="https://adir2112-blip.github.io/Hdrhaot/" target="_blank">
       <div class="card-visual" style="background:#F0FAF7">
-        <svg width="210" height="120" viewBox="0 0 210 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="210" height="120" viewBox="0 0 210 120" fill="none">
           <rect x="28" y="12" width="86" height="96" rx="9" fill="#C8EFE4"/>
-          <rect x="38" y="24" width="52" height="6" rx="3" fill="#1D9E75" opacity=".6"/>
-          <rect x="38" y="35" width="60" height="6" rx="3" fill="#1D9E75" opacity=".4"/>
-          <rect x="38" y="46" width="44" height="6" rx="3" fill="#1D9E75" opacity=".3"/>
-          <rect x="38" y="60" width="56" height="6" rx="3" fill="#1D9E75" opacity=".4"/>
-          <rect x="38" y="71" width="40" height="6" rx="3" fill="#1D9E75" opacity=".3"/>
-          <rect x="38" y="82" width="48" height="6" rx="3" fill="#1D9E75" opacity=".25"/>
+          <rect x="38" y="24" width="52" height="6" rx="3" fill="#1D9E75" opacity=".6"/><rect x="38" y="35" width="60" height="6" rx="3" fill="#1D9E75" opacity=".4"/>
+          <rect x="38" y="46" width="44" height="6" rx="3" fill="#1D9E75" opacity=".3"/><rect x="38" y="60" width="56" height="6" rx="3" fill="#1D9E75" opacity=".4"/>
+          <rect x="38" y="71" width="40" height="6" rx="3" fill="#1D9E75" opacity=".3"/><rect x="38" y="82" width="48" height="6" rx="3" fill="#1D9E75" opacity=".25"/>
           <rect x="120" y="16" width="66" height="46" rx="9" fill="#1D9E75"/>
-          <circle cx="153" cy="30" r="9"   fill="white" opacity=".25"/>
-          <circle cx="153" cy="30" r="4.5" fill="white"/>
-          <rect x="131" y="46" width="44" height="4.5" rx="2.2" fill="white" opacity=".5"/>
-          <rect x="136" y="55" width="34" height="4.5" rx="2.2" fill="white" opacity=".35"/>
+          <circle cx="153" cy="30" r="9" fill="white" opacity=".25"/><circle cx="153" cy="30" r="4.5" fill="white"/>
+          <rect x="131" y="46" width="44" height="4.5" rx="2.2" fill="white" opacity=".5"/><rect x="136" y="55" width="34" height="4.5" rx="2.2" fill="white" opacity=".35"/>
           <rect x="120" y="68" width="64" height="34" rx="9" fill="#C8EFE4"/>
           <text x="152" y="80" font-family="Heebo,sans-serif" font-size="9" font-weight="700" fill="#085041" text-anchor="middle">סוכן חכם</text>
           <rect x="128" y="85" width="48" height="11" rx="5.5" fill="#1D9E75"/>
@@ -432,10 +259,7 @@
         </svg>
       </div>
       <div class="card-body">
-        <div class="card-meta">
-          <span class="card-num">02</span>
-          <span class="card-badge" style="background:#E6F8F2;color:#0A6B4A">ניהול ידע</span>
-        </div>
+        <div class="card-meta"><span class="card-num">02</span><span class="card-badge" style="background:#E6F8F2;color:#0A6B4A">ניהול ידע</span></div>
         <div class="card-title">תדריכים, מבחנים וסוכן חכם</div>
         <div class="card-desc">חומרי הדרכה, מבחנים, מאגר ידע ועזרה חכמה מ-AI</div>
       </div>
@@ -445,30 +269,23 @@
       </div>
     </a>
 
-    <!-- תמלול שיחות -->
+    <!-- 03 -->
     <a class="card" href="https://adir2112-blip.github.io/Timlol/" target="_blank">
       <div class="card-visual" style="background:#F0EFFE">
-        <svg width="210" height="120" viewBox="0 0 210 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="210" height="120" viewBox="0 0 210 120" fill="none">
           <rect x="20" y="16" width="170" height="84" rx="11" fill="#DDD9F9"/>
           <circle cx="105" cy="46" r="18" fill="#7F77DD"/>
           <path d="M99 46 L101 41 L105 51 L109 36 L113 46" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
           <rect x="93" y="68" width="24" height="5.5" rx="2.7" fill="#7F77DD" opacity=".5"/>
           <rect x="88" y="77" width="34" height="5.5" rx="2.7" fill="#7F77DD" opacity=".35"/>
-          <rect x="30" y="26" width="36" height="5" rx="2.5" fill="#7F77DD" opacity=".45"/>
-          <rect x="30" y="36" width="28" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/>
-          <rect x="30" y="46" width="32" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/>
-          <rect x="144" y="26" width="36" height="5" rx="2.5" fill="#7F77DD" opacity=".45"/>
-          <rect x="148" y="36" width="28" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/>
-          <rect x="146" y="46" width="32" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/>
+          <rect x="30" y="26" width="36" height="5" rx="2.5" fill="#7F77DD" opacity=".45"/><rect x="30" y="36" width="28" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/><rect x="30" y="46" width="32" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/>
+          <rect x="144" y="26" width="36" height="5" rx="2.5" fill="#7F77DD" opacity=".45"/><rect x="148" y="36" width="28" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/><rect x="146" y="46" width="32" height="5" rx="2.5" fill="#7F77DD" opacity=".3"/>
           <rect x="34" y="88" width="142" height="8" rx="4" fill="#AFA9EC" opacity=".5"/>
-          <rect x="34" y="88" width="80"  height="8" rx="4" fill="#534AB7" opacity=".7"/>
+          <rect x="34" y="88" width="80" height="8" rx="4" fill="#534AB7" opacity=".7"/>
         </svg>
       </div>
       <div class="card-body">
-        <div class="card-meta">
-          <span class="card-num">03</span>
-          <span class="card-badge" style="background:#EEEDFE;color:#3C3489">תמלול</span>
-        </div>
+        <div class="card-meta"><span class="card-num">03</span><span class="card-badge" style="background:#EEEDFE;color:#3C3489">תמלול</span></div>
         <div class="card-title">מערכת תמלול שיחות</div>
         <div class="card-desc">תמלול אוטומטי של שיחות, עריכה, חיפוש וניתוח תוכן</div>
       </div>
@@ -478,41 +295,23 @@
       </div>
     </a>
 
-    <!-- סידור עבודה -->
+    <!-- 04 -->
     <a class="card" href="https://adir2112-blip.github.io/moked-shifts/" target="_blank">
       <div class="card-visual" style="background:#FFFBF0">
-        <svg width="210" height="120" viewBox="0 0 210 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="210" height="120" viewBox="0 0 210 120" fill="none">
           <rect x="20" y="12" width="170" height="92" rx="10" fill="#FAE8C0"/>
           <rect x="28" y="20" width="154" height="20" rx="6" fill="#EF9F27"/>
-          <text x="105" y="33.5" font-family="Heebo,sans-serif" font-size="9.5" font-weight="700" fill="white" text-anchor="middle">לוח משמרות — מאי 2026</text>
-          <rect x="28"  y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
-          <rect x="52"  y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
-          <rect x="76"  y="46" width="20" height="20" rx="4.5" fill="#EF9F27"/>
-          <rect x="100" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
-          <rect x="124" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
-          <rect x="148" y="46" width="20" height="20" rx="4.5" fill="#EF9F27"/>
-          <text x="38"  y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">א</text>
-          <text x="62"  y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">ב</text>
-          <text x="86"  y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="700" fill="white"   text-anchor="middle">ג</text>
-          <text x="110" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">ד</text>
-          <text x="134" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="600" fill="#633806" text-anchor="middle">ה</text>
-          <text x="158" y="59.5" font-family="Heebo,sans-serif" font-size="9" font-weight="700" fill="white"   text-anchor="middle">ו</text>
-          <rect x="28"  y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
-          <rect x="52"  y="70" width="20" height="14" rx="3.5" fill="#EF9F27" opacity=".8"/>
-          <rect x="76"  y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
-          <rect x="100" y="70" width="20" height="14" rx="3.5" fill="#EF9F27" opacity=".8"/>
-          <rect x="124" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
-          <rect x="148" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
-          <rect x="28"  y="88" width="68" height="7" rx="3.5" fill="#EF9F27" opacity=".5"/>
-          <rect x="102" y="88" width="44" height="7" rx="3.5" fill="#FAC775" opacity=".7"/>
-          <rect x="152" y="88" width="24" height="7" rx="3.5" fill="#EF9F27" opacity=".4"/>
+          <text x="105" y="33.5" font-family="Heebo,sans-serif" font-size="9.5" font-weight="700" fill="white" text-anchor="middle">לוח משמרות</text>
+          <rect x="28" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/><rect x="52" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
+          <rect x="76" y="46" width="20" height="20" rx="4.5" fill="#EF9F27"/><rect x="100" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/>
+          <rect x="124" y="46" width="20" height="20" rx="4.5" fill="#FAC775"/><rect x="148" y="46" width="20" height="20" rx="4.5" fill="#EF9F27"/>
+          <rect x="28" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/><rect x="52" y="70" width="20" height="14" rx="3.5" fill="#EF9F27" opacity=".8"/>
+          <rect x="76" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/><rect x="100" y="70" width="20" height="14" rx="3.5" fill="#EF9F27" opacity=".8"/>
+          <rect x="124" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/><rect x="148" y="70" width="20" height="14" rx="3.5" fill="#FAC775" opacity=".6"/>
         </svg>
       </div>
       <div class="card-body">
-        <div class="card-meta">
-          <span class="card-num">04</span>
-          <span class="card-badge" style="background:#FEF8E8;color:#7A4C0A">סידור עבודה</span>
-        </div>
+        <div class="card-meta"><span class="card-num">04</span><span class="card-badge" style="background:#FEF8E8;color:#7A4C0A">סידור עבודה</span></div>
         <div class="card-title">מערכת סידור עבודה</div>
         <div class="card-desc">ניהול משמרות, לוחות זמנים ותכנון כוח אדם חכם</div>
       </div>
@@ -522,39 +321,382 @@
       </div>
     </a>
 
+    <!-- 05 יירוטים split -->
+    <div class="split-card" style="grid-column:1 / -1;">
+      <div class="split-header">
+        <i class="ti ti-shield-bolt" style="font-size:16px;color:#6B7FDD"></i>
+        <span class="split-header-title">מערכת יירוטים</span>
+        <span class="split-tag" style="background:#EEEDFE;color:#3C3489;margin-right:4px">05</span>
+        <span style="flex:1"></span>
+        <span style="font-size:12px;color:#A8A5A0">בחר את הכניסה המתאימה</span>
+      </div>
+      <div class="split-card-inner">
+        <a class="split-half" href="https://adir2112-blip.github.io/Yrotim/" target="_blank">
+          <div class="split-visual" style="background:#EEF0FF">
+            <svg width="160" height="90" viewBox="0 0 160 90" fill="none">
+              <rect x="10" y="10" width="140" height="70" rx="8" fill="#D8DCF8"/>
+              <rect x="18" y="18" width="124" height="14" rx="4" fill="#6B7FDD"/>
+              <rect x="18" y="36" width="80" height="5" rx="2.5" fill="#6B7FDD" opacity=".4"/>
+              <rect x="18" y="45" width="60" height="5" rx="2.5" fill="#6B7FDD" opacity=".3"/>
+              <rect x="18" y="54" width="70" height="5" rx="2.5" fill="#6B7FDD" opacity=".3"/>
+              <rect x="108" y="36" width="34" height="34" rx="6" fill="#6B7FDD"/>
+              <text x="125" y="50" font-family="Heebo,sans-serif" font-size="7" font-weight="700" fill="white" text-anchor="middle">מנהל</text>
+              <path d="M118 58 L122 62 L132 52" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
+          <div class="split-body">
+            <div class="split-label">ADMIN</div>
+            <div class="split-title">צד מנהל</div>
+            <div class="split-desc">ניהול וצפייה בכל היירוטים</div>
+          </div>
+          <div class="split-footer">
+            <span class="split-cta"><i class="ti ti-external-link" style="font-size:12px"></i>כניסה</span>
+            <div class="split-arrow"><i class="ti ti-arrow-left"></i></div>
+          </div>
+        </a>
+        <a class="split-half" href="https://adir2112-blip.github.io/Yrotim/?agent=1" target="_blank">
+          <div class="split-visual" style="background:#F0F4FF">
+            <svg width="160" height="90" viewBox="0 0 160 90" fill="none">
+              <rect x="10" y="10" width="140" height="70" rx="8" fill="#D8DCF8"/>
+              <circle cx="80" cy="36" r="14" fill="#6B7FDD" opacity=".3"/>
+              <circle cx="80" cy="36" r="8" fill="#6B7FDD"/>
+              <rect x="55" y="54" width="50" height="5" rx="2.5" fill="#6B7FDD" opacity=".5"/>
+              <rect x="60" y="63" width="40" height="5" rx="2.5" fill="#6B7FDD" opacity=".35"/>
+              <rect x="18" y="20" width="24" height="24" rx="5" fill="#6B7FDD" opacity=".2"/>
+              <rect x="118" y="20" width="24" height="24" rx="5" fill="#6B7FDD" opacity=".2"/>
+            </svg>
+          </div>
+          <div class="split-body">
+            <div class="split-label">AGENT</div>
+            <div class="split-title">צד נציג</div>
+            <div class="split-desc">ממשק עבודה לנציגים</div>
+          </div>
+          <div class="split-footer">
+            <span class="split-cta"><i class="ti ti-external-link" style="font-size:12px"></i>כניסה</span>
+            <div class="split-arrow"><i class="ti ti-arrow-left"></i></div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 06 דשבורד מרכז אדיר -->
+    <div class="card" style="grid-column:1 / -1;cursor:pointer;" onclick="openDashboard()">
+      <div class="card-visual" style="background:#1A1A1A;height:100px;">
+        <svg width="340" height="76" viewBox="0 0 340 76" fill="none">
+          <rect x="8"   y="8" width="96" height="60" rx="8" fill="#222"/>
+          <rect x="16"  y="16" width="80" height="8" rx="3" fill="#333"/>
+          <text x="56"  y="52" font-family="Heebo,sans-serif" font-size="22" font-weight="900" fill="#3DB870" text-anchor="middle">24</text>
+          <rect x="122" y="8" width="96" height="60" rx="8" fill="#222"/>
+          <rect x="130" y="16" width="80" height="8" rx="3" fill="#333"/>
+          <text x="170" y="52" font-family="Heebo,sans-serif" font-size="22" font-weight="900" fill="#F59E0B" text-anchor="middle">8</text>
+          <rect x="236" y="8" width="96" height="60" rx="8" fill="#222"/>
+          <rect x="244" y="16" width="80" height="8" rx="3" fill="#333"/>
+          <text x="284" y="52" font-family="Heebo,sans-serif" font-size="22" font-weight="900" fill="#6B7FDD" text-anchor="middle">157</text>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-num">06</span>
+          <span class="card-badge" style="background:#F5F3EF;color:#888;border:1px solid #E0DDD6;">🔒 מוגן סיסמא</span>
+        </div>
+        <div class="card-title">דשבורד מרכז אדיר</div>
+        <div class="card-desc">נתוני יירוטים ומכירות בזמן אמת — גישה מנהל בלבד</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-cta"><i class="ti ti-lock" style="font-size:14px"></i>כניסה מאובטחת</span>
+        <div class="card-arrow"><i class="ti ti-arrow-left"></i></div>
+      </div>
+    </div>
+
   </div>
 
   <div class="site-footer">
     <span class="pill-green"></span>
     <span>כל המערכות פעילות ומחוברות</span>
   </div>
+</div><!-- /hub -->
 
-  <script>
-    function getGreeting(h) {
-      if (h >= 5  && h < 12) return { text: 'בוקר טוב, אדיר',     emoji: '☀️' };
-      if (h >= 12 && h < 17) return { text: 'צהריים טובים, אדיר', emoji: '🌤️' };
-      if (h >= 17 && h < 21) return { text: 'ערב טוב, אדיר',      emoji: '🌆' };
-      return                         { text: 'לילה טוב, אדיר',     emoji: '🌙' };
+
+<!-- ════════ DASHBOARD OVERLAY ════════ -->
+<div class="overlay" id="dashOverlay">
+
+  <!-- Lock screen -->
+  <div class="lock-screen" id="lockScreen">
+    <div class="lock-icon"><i class="ti ti-lock"></i></div>
+    <div style="text-align:center">
+      <div class="lock-title">דשבורד מרכז אדיר</div>
+      <div class="lock-sub">גישה מנהל בלבד</div>
+    </div>
+    <div class="lock-input-wrap">
+      <input class="lock-input" id="lockInput" type="password" placeholder="סיסמא" onkeydown="if(event.key==='Enter')checkPass()"/>
+      <button class="lock-toggle" onclick="togglePass()" id="lockToggle"><i class="ti ti-eye" id="eyeIcon"></i></button>
+    </div>
+    <div class="lock-error" id="lockError"></div>
+    <button class="lock-btn" onclick="checkPass()">כניסה</button>
+    <button onclick="closeDashboard()" style="background:none;border:none;color:#AAA;font-size:13px;cursor:pointer;font-family:Heebo,sans-serif;margin-top:-.5rem;">← חזרה</button>
+  </div>
+
+  <!-- Dashboard inner -->
+  <div class="dash-inner" id="dashInner">
+    <div class="dash-header">
+      <div class="dash-header-brand">
+        <div class="dash-dot"></div>
+        <div>
+          <div class="dash-header-title">דשבורד מרכז אדיר</div>
+          <div class="dash-header-sub" id="dashDate">טוען...</div>
+        </div>
+      </div>
+      <div class="dash-header-right">
+        <div class="dash-countdown">⟳ רענון בעוד <span id="countdownNum">60</span>ש׳</div>
+        <button class="dash-close" onclick="closeDashboard()"><i class="ti ti-x" style="font-size:13px"></i> יציאה</button>
+      </div>
+    </div>
+
+    <div class="dash-body">
+
+      <!-- YIRUTIM -->
+      <div class="dash-section">
+        <div class="dash-section-header">
+          <div class="dash-section-title">
+            <i class="ti ti-shield-bolt" style="color:#4F46E5;font-size:20px"></i>
+            יירוטים — ממתינים לטיפול
+          </div>
+          <button class="dash-refresh" id="yRefBtn" onclick="loadYirutim()">
+            <i class="ti ti-refresh" style="font-size:13px"></i> רענון
+          </button>
+        </div>
+        <div class="dash-stats">
+          <div class="dash-stat"><div class="dash-stat-label">סה״כ רשומות</div><div class="dash-stat-value" id="statTotal">—</div></div>
+          <div class="dash-stat"><div class="dash-stat-label">ממתינות לטיפול</div><div class="dash-stat-value orange" id="statWaiting">—</div></div>
+          <div class="dash-stat"><div class="dash-stat-label">פעילויות ייחודיות</div><div class="dash-stat-value blue" id="statActivities">—</div></div>
+        </div>
+        <div class="dash-table-wrap">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>שם פעילות</th>
+                <th>ממתינים לטיפול</th>
+                <th>ותק פנייה ישנה</th>
+              </tr>
+            </thead>
+            <tbody id="yirutimBody">
+              <tr class="loading-row"><td colspan="3">טוען נתונים...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FREEFIT -->
+      <div class="dash-section">
+        <div class="dash-section-header">
+          <div class="dash-section-title">
+            <i class="ti ti-chart-bar" style="color:#EA580C;font-size:20px"></i>
+            FREEFIT מכירות — היום
+          </div>
+          <button class="dash-refresh" id="fRefBtn" onclick="loadFreefit()">
+            <i class="ti ti-refresh" style="font-size:13px"></i> רענון
+          </button>
+        </div>
+        <div class="dash-stats">
+          <div class="dash-stat"><div class="dash-stat-label">מכירות היום</div><div class="dash-stat-value green" id="statSales">—</div></div>
+          <div class="dash-stat"><div class="dash-stat-label">שיחות היום</div><div class="dash-stat-value" id="statCalls">—</div></div>
+          <div class="dash-stat"><div class="dash-stat-label">נציגים פעילים</div><div class="dash-stat-value blue" id="statAgents">—</div></div>
+        </div>
+        <div class="dash-table-wrap">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>שם נציג</th>
+                <th>מכירות</th>
+                <th>שיחות</th>
+                <th>ליד</th>
+                <th>חידושים</th>
+              </tr>
+            </thead>
+            <tbody id="freefitBody">
+              <tr class="loading-row"><td colspan="5">טוען נתונים...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // ── Clock ──
+  function getGreeting(h){
+    if(h>=5&&h<12)  return{text:'בוקר טוב, אדיר',emoji:'☀️'};
+    if(h>=12&&h<17) return{text:'צהריים טובים, אדיר',emoji:'🌤️'};
+    if(h>=17&&h<21) return{text:'ערב טוב, אדיר',emoji:'🌆'};
+    return{text:'לילה טוב, אדיר',emoji:'🌙'};
+  }
+  function tick(){
+    const n=new Date(),h=n.getHours();
+    document.getElementById('clk').textContent=String(h).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+    const days=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const months=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+    const ds='יום '+days[n.getDay()]+' · '+n.getDate()+' '+months[n.getMonth()]+' '+n.getFullYear();
+    document.getElementById('cld').textContent=ds;
+    const dd=document.getElementById('dashDate'); if(dd) dd.textContent=ds;
+    const g=getGreeting(h);
+    document.getElementById('greeting').innerHTML=g.text+'<span class="greeting-emoji">'+g.emoji+'</span>';
+  }
+  tick(); setInterval(tick,30000);
+
+  // ── Lock ──
+  const PASS='Q1w2e3r4!';
+  function openDashboard(){
+    document.getElementById('dashOverlay').classList.add('active');
+    document.getElementById('lockScreen').style.display='flex';
+    document.getElementById('dashInner').classList.remove('active');
+    document.getElementById('lockInput').value='';
+    document.getElementById('lockError').textContent='';
+    setTimeout(()=>document.getElementById('lockInput').focus(),300);
+  }
+  function closeDashboard(){
+    document.getElementById('dashOverlay').classList.remove('active');
+    clearInterval(autoRefreshInterval);
+    clearInterval(countdownInterval);
+  }
+  function checkPass(){
+    if(document.getElementById('lockInput').value===PASS){
+      document.getElementById('lockScreen').style.display='none';
+      document.getElementById('dashInner').classList.add('active');
+      loadAll();
+      startAutoRefresh();
+    } else {
+      const inp=document.getElementById('lockInput');
+      inp.classList.add('error');
+      document.getElementById('lockError').textContent='סיסמא שגויה, נסה שנית';
+      setTimeout(()=>inp.classList.remove('error'),400);
     }
+  }
+  function togglePass(){
+    const inp=document.getElementById('lockInput'),ico=document.getElementById('eyeIcon');
+    if(inp.type==='password'){inp.type='text';ico.className='ti ti-eye-off';}
+    else{inp.type='password';ico.className='ti ti-eye';}
+  }
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDashboard(); });
 
-    function tick() {
-      const n  = new Date();
-      const h  = n.getHours();
-      const hh = String(h).padStart(2, '0');
-      const mm = String(n.getMinutes()).padStart(2, '0');
-      document.getElementById('clk').textContent = hh + ':' + mm;
-      const days   = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-      const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-      document.getElementById('cld').textContent =
-        'יום ' + days[n.getDay()] + ' · ' + n.getDate() + ' ' + months[n.getMonth()] + ' ' + n.getFullYear();
-      const g = getGreeting(h);
-      document.getElementById('greeting').innerHTML =
-        g.text + '<span class="greeting-emoji">' + g.emoji + '</span>';
-    }
+  // ── Auto refresh every 60s ──
+  let autoRefreshInterval, countdownInterval, countdown=60;
+  function startAutoRefresh(){
+    clearInterval(autoRefreshInterval);
+    clearInterval(countdownInterval);
+    countdown=60;
+    document.getElementById('countdownNum').textContent=countdown;
+    countdownInterval=setInterval(()=>{
+      countdown--;
+      document.getElementById('countdownNum').textContent=countdown;
+      if(countdown<=0){ countdown=60; loadAll(); }
+    },1000);
+  }
+  function loadAll(){ loadYirutim(); loadFreefit(); }
 
-    tick();
-    setInterval(tick, 30000);
-  </script>
+  // ── Supabase ──
+  const Y_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
+  const Y_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
+  const F_URL='https://fmejfxejsrmjvexfizgj.supabase.co/rest/v1';
+  const F_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtZWpmeGVqc3JtanZleGZpemdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjA1MjQsImV4cCI6MjA5MTkzNjUyNH0.A8Eu-3Uj-i06U0DsDt-pbGu1tQJXdjZaTyz797PsOEU';
+  const hdr=k=>({'apikey':k,'Authorization':'Bearer '+k,'Content-Type':'application/json'});
 
+  function spinning(id,on){ const b=document.getElementById(id); if(b) b.classList.toggle('spinning',on); }
+
+  // ── Days ago helper ──
+  function daysAgo(dateStr){
+    if(!dateStr) return null;
+    const diff=Date.now()-new Date(dateStr).getTime();
+    const days=Math.floor(diff/(1000*60*60*24));
+    if(days===0) return{label:'היום',cls:'age-ok'};
+    if(days===1) return{label:'אתמול',cls:'age-warn'};
+    if(days<=3)  return{label:days+' ימים',cls:'age-warn'};
+    return{label:days+' ימים',cls:'age-urgent'};
+  }
+
+  // ── Load Yirutim ──
+  async function loadYirutim(){
+    spinning('yRefBtn',true);
+    const body=document.getElementById('yirutimBody');
+    try{
+      const res=await fetch(Y_URL+'/yirutim?select=*&order=created_at.asc',{headers:hdr(Y_KEY)});
+      const data=await res.json();
+      if(!Array.isArray(data)||data.length===0){
+        body.innerHTML='<tr class="empty-row"><td colspan="3">אין נתונים</td></tr>';
+        ['statTotal','statWaiting','statActivities'].forEach(id=>document.getElementById(id).textContent='0');
+        return;
+      }
+      document.getElementById('statTotal').textContent=data.length;
+
+      // Group by activity, count waiting, find oldest created_at per activity
+      const grouped={};
+      data.forEach(r=>{
+        const act=r.activity||'—';
+        if(!grouped[act]) grouped[act]={waiting:0,oldest:r.created_at};
+        // count rows that are NOT done (not "טופל")
+        const isDone=(r.status||'').includes('טופל');
+        if(!isDone) grouped[act].waiting++;
+        if(r.created_at && r.created_at < grouped[act].oldest) grouped[act].oldest=r.created_at;
+      });
+
+      const totalWaiting=Object.values(grouped).reduce((s,g)=>s+g.waiting,0);
+      document.getElementById('statWaiting').textContent=totalWaiting;
+      document.getElementById('statActivities').textContent=Object.keys(grouped).length;
+
+      // Sort by waiting count desc
+      const sorted=Object.entries(grouped).sort((a,b)=>b[1].waiting-a[1].waiting);
+
+      let html='';
+      sorted.forEach(([act,g])=>{
+        const age=daysAgo(g.oldest);
+        const ageHtml=age?`<span class="age-chip ${age.cls}">${age.label}</span>`:'—';
+        const waitColor=g.waiting>5?'num-orange':g.waiting>0?'num-gray':'num-gray';
+        html+=`<tr>
+          <td class="name-cell">${act}</td>
+          <td><span class="num-cell ${g.waiting>0?'num-orange':''}" style="font-size:26px;font-weight:900;letter-spacing:-1px">${g.waiting}</span></td>
+          <td>${ageHtml}</td>
+        </tr>`;
+      });
+      body.innerHTML=html;
+    }catch(e){
+      body.innerHTML='<tr class="empty-row"><td colspan="3">שגיאה בטעינת נתונים</td></tr>';
+    }finally{ spinning('yRefBtn',false); }
+  }
+
+  // ── Load Freefit ──
+  async function loadFreefit(){
+    spinning('fRefBtn',true);
+    const body=document.getElementById('freefitBody');
+    try{
+      const today=new Date().toISOString().slice(0,10);
+      const res=await fetch(F_URL+'/daily_stats?select=*&date=eq.'+today+'&order=total_sales.desc',{headers:hdr(F_KEY)});
+      const data=await res.json();
+      if(!Array.isArray(data)||data.length===0){
+        body.innerHTML='<tr class="empty-row"><td colspan="5">אין נתונים להיום</td></tr>';
+        ['statSales','statCalls','statAgents'].forEach(id=>document.getElementById(id).textContent='0');
+        return;
+      }
+      document.getElementById('statSales').textContent=data.reduce((s,r)=>s+(r.total_sales||0),0);
+      document.getElementById('statCalls').textContent=data.reduce((s,r)=>s+(r.calls||0),0);
+      document.getElementById('statAgents').textContent=data.filter(r=>(r.calls||0)>0).length;
+      let html='';
+      data.forEach(r=>{
+        const s=r.total_sales||0,c=r.calls||0,l=r.leads||0,rn=r.renewals||0;
+        html+=`<tr>
+          <td class="name-cell">${r.agent_name||'—'}</td>
+          <td><span class="num-cell ${s>0?'num-green':'num-gray'}">${s}</span></td>
+          <td><span class="num-cell num-gray">${c}</span></td>
+          <td style="color:#AAA;font-size:15px">${l}</td>
+          <td style="color:#AAA;font-size:15px">${rn}</td>
+        </tr>`;
+      });
+      body.innerHTML=html;
+    }catch(e){
+      body.innerHTML='<tr class="empty-row"><td colspan="5">שגיאה בטעינת נתונים</td></tr>';
+    }finally{ spinning('fRefBtn',false); }
+  }
+</script>
 </body>
 </html>
