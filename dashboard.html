@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>דשבורד מרכז אדיר</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
+  <style>
+    *, *::before, *::after { margin:0;padding:0;box-sizing:border-box; }
+    body { font-family:'Heebo',sans-serif;direction:rtl;background:#F5F3EF;min-height:100vh; }
+
+    .dash-header { background:#fff;border-bottom:2px solid #E8E4DC;padding:1rem 2.2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10; }
+    .dash-header-brand { display:flex;align-items:center;gap:12px; }
+    .dash-dot { width:10px;height:10px;border-radius:50%;background:#3DB870;animation:blink 2.5s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:.4} }
+    .dash-header-title { font-size:20px;font-weight:800;color:#1A1A1A;letter-spacing:-0.5px; }
+    .dash-header-sub { font-size:12.5px;color:#AAA;margin-top:2px; }
+    .dash-header-right { display:flex;align-items:center;gap:.75rem; }
+    .dash-countdown { font-size:12px;color:#AAA;background:#F5F3EF;border:1px solid #E0DDD6;border-radius:8px;padding:5px 12px;font-variant-numeric:tabular-nums; }
+    .back-btn { background:#F5F3EF;border:1.5px solid #E0DDD6;border-radius:10px;padding:7px 16px;font-size:13px;font-weight:600;color:#1A1A1A;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:6px;text-decoration:none;transition:background .18s; }
+    .back-btn:hover { background:#E8E4DC; }
+
+    .dash-body { padding:1.5rem 2.2rem;display:flex;flex-direction:column;gap:1.5rem;background:#F5F3EF; }
+
+    .dash-section { background:#fff;border:1.5px solid #E8E4DC;border-radius:20px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.04); }
+    .dash-section-header { padding:1.1rem 1.6rem;border-bottom:1.5px solid #F0EDE6;display:flex;align-items:center;justify-content:space-between; }
+    .dash-section-title { font-size:18px;font-weight:800;color:#1A1A1A;display:flex;align-items:center;gap:10px;letter-spacing:-0.3px; }
+    .dash-refresh { background:#F5F3EF;border:1px solid #E0DDD6;border-radius:8px;padding:5px 12px;font-size:12px;color:#888;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:5px;transition:color .18s,background .18s; }
+    .dash-refresh:hover { background:#E8E4DC;color:#1A1A1A; }
+    .dash-refresh.spinning i { animation:spin .6s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    .dash-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;padding:1.2rem 1.6rem;border-bottom:1.5px solid #F0EDE6; }
+    .dash-stat { background:#F8F6F2;border:1px solid #EDE9E2;border-radius:14px;padding:1rem 1.2rem; }
+    .dash-stat-label { font-size:12px;color:#AAA;font-weight:600;letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px; }
+    .dash-stat-value { font-size:38px;font-weight:900;color:#1A1A1A;letter-spacing:-2px;line-height:1; }
+    .dash-stat-value.green { color:#16A34A; }
+    .dash-stat-value.orange { color:#D97706; }
+    .dash-stat-value.blue { color:#4F46E5; }
+
+    .dash-table-wrap { overflow-x:auto;overflow-y:auto;max-height:340px; }
+    .dash-table { width:100%;border-collapse:collapse; }
+    .dash-table th { padding:.9rem 1.6rem;text-align:right;font-size:12px;font-weight:700;letter-spacing:.8px;color:#AAA;text-transform:uppercase;border-bottom:1.5px solid #F0EDE6;white-space:nowrap;position:sticky;top:0;background:#fff;z-index:2; }
+    .dash-table td { padding:1rem 1.6rem;color:#1A1A1A;border-bottom:1px solid #F8F6F2;white-space:nowrap;font-size:16px; }
+    .dash-table tr:last-child td { border-bottom:none; }
+    .dash-table tr:hover td { background:#FAFAF8; }
+    .dash-table .name-cell { font-weight:700;font-size:17px;color:#1A1A1A; }
+    .dash-table .num-cell { font-size:26px;font-weight:900;letter-spacing:-1px; }
+    .num-green { color:#16A34A; }
+    .num-orange { color:#D97706; }
+    .num-gray { color:#888; }
+
+    .age-chip { display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:700;padding:4px 12px;border-radius:999px; }
+    .age-urgent { background:#FEE2E2;color:#991B1B; }
+    .age-warn   { background:#FEF3C7;color:#92400E; }
+    .age-ok     { background:#DCFCE7;color:#166534; }
+
+    .empty-row td,.loading-row td { text-align:center;color:#AAA;padding:2.5rem;font-size:15px; }
+  </style>
+</head>
+<body>
+
+  <div class="dash-header">
+    <div class="dash-header-brand">
+      <div class="dash-dot"></div>
+      <div>
+        <div class="dash-header-title">דשבורד מרכז אדיר</div>
+        <div class="dash-header-sub" id="dashDate">טוען...</div>
+      </div>
+    </div>
+    <div class="dash-header-right">
+      <div class="dash-countdown">⟳ רענון בעוד <span id="countdownNum">60</span>ש׳</div>
+      <a class="back-btn" href="index.html"><i class="ti ti-arrow-right" style="font-size:13px"></i> חזרה</a>
+    </div>
+  </div>
+
+  <div class="dash-body">
+
+    <!-- YIRUTIM -->
+    <div class="dash-section">
+      <div class="dash-section-header">
+        <div class="dash-section-title">
+          <i class="ti ti-shield-bolt" style="color:#4F46E5;font-size:20px"></i>
+          יירוטים — ממתינים לטיפול
+        </div>
+        <button class="dash-refresh" id="yRefBtn" onclick="loadYirutim()">
+          <i class="ti ti-refresh" style="font-size:13px"></i> רענון
+        </button>
+      </div>
+      <div class="dash-stats">
+        <div class="dash-stat"><div class="dash-stat-label">סה״כ רשומות</div><div class="dash-stat-value" id="statTotal">—</div></div>
+        <div class="dash-stat"><div class="dash-stat-label">ממתינות לטיפול</div><div class="dash-stat-value orange" id="statWaiting">—</div></div>
+        <div class="dash-stat"><div class="dash-stat-label">פעילויות ייחודיות</div><div class="dash-stat-value blue" id="statActivities">—</div></div>
+      </div>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th>שם פעילות</th>
+              <th>ממתינים לטיפול</th>
+              <th>ותק פנייה ישנה</th>
+            </tr>
+          </thead>
+          <tbody id="yirutimBody">
+            <tr class="loading-row"><td colspan="3">טוען נתונים...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FREEFIT -->
+    <div class="dash-section">
+      <div class="dash-section-header">
+        <div class="dash-section-title">
+          <i class="ti ti-chart-bar" style="color:#EA580C;font-size:20px"></i>
+          FREEFIT מכירות — היום
+        </div>
+        <button class="dash-refresh" id="fRefBtn" onclick="loadFreefit()">
+          <i class="ti ti-refresh" style="font-size:13px"></i> רענון
+        </button>
+      </div>
+      <div class="dash-stats">
+        <div class="dash-stat"><div class="dash-stat-label">מכירות היום</div><div class="dash-stat-value green" id="statSales">—</div></div>
+        <div class="dash-stat"><div class="dash-stat-label">שיחות היום</div><div class="dash-stat-value" id="statCalls">—</div></div>
+        <div class="dash-stat"><div class="dash-stat-label">נציגים פעילים</div><div class="dash-stat-value blue" id="statAgents">—</div></div>
+      </div>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th>שם נציג</th>
+              <th>מכירות</th>
+              <th>שיחות</th>
+              <th>ליד</th>
+              <th>חידושים</th>
+            </tr>
+          </thead>
+          <tbody id="freefitBody">
+            <tr class="loading-row"><td colspan="5">טוען נתונים...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Date ──
+    function updateDate(){
+      const n=new Date();
+      const days=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+      const months=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+      document.getElementById('dashDate').textContent='יום '+days[n.getDay()]+' · '+n.getDate()+' '+months[n.getMonth()]+' '+n.getFullYear();
+    }
+    updateDate(); setInterval(updateDate,60000);
+
+    // ── Auto refresh countdown ──
+    let countdown=60;
+    setInterval(()=>{
+      countdown--;
+      document.getElementById('countdownNum').textContent=countdown;
+      if(countdown<=0){ countdown=60; loadAll(); }
+    },1000);
+
+    function loadAll(){ loadYirutim(); loadFreefit(); }
+
+    // ── Supabase ──
+    const Y_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
+    const Y_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
+    const F_URL='https://fmejfxejsrmjvexfizgj.supabase.co/rest/v1';
+    const F_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtZWpmeGVqc3JtanZleGZpemdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjA1MjQsImV4cCI6MjA5MTkzNjUyNH0.A8Eu-3Uj-i06U0DsDt-pbGu1tQJXdjZaTyz797PsOEU';
+    const hdr=k=>({'apikey':k,'Authorization':'Bearer '+k,'Content-Type':'application/json'});
+
+    function spinning(id,on){ const b=document.getElementById(id); if(b) b.classList.toggle('spinning',on); }
+
+    function daysAgo(dateStr){
+      if(!dateStr) return null;
+      const days=Math.floor((Date.now()-new Date(dateStr).getTime())/(1000*60*60*24));
+      if(days===0) return{label:'היום',cls:'age-ok'};
+      if(days===1) return{label:'אתמול',cls:'age-warn'};
+      if(days<=3)  return{label:days+' ימים',cls:'age-warn'};
+      return{label:days+' ימים',cls:'age-urgent'};
+    }
+
+    async function loadYirutim(){
+      spinning('yRefBtn',true);
+      const body=document.getElementById('yirutimBody');
+      try{
+        const res=await fetch(Y_URL+'/yirutim?select=*&order=created_at.asc',{headers:hdr(Y_KEY)});
+        const data=await res.json();
+        if(!Array.isArray(data)||data.length===0){
+          body.innerHTML='<tr class="empty-row"><td colspan="3">אין נתונים</td></tr>';
+          ['statTotal','statWaiting','statActivities'].forEach(id=>document.getElementById(id).textContent='0');
+          return;
+        }
+        document.getElementById('statTotal').textContent=data.length;
+        const grouped={};
+        data.forEach(r=>{
+          const act=r.activity||'—';
+          if(!grouped[act]) grouped[act]={waiting:0,oldest:r.created_at};
+          if(!(r.status||'').includes('טופל')) grouped[act].waiting++;
+          if(r.created_at&&r.created_at<grouped[act].oldest) grouped[act].oldest=r.created_at;
+        });
+        document.getElementById('statWaiting').textContent=Object.values(grouped).reduce((s,g)=>s+g.waiting,0);
+        document.getElementById('statActivities').textContent=Object.keys(grouped).length;
+        const sorted=Object.entries(grouped).sort((a,b)=>b[1].waiting-a[1].waiting);
+        let html='';
+        sorted.forEach(([act,g])=>{
+          const age=daysAgo(g.oldest);
+          html+=`<tr>
+            <td class="name-cell">${act}</td>
+            <td><span class="num-cell ${g.waiting>0?'num-orange':'num-gray'}">${g.waiting}</span></td>
+            <td>${age?`<span class="age-chip ${age.cls}">${age.label}</span>`:'—'}</td>
+          </tr>`;
+        });
+        body.innerHTML=html;
+      }catch(e){
+        body.innerHTML='<tr class="empty-row"><td colspan="3">שגיאה בטעינת נתונים</td></tr>';
+      }finally{ spinning('yRefBtn',false); }
+    }
+
+    async function loadFreefit(){
+      spinning('fRefBtn',true);
+      const body=document.getElementById('freefitBody');
+      try{
+        const today=new Date().toISOString().slice(0,10);
+        const res=await fetch(F_URL+'/daily_stats?select=*&date=eq.'+today+'&order=total_sales.desc',{headers:hdr(F_KEY)});
+        const data=await res.json();
+        if(!Array.isArray(data)||data.length===0){
+          body.innerHTML='<tr class="empty-row"><td colspan="5">אין נתונים להיום</td></tr>';
+          ['statSales','statCalls','statAgents'].forEach(id=>document.getElementById(id).textContent='0');
+          return;
+        }
+        document.getElementById('statSales').textContent=data.reduce((s,r)=>s+(r.total_sales||0),0);
+        document.getElementById('statCalls').textContent=data.reduce((s,r)=>s+(r.calls||0),0);
+        document.getElementById('statAgents').textContent=data.filter(r=>(r.calls||0)>0).length;
+        let html='';
+        data.forEach(r=>{
+          const s=r.total_sales||0,c=r.calls||0,l=r.leads||0,rn=r.renewals||0;
+          html+=`<tr>
+            <td class="name-cell">${r.agent_name||'—'}</td>
+            <td><span class="num-cell ${s>0?'num-green':'num-gray'}">${s}</span></td>
+            <td><span class="num-cell num-gray">${c}</span></td>
+            <td style="color:#AAA;font-size:15px">${l}</td>
+            <td style="color:#AAA;font-size:15px">${rn}</td>
+          </tr>`;
+        });
+        body.innerHTML=html;
+      }catch(e){
+        body.innerHTML='<tr class="empty-row"><td colspan="5">שגיאה בטעינת נתונים</td></tr>';
+      }finally{ spinning('fRefBtn',false); }
+    }
+
+    // Load on start
+    loadAll();
+  </script>
+</body>
+</html>
