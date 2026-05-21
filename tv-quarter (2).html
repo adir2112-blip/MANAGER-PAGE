@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TV Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:100%;height:100%;background:#F0EDE6;font-family:'Heebo',sans-serif;direction:rtl;overflow:hidden}
+
+    .root{display:grid;grid-template-rows:28px 1fr 1fr;height:100vh;width:100vw}
+
+    /* HEADER */
+    .header{
+      background:#1A1A1A;
+      padding:0 12px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .header-title{font-size:11px;font-weight:900;color:#fff;display:flex;align-items:center;gap:5px}
+    .blink{width:5px;height:5px;border-radius:50%;background:#3DB870;animation:blink 2s infinite;flex-shrink:0}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+    .header-meta{font-size:9px;color:#888;display:flex;align-items:center;gap:8px}
+
+    /* PANEL */
+    .panel{background:#fff;display:flex;flex-direction:column;overflow:hidden;border-bottom:1px solid #E8E4DC;margin:4px 4px 0}
+    .panel:last-child{margin-bottom:4px}
+    .panel{border-radius:10px;border:1px solid #E8E4DC;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+
+    .panel-header{
+      background:#FAFAF8;
+      padding:4px 10px;
+      display:flex;align-items:center;justify-content:space-between;
+      flex-shrink:0;
+      border-bottom:1px solid #F0EDE6;
+      border-radius:10px 10px 0 0;
+    }
+    .panel-label{font-size:9px;font-weight:700;color:#AAA49C;letter-spacing:.8px;text-transform:uppercase}
+    .panel-total{font-size:9px;color:#AAA49C;display:flex;gap:10px}
+    .panel-total b{color:#1A1A1A;font-size:12px;font-weight:900}
+
+    /* TABLE */
+    .tbl-wrap{flex:1;overflow-y:auto;overflow-x:hidden;background:#fff}
+    .tbl-wrap::-webkit-scrollbar{width:2px}
+    .tbl-wrap::-webkit-scrollbar-thumb{background:#E8E4DC;border-radius:2px}
+    .tbl{width:100%;border-collapse:collapse}
+
+    /* FREEFIT rows */
+    .ff-row td{padding:2.5px 10px;border-bottom:1px solid #F8F6F2;vertical-align:middle}
+    .ff-row:last-child td{border-bottom:none}
+    .ff-row:hover td{background:#FAFAF8}
+    .ff-name{font-size:12px;font-weight:700;color:#1A1A1A;white-space:nowrap}
+    .ff-sales{font-size:16px;font-weight:900;letter-spacing:-1px;width:32px;text-align:center}
+    .ff-calls{font-size:10px;color:#C0BDB6;width:42px;text-align:center;white-space:nowrap}
+
+    .green{color:#16A34A}
+    .gray{color:#D0CCC6}
+    .orange{color:#D97706}
+    .red{color:#DC2626}
+
+    /* total row */
+    .ff-total td{padding:3px 10px;border-top:1.5px solid #F0EDE6;background:#FAFAF8}
+    .ff-total .ff-name{color:#888;font-size:10px;font-weight:700;letter-spacing:.5px}
+    .ff-total .ff-sales{font-size:15px;color:#1A1A1A}
+    .ff-total .ff-calls{color:#C0BDB6}
+
+    /* YIRUTIM rows */
+    .yr-row td{padding:2.5px 10px;border-bottom:1px solid #F8F6F2;vertical-align:middle}
+    .yr-row:last-child td{border-bottom:none}
+    .yr-row:hover td{background:#FAFAF8}
+    .yr-name{font-size:12px;font-weight:700;color:#1A1A1A;white-space:nowrap}
+    .yr-count{font-size:16px;font-weight:900;width:32px;text-align:center;letter-spacing:-1px}
+    .yr-age{width:54px;text-align:center}
+
+    .chip{font-size:8px;font-weight:700;padding:1px 5px;border-radius:999px;display:inline-block}
+    .chip.ok{background:#DCFCE7;color:#166534}
+    .chip.warn{background:#FEF9C3;color:#854D0E}
+    .chip.urgent{background:#FEE2E2;color:#991B1B}
+
+    .loading{text-align:center;color:#C0BDB6;padding:8px;font-size:10px}
+  </style>
+</head>
+<body>
+<div class="root">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title">
+      <div class="blink"></div>דשבורד מרכז אדיר
+    </div>
+    <div class="header-meta">
+      <span id="hDate"></span>
+      <span>⟳ <span id="cd">60</span>ש׳</span>
+    </div>
+  </div>
+
+  <!-- FREEFIT -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-label">📊 FREEFIT — מכירות היום</div>
+      <div class="panel-total">מכירות <b id="tSales">—</b> &nbsp; שיחות <b id="tCalls">—</b></div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <tbody id="ffBody"><tr><td colspan="3" class="loading">טוען...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- YIRUTIM -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-label">🛡️ יירוטים — ממתינים לטיפול</div>
+      <div class="panel-total">ממתינים <b id="tWait">—</b></div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <tbody id="yrBody"><tr><td colspan="3" class="loading">טוען...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<script>
+  const Y_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
+  const Y_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
+  const F_URL='https://fmejfxejsrmjvexfizgj.supabase.co/rest/v1';
+  const F_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtZWpmeGVqc3JtanZleGZpemdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjA1MjQsImV4cCI6MjA5MTkzNjUyNH0.A8Eu-3Uj-i06U0DsDt-pbGu1tQJXdjZaTyz797PsOEU';
+  const H=k=>({'apikey':k,'Authorization':'Bearer '+k});
+
+  function updateDate(){
+    const n=new Date();
+    const days=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+    const months=['ינו','פבר','מרץ','אפר','מאי','יוני','יולי','אוג','ספט','אוק','נוב','דצמ'];
+    document.getElementById('hDate').textContent='יום '+days[n.getDay()]+' '+n.getDate()+' '+months[n.getMonth()];
+  }
+
+  function daysAgo(d){
+    if(!d)return null;
+    const diff=Math.floor((Date.now()-new Date(d))/(864e5));
+    if(diff===0)return{l:'היום',c:'ok'};
+    if(diff===1)return{l:'אתמול',c:'warn'};
+    if(diff<=3) return{l:diff+' ימים',c:'warn'};
+    return{l:diff+' ימים',c:'urgent'};
+  }
+
+  async function loadFF(){
+    try{
+      const today=new Date().toISOString().slice(0,10);
+      const r=await fetch(F_URL+'/daily_stats?select=agent_name,total_sales,calls&date=eq.'+today+'&order=total_sales.desc',{headers:H(F_KEY)});
+      const d=await r.json();
+      if(!Array.isArray(d)||!d.length){
+        document.getElementById('ffBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים להיום</td></tr>';
+        document.getElementById('tSales').textContent='0';
+        document.getElementById('tCalls').textContent='0';
+        return;
+      }
+      const tS=d.reduce((s,x)=>s+(x.total_sales||0),0);
+      const tC=d.reduce((s,x)=>s+(x.calls||0),0);
+      document.getElementById('tSales').textContent=tS;
+      document.getElementById('tCalls').textContent=tC;
+
+      let html=d.map(x=>{
+        const s=x.total_sales||0,c=x.calls||0;
+        return`<tr class="ff-row">
+          <td class="ff-name">${x.agent_name||'—'}</td>
+          <td class="ff-sales ${s>0?'green':'gray'}">${s}</td>
+          <td class="ff-calls">${c} שיחות</td>
+        </tr>`;
+      }).join('');
+      html+=`<tr class="ff-total">
+        <td class="ff-name">סה״כ</td>
+        <td class="ff-sales green">${tS}</td>
+        <td class="ff-calls">${tC} שיחות</td>
+      </tr>`;
+      document.getElementById('ffBody').innerHTML=html;
+    }catch(e){
+      document.getElementById('ffBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה</td></tr>';
+    }
+  }
+
+  async function loadYR(){
+    try{
+      const r=await fetch(Y_URL+'/yirutim?select=activity,status,created_at&order=created_at.asc',{headers:H(Y_KEY)});
+      const d=await r.json();
+      if(!Array.isArray(d)||!d.length){
+        document.getElementById('yrBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים</td></tr>';
+        document.getElementById('tWait').textContent='0';
+        return;
+      }
+      const g={};
+      d.forEach(x=>{
+        const a=x.activity||'—';
+        if(!g[a])g[a]={w:0,oldest:x.created_at};
+        if(!(x.status||'').includes('טופל'))g[a].w++;
+        if(x.created_at&&x.created_at<g[a].oldest)g[a].oldest=x.created_at;
+      });
+      document.getElementById('tWait').textContent=Object.values(g).reduce((s,x)=>s+x.w,0);
+      const sorted=Object.entries(g).sort((a,b)=>b[1].w-a[1].w);
+      document.getElementById('yrBody').innerHTML=sorted.map(([act,x])=>{
+        const age=daysAgo(x.oldest);
+        const urgent=age&&age.c==='urgent';
+        const wc=x.w>0?(urgent?'red':'orange'):'gray';
+        return`<tr class="yr-row">
+          <td class="yr-name" style="${urgent?'color:#DC2626':''}">${act}</td>
+          <td class="yr-count ${wc}">${x.w}</td>
+          <td class="yr-age">${age?`<span class="chip ${age.c}">${age.l}</span>`:''}</td>
+        </tr>`;
+      }).join('');
+    }catch(e){
+      document.getElementById('yrBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה</td></tr>';
+    }
+  }
+
+  function loadAll(){loadFF();loadYR();}
+  let cd=60;
+  setInterval(()=>{
+    cd--;document.getElementById('cd').textContent=cd;
+    if(cd<=0){cd=60;loadAll();}
+  },1000);
+  updateDate();setInterval(updateDate,60000);
+  loadAll();
+</script>
+</body>
+</html>
