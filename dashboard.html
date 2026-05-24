@@ -184,6 +184,12 @@
       return{label:days+' ימים',cls:'age-urgent'};
     }
 
+    function isWaiting(status){
+      const s=(status||'').trim();
+      // "טופל" בלבד = סגור. כל השאר (טרם טופל, אין מענה, ריק) = ממתין
+      return s !== 'טופל';
+    }
+
     async function loadYirutim(){
       spinning('yRefBtn',true);
       const body=document.getElementById('yirutimBody');
@@ -199,16 +205,21 @@
         const grouped={};
         data.forEach(r=>{
           const act=r.activity||'—';
-          if(!grouped[act]) grouped[act]={waiting:0,oldest:r.created_at};
-          if(!(r.status||'').includes('טופל')) grouped[act].waiting++;
-          if(r.created_at&&r.created_at<grouped[act].oldest) grouped[act].oldest=r.created_at;
+          if(!grouped[act]) grouped[act]={waiting:0,oldestWaiting:null};
+          if(isWaiting(r.status)){
+            grouped[act].waiting++;
+            // oldest = ישן ביותר מבין הממתינים בלבד
+            if(!grouped[act].oldestWaiting || r.created_at < grouped[act].oldestWaiting){
+              grouped[act].oldestWaiting = r.created_at;
+            }
+          }
         });
         document.getElementById('statWaiting').textContent=Object.values(grouped).reduce((s,g)=>s+g.waiting,0);
         document.getElementById('statActivities').textContent=Object.keys(grouped).length;
         const sorted=Object.entries(grouped).sort((a,b)=>b[1].waiting-a[1].waiting);
         let html='';
         sorted.forEach(([act,g])=>{
-          const age=daysAgo(g.oldest);
+          const age=daysAgo(g.oldestWaiting);
           html+=`<tr>
             <td class="name-cell">${act}</td>
             <td><span class="num-cell ${g.waiting>0?'num-orange':'num-gray'}">${g.waiting}</span></td>
