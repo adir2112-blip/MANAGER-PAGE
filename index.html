@@ -634,11 +634,14 @@
       const grouped={};
       data.forEach(r=>{
         const act=r.activity||'—';
-        if(!grouped[act]) grouped[act]={waiting:0,oldest:r.created_at};
-        // count rows that are NOT done (not "טופל")
-        const isDone=(r.status||'').includes('טופל');
-        if(!isDone) grouped[act].waiting++;
-        if(r.created_at && r.created_at < grouped[act].oldest) grouped[act].oldest=r.created_at;
+        if(!grouped[act]) grouped[act]={waiting:0,oldestWaiting:null};
+        // רק "טרם טופל" בדיוק = ממתין
+        const isWaiting=(r.status||'').trim()==='טרם טופל';
+        if(isWaiting){
+          grouped[act].waiting++;
+          if(!grouped[act].oldestWaiting || r.created_at < grouped[act].oldestWaiting)
+            grouped[act].oldestWaiting = r.created_at;
+        }
       });
 
       const totalWaiting=Object.values(grouped).reduce((s,g)=>s+g.waiting,0);
@@ -650,7 +653,7 @@
 
       let html='';
       sorted.forEach(([act,g])=>{
-        const age=daysAgo(g.oldest);
+        const age=daysAgo(g.oldestWaiting);
         const ageHtml=age?`<span class="age-chip ${age.cls}">${age.label}</span>`:'—';
         const waitColor=g.waiting>5?'num-orange':g.waiting>0?'num-gray':'num-gray';
         html+=`<tr>
