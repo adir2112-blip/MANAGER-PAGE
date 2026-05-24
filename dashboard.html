@@ -185,9 +185,7 @@
     }
 
     function isWaiting(status){
-      const s=(status||'').trim();
-      // "טופל" בלבד = סגור. כל השאר (טרם טופל, אין מענה, ריק) = ממתין
-      return s !== 'טופל';
+      return (status||'').trim() === 'טרם טופל';
     }
 
     async function loadYirutim(){
