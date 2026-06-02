@@ -6,6 +6,7 @@
   <title>ניהול נציגים — אדיר לוי</title>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Heebo',sans-serif;direction:rtl;background:#F0EDE6;min-height:100vh}
@@ -230,6 +231,36 @@
             </select>
           </div>
           <button class="add-btn green" onclick="addAgent()"><i class="ti ti-plus"></i> הוסף</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ייבוא מאקסל -->
+    <div class="admin-section">
+      <div class="admin-section-title"><i class="ti ti-file-spreadsheet"></i> ייבוא מאקסל</div>
+      <div class="admin-form">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <div>
+            <div style="font-size:12px;color:#AAA;margin-bottom:6px">עמודה A = ת״ז &nbsp;|&nbsp; עמודה B = שם מלא &nbsp;|&nbsp; עמודה C = פעילות</div>
+            <input type="file" id="xlsxInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this)"/>
+            <button class="add-btn" style="background:#2563EB" onclick="document.getElementById('xlsxInput').click()">
+              <i class="ti ti-upload"></i> בחר קובץ אקסל
+            </button>
+          </div>
+          <div id="importStatus" style="font-size:12.5px;color:#AAA"></div>
+        </div>
+        <div id="importPreview" style="margin-top:.75rem;display:none">
+          <div style="font-size:12px;font-weight:700;color:#1A1A1A;margin-bottom:.5rem" id="importPreviewTitle"></div>
+          <div style="max-height:200px;overflow-y:auto;border:1px solid #E8E4DC;border-radius:8px">
+            <table class="admin-table" id="importPreviewTable">
+              <thead><tr><th>ת״ז</th><th>שם מלא</th><th>פעילות</th><th>סטטוס</th></tr></thead>
+              <tbody id="importPreviewBody"></tbody>
+            </table>
+          </div>
+          <div style="display:flex;gap:.75rem;margin-top:.75rem">
+            <button class="add-btn green" onclick="confirmImport()"><i class="ti ti-check"></i> ייבא הכל</button>
+            <button class="add-btn" style="background:#888" onclick="cancelImport()">ביטול</button>
+          </div>
         </div>
       </div>
     </div>
@@ -539,17 +570,96 @@ async function loadAgentsTable(){
   </tr>`).join('');
 }
 
+// ── EXCEL IMPORT ──
+const VALID_ACTIVITIES=['מובמנט','מאוחדת','כללית מאוחדת','פריפיט שירות','פריפיט מכירות'];
+let importRows=[];
+
+function importExcel(input){
+  const file=input.files[0];
+  if(!file) return;
+  const status=document.getElementById('importStatus');
+  status.textContent='קורא קובץ...';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      // skip header row if first cell looks like header
+      const startRow=(rows[0]&&String(rows[0][0]).includes('ת'))||String(rows[0]?.[0]).length<3?1:0;
+      importRows=[];
+      const preview=[];
+      rows.slice(startRow).forEach((r,i)=>{
+        const idNum=String(r[0]||'').trim();
+        const name=String(r[1]||'').trim();
+        const activity=String(r[2]||'').trim();
+        if(!idNum&&!name) return;
+        const valid=VALID_ACTIVITIES.includes(activity);
+        importRows.push({id_number:idNum,name,activity,active:true,valid});
+        preview.push({idNum,name,activity,valid,row:i+startRow+1});
+      });
+      status.textContent=`נמצאו ${importRows.length} שורות`;
+      document.getElementById('importPreviewTitle').textContent=`תצוגה מקדימה — ${importRows.length} נציגים`;
+      document.getElementById('importPreviewBody').innerHTML=preview.map(p=>`<tr>
+        <td style="font-size:12px">${p.idNum}</td>
+        <td style="font-size:12px;font-weight:600">${p.name}</td>
+        <td style="font-size:12px"><span class="activity-tag">${p.activity}</span></td>
+        <td><span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;background:${p.valid?'#DCFCE7':'#FEE2E2'};color:${p.valid?'#166534':'#991B1B'}">${p.valid?'תקין':'פעילות לא מוכרת'}</span></td>
+      </tr>`).join('');
+      document.getElementById('importPreview').style.display='block';
+    }catch(err){
+      status.textContent='שגיאה בקריאת הקובץ: '+err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value='';
+}
+
+async function confirmImport(){
+  const validRows=importRows.filter(r=>r.valid);
+  if(!validRows.length){toast('אין שורות תקינות לייבוא');return;}
+  document.getElementById('importStatus').textContent='מייבא...';
+  let success=0,fail=0;
+  for(const r of validRows){
+    const res=await fetch(SB_URL+'/agents_roster',{method:'POST',headers:H,
+      body:JSON.stringify({name:r.name,id_number:r.id_number,activity:r.activity,active:true})});
+    if(res.ok||res.status===201) success++;
+    else fail++;
+  }
+  document.getElementById('importStatus').textContent=`יובאו ${success} נציגים${fail>0?' ('+fail+' נכשלו)':''}`;
+  document.getElementById('importPreview').style.display='none';
+  importRows=[];
+  toast(`יובאו ${success} נציגים ✓`);
+  await loadAllAgents();
+  await loadTodayHours(getToday());
+  renderGroups(getToday());
+  loadAgentsTable();
+}
+
+function cancelImport(){
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importStatus').textContent='';
+  importRows=[];
+}
+
 async function addAgent(){
   const name=document.getElementById('newAgentName').value.trim();
   const idNum=document.getElementById('newAgentId').value.trim();
   const activity=document.getElementById('newAgentActivity').value;
   if(!name||!idNum){toast('מלא שם ות״ז');return;}
-  await fetch(SB_URL+'/agents_roster',{method:'POST',headers:H,body:JSON.stringify({name,id_number:idNum,activity,active:true})});
-  document.getElementById('newAgentName').value='';
-  document.getElementById('newAgentId').value='';
-  toast('נציג נוסף ✓');
-  loadAgentsTable();
-  loadAllAgents();
+  const res=await fetch(SB_URL+'/agents_roster',{method:'POST',headers:H,body:JSON.stringify({name,id_number:idNum,activity,active:true})});
+  const data=await res.json();
+  if(res.ok||Array.isArray(data)){
+    document.getElementById('newAgentName').value='';
+    document.getElementById('newAgentId').value='';
+    toast('נציג נוסף ✓');
+    await loadAllAgents();
+    await loadTodayHours(getToday());
+    renderGroups(getToday());
+    loadAgentsTable();
+  } else {
+    toast('שגיאה: '+JSON.stringify(data));
+  }
 }
 
 async function toggleAgent(id,active){
@@ -585,13 +695,17 @@ async function addManager(){
   const pin=document.getElementById('newMgrPin').value.trim();
   const activity=document.getElementById('newMgrActivity').value;
   if(!name||pin.length!==4){toast('מלא שם ו-4 ספרות ת״ז');return;}
-  await fetch(SB_URL+'/managers',{method:'POST',headers:H,body:JSON.stringify({name,id_last4:pin,activity,active:true})});
-  document.getElementById('newMgrName').value='';
-  document.getElementById('newMgrPin').value='';
-  toast('מנהל נוסף ✓');
-  loadManagersTable();
-  // reload login list
-  loadManagers();
+  const res=await fetch(SB_URL+'/managers',{method:'POST',headers:H,body:JSON.stringify({name,id_last4:pin,activity})});
+  const data=await res.json();
+  if(res.ok||Array.isArray(data)){
+    document.getElementById('newMgrName').value='';
+    document.getElementById('newMgrPin').value='';
+    toast('מנהל נוסף ✓');
+    loadManagersTable();
+    loadManagers();
+  } else {
+    toast('שגיאה: '+JSON.stringify(data));
+  }
 }
 
 async function deleteManager(id,name){
