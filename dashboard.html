@@ -279,25 +279,25 @@
       spinning('eRefBtn',true);
       const body=document.getElementById('emailBody');
       try{
-        const res=await fetch('https://crm-al.vercel.app/api/emails-stats');
+        const res=await fetch('https://crm-al.vercel.app/api/emails-stats',{mode:'cors',headers:{'Accept':'application/json'}});
+        if(!res.ok) throw new Error('HTTP '+res.status);
         const data=await res.json();
-        const depts=data.departments||[];
+        const depts=(data.departments||[]).filter(d=>d.name!=='לא ידוע');
         const summary=data.summary||{};
         document.getElementById('statEmailOpen').textContent=summary.total_open??'—';
-        document.getElementById('statEmailDepts').textContent=summary.total_departments??'—';
+        document.getElementById('statEmailDepts').textContent=depts.length;
         document.getElementById('statEmailCritical').textContent=summary.critical??'0';
         if(!depts.length){
           body.innerHTML='<tr class="empty-row"><td colspan="4">אין נתונים</td></tr>';
           return;
         }
-        // sort: red first, then orange, yellow, green
         const slaOrder={red:0,orange:1,yellow:2,green:3};
         depts.sort((a,b)=>(slaOrder[a.sla_status]??9)-(slaOrder[b.sla_status]??9));
         const slaLabel={green:'ירוק',yellow:'צהוב',orange:'כתום',red:'אדום'};
         body.innerHTML=depts.map(d=>{
           const sla=d.sla_status||'green';
           const days=d.oldest_business_days??0;
-          const daysLabel=days===0?'היום':days===1?'יום אחד':days+' ימים';
+          const daysLabel=days===0?'היום':days===1?'יום':days+' ימים';
           return`<tr>
             <td class="name-cell">${d.name}</td>
             <td><span class="num-cell ${d.open_tickets>0?'num-orange':'num-gray'}">${d.open_tickets}</span></td>
@@ -306,7 +306,8 @@
           </tr>`;
         }).join('');
       }catch(e){
-        body.innerHTML='<tr class="empty-row"><td colspan="4">שגיאה בטעינת נתונים</td></tr>';
+        console.error('Emails error:',e);
+        body.innerHTML=`<tr class="empty-row"><td colspan="4">שגיאה: ${e.message}</td></tr>`;
       }finally{ spinning('eRefBtn',false); }
     }
 
