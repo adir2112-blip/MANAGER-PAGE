@@ -57,6 +57,12 @@
     .age-warn   { background:#FEF3C7;color:#92400E; }
     .age-ok     { background:#DCFCE7;color:#166534; }
 
+    .sla-green  { background:#DCFCE7;color:#166534; }
+    .sla-yellow { background:#FEF9C3;color:#854D0E; }
+    .sla-orange { background:#FFEDD5;color:#9A3412; }
+    .sla-red    { background:#FEE2E2;color:#991B1B; }
+    .sla-badge  { display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:999px; }
+
     .empty-row td,.loading-row td { text-align:center;color:#AAA;padding:2.5rem;font-size:15px; }
   </style>
 </head>
@@ -96,16 +102,8 @@
       </div>
       <div class="dash-table-wrap">
         <table class="dash-table">
-          <thead>
-            <tr>
-              <th>שם פעילות</th>
-              <th>ממתינים לטיפול</th>
-              <th>ותק פנייה ישנה</th>
-            </tr>
-          </thead>
-          <tbody id="yirutimBody">
-            <tr class="loading-row"><td colspan="3">טוען נתונים...</td></tr>
-          </tbody>
+          <thead><tr><th>שם פעילות</th><th>ממתינים לטיפול</th><th>ותק פנייה ישנה</th></tr></thead>
+          <tbody id="yirutimBody"><tr class="loading-row"><td colspan="3">טוען נתונים...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -128,18 +126,32 @@
       </div>
       <div class="dash-table-wrap">
         <table class="dash-table">
-          <thead>
-            <tr>
-              <th>שם נציג</th>
-              <th>מכירות</th>
-              <th>שיחות</th>
-              <th>ליד</th>
-              <th>חידושים</th>
-            </tr>
-          </thead>
-          <tbody id="freefitBody">
-            <tr class="loading-row"><td colspan="5">טוען נתונים...</td></tr>
-          </tbody>
+          <thead><tr><th>שם נציג</th><th>מכירות</th><th>שיחות</th><th>ליד</th><th>חידושים</th></tr></thead>
+          <tbody id="freefitBody"><tr class="loading-row"><td colspan="5">טוען נתונים...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EMAILS -->
+    <div class="dash-section">
+      <div class="dash-section-header">
+        <div class="dash-section-title">
+          <i class="ti ti-mail" style="color:#0284C7;font-size:20px"></i>
+          אימיילים — טיקטים פתוחים
+        </div>
+        <button class="dash-refresh" id="eRefBtn" onclick="loadEmails()">
+          <i class="ti ti-refresh" style="font-size:13px"></i> רענון
+        </button>
+      </div>
+      <div class="dash-stats">
+        <div class="dash-stat"><div class="dash-stat-label">סה״כ פתוחים</div><div class="dash-stat-value blue" id="statEmailOpen">—</div></div>
+        <div class="dash-stat"><div class="dash-stat-label">מחלקות</div><div class="dash-stat-value" id="statEmailDepts">—</div></div>
+        <div class="dash-stat"><div class="dash-stat-label">קריטי (אדום)</div><div class="dash-stat-value" style="color:#DC2626" id="statEmailCritical">—</div></div>
+      </div>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead><tr><th>מחלקה</th><th>פתוחים</th><th>ימי עסקים</th><th>SLA</th></tr></thead>
+          <tbody id="emailBody"><tr class="loading-row"><td colspan="4">טוען נתונים...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -164,7 +176,7 @@
       if(countdown<=0){ countdown=60; loadAll(); }
     },1000);
 
-    function loadAll(){ loadYirutim(); loadFreefit(); }
+    function loadAll(){ loadYirutim(); loadFreefit(); loadEmails(); }
 
     // ── Supabase ──
     const Y_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
@@ -234,7 +246,7 @@
       spinning('fRefBtn',true);
       const body=document.getElementById('freefitBody');
       try{
-        const today=new Date().toISOString().slice(0,10);
+        const _now=new Date(); const today=new Date(_now.getTime()+3*60*60*1000).toISOString().slice(0,10);
         const res=await fetch(F_URL+'/daily_stats?select=*&date=eq.'+today+'&order=total_sales.desc',{headers:hdr(F_KEY)});
         const data=await res.json();
         if(!Array.isArray(data)||data.length===0){
@@ -260,6 +272,42 @@
       }catch(e){
         body.innerHTML='<tr class="empty-row"><td colspan="5">שגיאה בטעינת נתונים</td></tr>';
       }finally{ spinning('fRefBtn',false); }
+    }
+
+    // ── Emails ──
+    async function loadEmails(){
+      spinning('eRefBtn',true);
+      const body=document.getElementById('emailBody');
+      try{
+        const res=await fetch('https://crm-al.vercel.app/api/emails-stats');
+        const data=await res.json();
+        const depts=data.departments||[];
+        const summary=data.summary||{};
+        document.getElementById('statEmailOpen').textContent=summary.total_open??'—';
+        document.getElementById('statEmailDepts').textContent=summary.total_departments??'—';
+        document.getElementById('statEmailCritical').textContent=summary.critical??'0';
+        if(!depts.length){
+          body.innerHTML='<tr class="empty-row"><td colspan="4">אין נתונים</td></tr>';
+          return;
+        }
+        // sort: red first, then orange, yellow, green
+        const slaOrder={red:0,orange:1,yellow:2,green:3};
+        depts.sort((a,b)=>(slaOrder[a.sla_status]??9)-(slaOrder[b.sla_status]??9));
+        const slaLabel={green:'ירוק',yellow:'צהוב',orange:'כתום',red:'אדום'};
+        body.innerHTML=depts.map(d=>{
+          const sla=d.sla_status||'green';
+          const days=d.oldest_business_days??0;
+          const daysLabel=days===0?'היום':days===1?'יום אחד':days+' ימים';
+          return`<tr>
+            <td class="name-cell">${d.name}</td>
+            <td><span class="num-cell ${d.open_tickets>0?'num-orange':'num-gray'}">${d.open_tickets}</span></td>
+            <td style="font-size:15px;color:#555">${d.open_tickets>0?daysLabel:'—'}</td>
+            <td><span class="sla-badge sla-${sla}">${slaLabel[sla]||sla}</span></td>
+          </tr>`;
+        }).join('');
+      }catch(e){
+        body.innerHTML='<tr class="empty-row"><td colspan="4">שגיאה בטעינת נתונים</td></tr>';
+      }finally{ spinning('eRefBtn',false); }
     }
 
     // Load on start
