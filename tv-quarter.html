@@ -248,9 +248,10 @@
 
   async function loadEmails(){
     try{
-      const res=await fetch('https://crm-al.vercel.app/api/emails-stats');
+      const res=await fetch('https://crm-al.vercel.app/api/emails-stats',{mode:'cors',headers:{'Accept':'application/json'}});
+      if(!res.ok) throw new Error('HTTP '+res.status);
       const data=await res.json();
-      const depts=data.departments||[];
+      const depts=(data.departments||[]).filter(d=>d.name!=='לא ידוע');
       const summary=data.summary||{};
       document.getElementById('tEmailOpen').textContent=summary.total_open??'0';
       document.getElementById('tEmailCrit').textContent=summary.critical??'0';
@@ -271,7 +272,8 @@
         </tr>`;
       }).join('');
     }catch(e){
-      document.getElementById('emBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה</td></tr>';
+      console.error('Emails error:',e);
+      document.getElementById('emBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה: '+e.message+'</td></tr>';
     }
   }
 
