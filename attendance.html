@@ -222,10 +222,7 @@
           <div class="form-group"><label>ת״ז</label><input class="form-input" id="newAgentId" placeholder="000000000" maxlength="9"/></div>
           <div class="form-group"><label>פעילות</label>
             <select class="form-select" id="newAgentActivity">
-              <option value="כללית אקטיב">כללית אקטיב</option>
-              <option value="עובדים בריא 360">עובדים בריא 360</option>
-              <option value="לאומית FIT">לאומית FIT</option>
-              <option value="מעוף לעמית">מעוף לעמית</option>
+              <option value="מובמנט">מובמנט (כללית + עובדים בריא + לאומית + מעוף)</option>
               <option value="מאוחדת">מאוחדת</option>
               <option value="כללית מאוחדת">כללית מאוחדת</option>
               <option value="פריפיט שירות">פריפיט שירות</option>
@@ -255,11 +252,9 @@
           <div class="form-group"><label>הרשאת פעילות</label>
             <select class="form-select" id="newMgrActivity">
               <option value="הכל">הכל</option>
-              <option value="כללית אקטיב">כללית אקטיב</option>
-              <option value="עובדים בריא 360">עובדים בריא 360</option>
-              <option value="לאומית FIT">לאומית FIT</option>
-              <option value="מעוף לעמית">מעוף לעמית</option>
+              <option value="מובמנט">מובמנט</option>
               <option value="מאוחדת">מאוחדת</option>
+              <option value="כללית מאוחדת">כללית מאוחדת</option>
               <option value="פריפיט שירות">פריפיט שירות</option>
               <option value="פריפיט מכירות">פריפיט מכירות</option>
             </select>
@@ -289,10 +284,10 @@ const SUPER_ADMIN_NAME='אדיר לוי';
 const GROUPS=[
   {
     id:'group1',
-    title:'כללית + עובדים בריא + לאומית + מעוף',
+    title:'מובמנט',
     icon:'🏥',
     subGroups:[
-      {label:'כללית אקטיב / עובדים בריא / לאומית / מעוף', activities:['כללית אקטיב','עובדים בריא 360','לאומית FIT','מעוף לעמית']}
+      {label:'מובמנט', activities:['מובמנט']}
     ]
   },
   {
