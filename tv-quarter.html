@@ -248,7 +248,7 @@
 
   async function loadEmails(){
     try{
-      const res=await fetch('https://crm-al.vercel.app/api/emails-stats',{mode:'cors',headers:{'Accept':'application/json'}});
+      const res=await fetch('https://crm-movement.vercel.app/api/emails-stats',{mode:'cors',headers:{'Accept':'application/json'}});
       if(!res.ok) throw new Error('HTTP '+res.status);
       const data=await res.json();
       const depts=(data.departments||[]).filter(d=>d.name!=='לא ידוע');
