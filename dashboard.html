@@ -196,35 +196,29 @@
       return{label:days+' ימים',cls:'age-urgent'};
     }
 
-    function isWaiting(status){
-      return (status||'').trim() === 'טרם טופל';
-    }
-
     async function loadYirutim(){
       spinning('yRefBtn',true);
       const body=document.getElementById('yirutimBody');
       try{
-        const res=await fetch(Y_URL+'/yirutim?select=*&order=created_at.asc',{headers:hdr(Y_KEY)});
+        const res=await fetch(Y_URL+'/yirutim?select=activity,created_at&status=eq.טרם טופל&order=created_at.asc',{
+          headers:{...hdr(Y_KEY),'Range-Unit':'items','Range':'0-4999'}
+        });
         const data=await res.json();
         if(!Array.isArray(data)||data.length===0){
-          body.innerHTML='<tr class="empty-row"><td colspan="3">אין נתונים</td></tr>';
+          body.innerHTML='<tr class="empty-row"><td colspan="3">אין ממתינים</td></tr>';
           ['statTotal','statWaiting','statActivities'].forEach(id=>document.getElementById(id).textContent='0');
           return;
         }
         document.getElementById('statTotal').textContent=data.length;
+        document.getElementById('statWaiting').textContent=data.length;
         const grouped={};
         data.forEach(r=>{
           const act=r.activity||'—';
           if(!grouped[act]) grouped[act]={waiting:0,oldestWaiting:null};
-          if(isWaiting(r.status)){
-            grouped[act].waiting++;
-            // oldest = ישן ביותר מבין הממתינים בלבד
-            if(!grouped[act].oldestWaiting || r.created_at < grouped[act].oldestWaiting){
-              grouped[act].oldestWaiting = r.created_at;
-            }
-          }
+          grouped[act].waiting++;
+          if(!grouped[act].oldestWaiting||r.created_at<grouped[act].oldestWaiting)
+            grouped[act].oldestWaiting=r.created_at;
         });
-        document.getElementById('statWaiting').textContent=Object.values(grouped).reduce((s,g)=>s+g.waiting,0);
         document.getElementById('statActivities').textContent=Object.keys(grouped).length;
         const sorted=Object.entries(grouped).sort((a,b)=>b[1].waiting-a[1].waiting);
         let html='';
@@ -279,7 +273,7 @@
       spinning('eRefBtn',true);
       const body=document.getElementById('emailBody');
       try{
-        const res=await fetch('https://crm-movement.vercel.app/api/emails-stats',{mode:'cors',headers:{'Accept':'application/json'}});
+        const res=await fetch('https://crm-al.vercel.app/api/emails-stats',{mode:'cors',headers:{'Accept':'application/json'}});
         if(!res.ok) throw new Error('HTTP '+res.status);
         const data=await res.json();
         const depts=(data.departments||[]).filter(d=>d.name!=='לא ידוע');
