@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>היסטוריה תקינה — אדיר לוי</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Heebo',sans-serif;direction:rtl;background:#F0EDE6;min-height:100vh}
+
+    /* LOGIN */
+    .login-overlay{position:fixed;inset:0;background:#F0EDE6;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem}
+    .login-overlay.hidden{display:none}
+    .login-box{background:#fff;border:1px solid #E8E4DC;border-radius:20px;padding:2.2rem 2rem;width:340px;box-shadow:0 4px 24px rgba(0,0,0,.07)}
+    .login-logo{width:52px;height:52px;background:#1A1A1A;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
+    .login-logo svg{width:26px;height:26px}
+    .login-title{text-align:center;font-size:18px;font-weight:800;color:#1A1A1A;margin-bottom:4px}
+    .login-sub{text-align:center;font-size:12.5px;color:#AAA;margin-bottom:1.4rem}
+    .manager-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.2rem;max-height:240px;overflow-y:auto}
+    .manager-btn{background:#FAFAF8;border:1.5px solid #E8E4DC;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:700;color:#1A1A1A;cursor:pointer;font-family:'Heebo',sans-serif;text-align:right;transition:all .18s;display:flex;align-items:center;justify-content:space-between}
+    .manager-btn:hover{background:#F0EDE6;border-color:#C8C4BC}
+    .manager-btn.selected{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+    .manager-btn .act-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;background:#F0EDE6;color:#888}
+    .manager-btn.selected .act-tag{background:#333;color:#aaa}
+    .pin-wrap{position:relative;margin-bottom:.8rem}
+    .pin-input{width:100%;background:#FAFAF8;border:1.5px solid #E8E4DC;border-radius:12px;padding:12px 16px;font-size:18px;letter-spacing:6px;text-align:center;font-family:'Heebo',sans-serif;color:#1A1A1A;outline:none;transition:border-color .2s}
+    .pin-input:focus{border-color:#1A1A1A}
+    .pin-input.error{border-color:#EF4444;animation:shake .3s}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+    .login-btn{width:100%;background:#1A1A1A;color:#fff;border:none;border-radius:12px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif;transition:background .18s}
+    .login-btn:hover{background:#333}
+    .login-error{text-align:center;font-size:12px;color:#EF4444;min-height:18px}
+
+    /* HEADER */
+    .header{background:#1A1A1A;padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
+    .header-brand{display:flex;align-items:center;gap:12px}
+    .header-logo{width:38px;height:38px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center}
+    .header-logo svg{width:19px;height:19px}
+    .header-title{font-size:16px;font-weight:800;color:#fff}
+    .header-sub{font-size:11px;color:#555;margin-top:1px}
+    .header-right{display:flex;align-items:center;gap:.75rem}
+    .header-manager{font-size:12px;color:#aaa;display:flex;align-items:center;gap:5px}
+    .dot-green{width:6px;height:6px;border-radius:50%;background:#3DB870;animation:blink 2s infinite;flex-shrink:0}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .back-btn{background:#2A2A2A;border:1px solid #333;border-radius:8px;padding:5px 14px;font-size:12px;color:#aaa;cursor:pointer;font-family:'Heebo',sans-serif;text-decoration:none;display:flex;align-items:center;gap:5px;transition:background .18s}
+    .back-btn:hover{background:#333;color:#fff}
+    .logout-btn{background:#2A2A2A;border:1px solid #333;border-radius:8px;padding:5px 12px;font-size:12px;color:#aaa;cursor:pointer;font-family:'Heebo',sans-serif;transition:background .18s}
+    .logout-btn:hover{background:#333;color:#fff}
+
+    /* MAIN */
+    .main{padding:1.5rem 2rem;max-width:1100px;margin:0 auto}
+
+    /* FILTERS */
+    .filters-bar{background:#fff;border:1px solid #E8E4DC;border-radius:14px;padding:1rem 1.4rem;margin-bottom:1.2rem;display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+    .filter-group{display:flex;flex-direction:column;gap:4px}
+    .filter-label{font-size:11px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.6px}
+    .filter-select,.filter-input{background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:10px;padding:8px 12px;font-size:13px;font-family:'Heebo',sans-serif;color:#1A1A1A;outline:none;transition:border-color .18s;cursor:pointer}
+    .filter-select:focus,.filter-input:focus{border-color:#1A1A1A;background:#fff}
+    .filter-btn{background:#1A1A1A;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:6px;transition:background .18s;white-space:nowrap}
+    .filter-btn:hover{background:#333}
+    .filter-btn.green{background:#16A34A}.filter-btn.green:hover{background:#15803D}
+    .period-tabs{display:flex;gap:.4rem}
+    .period-tab{background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:600;color:#888;cursor:pointer;font-family:'Heebo',sans-serif;transition:all .18s}
+    .period-tab:hover{border-color:#C8C4BC;color:#555}
+    .period-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+
+    /* TABLE */
+    .results-wrap{background:#fff;border:1px solid #E8E4DC;border-radius:18px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.04)}
+    .results-header{background:#FAFAF8;padding:.85rem 1.4rem;border-bottom:1px solid #F0EDE6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+    .results-title{font-size:14px;font-weight:800;color:#1A1A1A;display:flex;align-items:center;gap:8px}
+    .results-count{font-size:12px;color:#AAA;font-weight:500}
+    .tbl-wrap{overflow-x:auto;max-height:600px;overflow-y:auto}
+    .tbl{width:100%;border-collapse:collapse}
+    .tbl thead{position:sticky;top:0;z-index:2}
+    .tbl th{padding:.7rem 1.2rem;text-align:right;font-size:11px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.8px;border-bottom:1.5px solid #F0EDE6;background:#FAFAF8;white-space:nowrap}
+    .tbl td{padding:.75rem 1.2rem;border-bottom:1px solid #F8F6F2;vertical-align:middle;font-size:13.5px}
+    .tbl tr:last-child td{border-bottom:none}
+    .tbl tr:hover td{background:#FAFAF8}
+    .activity-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;background:#F0EDE6;color:#666}
+    .taqan-val{font-size:18px;font-weight:900;color:#2563EB;letter-spacing:-1px}
+    .hours-val{font-size:16px;font-weight:700;color:#1A1A1A}
+    .saved-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:#DCFCE7;color:#166534;white-space:nowrap}
+    .empty-row td{text-align:center;color:#C0BDB6;padding:3rem;font-size:13px}
+    .loading-row td{text-align:center;color:#AAA;padding:2rem;font-size:13px}
+
+    /* SLA chips */
+    .sla-ok{background:#DCFCE7;color:#166534}
+    .sla-warn{background:#FEF9C3;color:#854D0E}
+    .sla-bad{background:#FEE2E2;color:#991B1B}
+
+    .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 26 26" fill="none">
+        <rect x="2" y="2" width="9" height="9" rx="2" fill="white" opacity=".9"/>
+        <rect x="15" y="2" width="9" height="9" rx="2" fill="white" opacity=".6"/>
+        <rect x="2" y="15" width="9" height="9" rx="2" fill="white" opacity=".6"/>
+        <rect x="15" y="15" width="9" height="9" rx="2" fill="white" opacity=".3"/>
+      </svg>
+    </div>
+    <div class="login-title">היסטוריה תקינה</div>
+    <div class="login-sub">בחר את שמך והזן 4 ספרות אחרונות של ת״ז</div>
+    <div class="manager-list" id="managerList"><div style="text-align:center;color:#AAA;padding:1rem">טוען...</div></div>
+    <div class="pin-wrap">
+      <input class="pin-input" id="pinInput" type="password" maxlength="4" placeholder="• • • •" inputmode="numeric"/>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <button class="login-btn" onclick="doLogin()">כניסה</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="header-brand">
+      <div class="header-logo">
+        <svg viewBox="0 0 20 20" fill="none">
+          <rect x="1" y="1" width="7" height="7" rx="1.5" fill="#1A1A1A" opacity=".9"/>
+          <rect x="12" y="1" width="7" height="7" rx="1.5" fill="#1A1A1A" opacity=".6"/>
+          <rect x="1" y="12" width="7" height="7" rx="1.5" fill="#1A1A1A" opacity=".6"/>
+          <rect x="12" y="12" width="7" height="7" rx="1.5" fill="#1A1A1A" opacity=".3"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">היסטוריה תקינה יומית</div>
+        <div class="header-sub">נתונים היסטוריים לפי פעילות</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-manager"><div class="dot-green"></div><span id="currentManagerName">—</span></div>
+      <a class="back-btn" href="attendance.html"><i class="ti ti-arrow-right" style="font-size:13px"></i> חזרה</a>
+      <button class="logout-btn" onclick="doLogout()"><i class="ti ti-logout"></i> יציאה</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- FILTERS -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <div class="filter-label">פעילות</div>
+        <select class="filter-select" id="filterActivity" style="min-width:160px">
+          <option value="הכל">כל הפעילויות</option>
+          <option value="מובמנט">מובמנט</option>
+          <option value="מאוחדת">מאוחדת</option>
+          <option value="פריפיט שירות">פריפיט שירות</option>
+          <option value="פריפיט מכירות">פריפיט מכירות</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">תקופה</div>
+        <div class="period-tabs">
+          <button class="period-tab active" id="tabMonth" onclick="setPeriod('month')">חודש נוכחי</button>
+          <button class="period-tab" id="tabPrev" onclick="setPeriod('prev')">חודש קודם</button>
+          <button class="period-tab" id="tabRange" onclick="setPeriod('range')">טווח</button>
+        </div>
+      </div>
+      <div class="filter-group" id="rangeGroup" style="display:none">
+        <div class="filter-label">מתאריך</div>
+        <input class="filter-input" type="date" id="dateFrom"/>
+      </div>
+      <div class="filter-group" id="rangeGroup2" style="display:none">
+        <div class="filter-label">עד תאריך</div>
+        <input class="filter-input" type="date" id="dateTo"/>
+      </div>
+      <button class="filter-btn" onclick="loadHistory()"><i class="ti ti-search"></i> הצג</button>
+      <button class="filter-btn green" onclick="exportExcel()"><i class="ti ti-download"></i> אקסל</button>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results-wrap">
+      <div class="results-header">
+        <div class="results-title">
+          <i class="ti ti-history" style="font-size:16px;color:#2563EB"></i>
+          תוצאות
+        </div>
+        <span class="results-count" id="resultsCount"></span>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>תאריך</th>
+              <th>פעילות</th>
+              <th>שעות</th>
+              <th>תקינה</th>
+              <th>עודכן ע״י</th>
+              <th>שעת עדכון</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr class="loading-row"><td colspan="6">בחר פרמטרים ולחץ הצג</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
+const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+const SUMMARY_MANAGERS=['אדיר לוי','הודיה מזרחי','בקי ביטון'];
+
+let currentManager=null, currentPeriod='month', historyData=[];
+
+function sb(path){return fetch(SB_URL+path,{headers:H}).then(r=>r.json());}
+function toast(msg,ms=2200){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms);}
+
+function fmtDate(d){
+  if(!d) return '—';
+  const dt=new Date(d+'T12:00:00');
+  const days=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+  return days[dt.getDay()]+' '+dt.getDate()+'/'+(dt.getMonth()+1)+'/'+dt.getFullYear();
+}
+function fmtDateTime(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function getMonthRange(offset=0){
+  const n=new Date();
+  const y=n.getFullYear(), m=n.getMonth()+offset;
+  const from=new Date(y,m,1).toISOString().slice(0,10);
+  const to=new Date(y,m+1,0).toISOString().slice(0,10);
+  return{from,to};
+}
+
+// LOGIN
+async function loadManagers(){
+  const data=await sb('/managers?select=*&order=name.asc');
+  const list=document.getElementById('managerList');
+  if(!Array.isArray(data)||!data.length){list.innerHTML='<div style="text-align:center;color:#C0BDB6;padding:1rem">אין מנהלים</div>';return;}
+  // סנן רק מנהלים שמורשים לראות היסטוריה
+  const allowed=data.filter(m=>SUMMARY_MANAGERS.includes(m.name));
+  if(!allowed.length){list.innerHTML='<div style="text-align:center;color:#C0BDB6;padding:1rem">אין הרשאה</div>';return;}
+  list.innerHTML=allowed.map(m=>`
+    <button class="manager-btn" onclick="selectMgr(this,'${m.id}','${m.name.replace(/'/g,"\\'")}','${m.activity}')">
+      <span>${m.name}</span><span class="act-tag">${m.activity}</span>
+    </button>`).join('');
+}
+function selectMgr(el,id,name,activity){
+  document.querySelectorAll('.manager-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  el._mgr={id,name,activity};
+  document.getElementById('pinInput').focus();
+}
+async function doLogin(){
+  const sel=document.querySelector('.manager-btn.selected');
+  if(!sel){document.getElementById('loginError').textContent='בחר מנהל';return;}
+  const pin=document.getElementById('pinInput').value.trim();
+  if(pin.length!==4){document.getElementById('loginError').textContent='הזן 4 ספרות';return;}
+  const mgr=sel._mgr;
+  const data=await sb('/managers?id=eq.'+mgr.id+'&id_last4=eq.'+pin+'&select=*');
+  if(!Array.isArray(data)||!data.length){
+    document.getElementById('pinInput').classList.add('error');
+    document.getElementById('loginError').textContent='ספרות שגויות';
+    setTimeout(()=>document.getElementById('pinInput').classList.remove('error'),400);
+    return;
+  }
+  currentManager=data[0];
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('app').style.display='block';
+  document.getElementById('currentManagerName').textContent=currentManager.name;
+  // סט פעילות לפי הרשאה
+  if(currentManager.activity!=='הכל'){
+    const sel=document.getElementById('filterActivity');
+    sel.value=currentManager.activity;
+  }
+  loadHistory();
+}
+function doLogout(){
+  currentManager=null;
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('app').style.display='none';
+  document.getElementById('pinInput').value='';
+  document.getElementById('loginError').textContent='';
+  document.querySelectorAll('.manager-btn').forEach(b=>b.classList.remove('selected'));
+}
+document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// PERIOD
+function setPeriod(p){
+  currentPeriod=p;
+  document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab'+p.charAt(0).toUpperCase()+p.slice(1)).classList.add('active');
+  const show=p==='range';
+  document.getElementById('rangeGroup').style.display=show?'':'none';
+  document.getElementById('rangeGroup2').style.display=show?'':'none';
+  if(p==='range'){
+    // ברירת מחדל — חודש אחרון
+    const r=getMonthRange(-1);
+    document.getElementById('dateFrom').value=r.from;
+    document.getElementById('dateTo').value=r.to;
+  }
+}
+
+// LOAD
+async function loadHistory(){
+  document.getElementById('historyBody').innerHTML='<tr class="loading-row"><td colspan="6">טוען...</td></tr>';
+  let from,to;
+  if(currentPeriod==='month'){const r=getMonthRange(0);from=r.from;to=r.to;}
+  else if(currentPeriod==='prev'){const r=getMonthRange(-1);from=r.from;to=r.to;}
+  else{from=document.getElementById('dateFrom').value;to=document.getElementById('dateTo').value;}
+  if(!from||!to){toast('בחר טווח תאריכים');return;}
+
+  const activity=document.getElementById('filterActivity').value;
+  // בדוק הרשאה
+  if(currentManager.activity!=='הכל'&&activity!==currentManager.activity&&activity!=='הכל'){
+    toast('אין הרשאה לפעילות זו'); return;
+  }
+
+  let query=`/work_hours_history?select=*&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,activity.asc`;
+  if(activity!=='הכל') query+=`&activity=eq.${encodeURIComponent(activity)}`;
+  // סנן לפי הרשאת מנהל
+  if(currentManager.activity!=='הכל') query+=`&activity=eq.${encodeURIComponent(currentManager.activity)}`;
+
+  const data=await sb(query);
+  historyData=Array.isArray(data)?data:[];
+  renderTable();
+}
+
+function renderTable(){
+  const tbody=document.getElementById('historyBody');
+  document.getElementById('resultsCount').textContent=historyData.length+' רשומות';
+  if(!historyData.length){
+    tbody.innerHTML='<tr class="empty-row"><td colspan="6">אין נתונים לתקופה הנבחרת</td></tr>';
+    return;
+  }
+  tbody.innerHTML=historyData.map(r=>{
+    const taqan=parseFloat(r.taqan)||0;
+    // SLA — תקינה מתחת ל-0.8 = אדום, מתחת ל-1 = צהוב, מעל 1 = ירוק
+    const slaClass=taqan>=1?'sla-ok':taqan>=0.8?'sla-warn':'sla-bad';
+    return`<tr>
+      <td style="font-weight:600;white-space:nowrap">${fmtDate(r.work_date)}</td>
+      <td><span class="activity-tag">${r.activity}</span></td>
+      <td><span class="hours-val">${r.total_hours}</span></td>
+      <td><span class="taqan-val ${slaClass}" style="font-size:16px;font-weight:900;padding:3px 10px;border-radius:8px">${taqan.toFixed(2)}</span></td>
+      <td><span class="saved-chip"><i class="ti ti-user" style="font-size:10px"></i>&nbsp;${r.saved_by||'—'}</span></td>
+      <td style="font-size:12px;color:#888">${fmtDateTime(r.saved_at)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// EXPORT
+function exportExcel(){
+  if(!historyData.length){toast('אין נתונים לייצוא');return;}
+  const rows=[['תאריך','פעילות','שעות','תקינה','עודכן ע״י','שעת עדכון'],
+    ...historyData.map(r=>[
+      r.work_date,r.activity,r.total_hours,parseFloat(r.taqan)||0,
+      r.saved_by||'',fmtDateTime(r.saved_at)
+    ])
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:14},{wch:16},{wch:10},{wch:10},{wch:16},{wch:16}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'היסטוריה');
+  XLSX.writeFile(wb,'היסטוריה_תקינה.xlsx');
+  toast('הקובץ הורד ✓');
+}
+
+loadManagers();
+</script>
+</body>
+</html>
