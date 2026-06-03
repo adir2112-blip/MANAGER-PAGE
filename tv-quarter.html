@@ -270,18 +270,24 @@
       }
       const slaOrder={red:0,orange:1,yellow:2,green:3};
       depts.sort((a,b)=>(slaOrder[a.sla_status]??9)-(slaOrder[b.sla_status]??9));
-      const slaHe={green:'ירוק',yellow:'צהוב',orange:'כתום',red:'אדום'};
       document.getElementById('emBody').innerHTML=depts.map(d=>{
         const sla=d.sla_status||'green';
         const wc=d.open_tickets>0?(sla==='red'?'red':sla==='orange'?'orange':'green'):'gray';
+        const days=d.oldest_business_days??0;
+        let ageLabel='';
+        if(d.open_tickets>0){
+          if(days===0) ageLabel='היום';
+          else if(days===1) ageLabel='אתמול';
+          else if(days===2) ageLabel='שלשום';
+          else ageLabel=days+' ימים';
+        }
         return`<tr class="em-row">
           <td class="em-name">${d.name}</td>
           <td class="em-count ${wc}">${d.open_tickets}</td>
-          <td class="em-sla"><span class="sla-chip sla-${sla}">${slaHe[sla]||sla}</span></td>
+          <td class="em-sla">${ageLabel?`<span class="sla-chip sla-${sla}" style="font-size:8px">${ageLabel}</span>`:''}</td>
         </tr>`;
       }).join('');
     }catch(e){
-      console.error('Emails error:',e);
       document.getElementById('emBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה: '+e.message+'</td></tr>';
     }
   }
@@ -291,12 +297,8 @@
       const _n=new Date(); const today=new Date(_n.getTime()+3*60*60*1000).toISOString().slice(0,10);
       const r=await fetch(Y_URL+'/work_hours?select=activity,hours,updated_by,updated_at&work_date=eq.'+today,{headers:H(Y_KEY)});
       const d=await r.json();
-      if(!Array.isArray(d)||!d.length){
-        document.getElementById('tqBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים</td></tr>';
-        return;
-      }
       const g={};
-      d.forEach(x=>{
+      if(Array.isArray(d)) d.forEach(x=>{
         const a=x.activity||'—';
         if(!g[a])g[a]={hours:0,updated_by:null,updated_at:null};
         g[a].hours+=parseFloat(x.hours)||0;
@@ -305,8 +307,17 @@
       const DIVS={מובמנט:9,מאוחדת:7,'פריפיט שירות':9,'פריפיט מכירות':9};
       const order=['מובמנט','מאוחדת','פריפיט שירות','פריפיט מכירות'];
       let html='';
-      order.forEach((act,i)=>{
-        const ag=g[act]; if(!ag) return;
+      order.forEach((act)=>{
+        const ag=g[act];
+        if(!ag){
+          html+=`<tr class="ff-row">
+            <td class="ff-name" style="width:35%">${act}</td>
+            <td style="width:65%;direction:ltr;text-align:left">
+              <span style="font-size:10px;font-weight:700;color:#AAA;background:#F8F6F2;padding:2px 8px;border-radius:6px">טרם נשלח</span>
+            </td>
+          </tr>`;
+          return;
+        }
         const div=DIVS[act]||9;
         const tq=(ag.hours/div).toFixed(2);
         const tn=parseFloat(tq);
@@ -321,7 +332,6 @@
             </div>
           </td>
         </tr>`;
-        // סה״כ אחרי מאוחדת
         if(act==='מאוחדת'){
           const mH=g['מובמנט']?.hours||0, meH=g['מאוחדת']?.hours||0;
           const tot=((mH/9)+(meH/7)).toFixed(2);
@@ -330,17 +340,15 @@
           const bg2=tn2>=1.8?'#DCFCE7':tn2>=1.4?'#FEF9C3':'#FEE2E2';
           html+=`<tr style="background:#F8F6F2;border-top:1px solid #E8E4DC">
             <td class="ff-name" style="font-size:10px;color:#888;width:38%">סה״כ</td>
-            <td style="width:62%">
-              <div style="display:flex;align-items:center;gap:6px">
-                <span style="font-size:13px;font-weight:900;color:${c2};background:${bg2};padding:2px 7px;border-radius:6px;flex-shrink:0">${tot}</span>
-              </div>
+            <td style="width:62%;direction:ltr;text-align:left">
+              <span style="font-size:13px;font-weight:900;color:${c2};background:${bg2};padding:2px 7px;border-radius:6px">${tot}</span>
             </td>
           </tr>`;
         }
       });
-      document.getElementById('tqBody').innerHTML=html||'<tr><td colspan="3" class="loading">אין</td></tr>';
+      document.getElementById('tqBody').innerHTML=html||'<tr><td colspan="2" class="loading">אין</td></tr>';
     }catch(e){
-      document.getElementById('tqBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה</td></tr>';
+      document.getElementById('tqBody').innerHTML='<tr><td colspan="2" class="loading">שגיאה</td></tr>';
     }
   }
 
