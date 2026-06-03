@@ -156,6 +156,25 @@
       </div>
     </div>
 
+    <!-- TAQAN -->
+    <div class="dash-section">
+      <div class="dash-section-header">
+        <div class="dash-section-title">
+          <i class="ti ti-clock-check" style="color:#16A34A;font-size:20px"></i>
+          תקינה יומית — פעילויות
+        </div>
+        <button class="dash-refresh" id="tRefBtn" onclick="loadTaqan()">
+          <i class="ti ti-refresh" style="font-size:13px"></i> רענון
+        </button>
+      </div>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead><tr><th>פעילות</th><th>תקינה</th><th>גורם מאשר</th><th>תאריך ושעה</th></tr></thead>
+          <tbody id="taqanBody"><tr class="loading-row"><td colspan="4">טוען נתונים...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -176,7 +195,7 @@
       if(countdown<=0){ countdown=60; loadAll(); }
     },1000);
 
-    function loadAll(){ loadYirutim(); loadFreefit(); loadEmails(); }
+    function loadAll(){ loadYirutim(); loadFreefit(); loadEmails(); loadTaqan(); }
 
     // ── Supabase ──
     const Y_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
@@ -223,10 +242,16 @@
         const sorted=Object.entries(grouped).sort((a,b)=>b[1].waiting-a[1].waiting);
         let html='';
         sorted.forEach(([act,g])=>{
+          const w=g.waiting;
+          // מדרגות עומס: ירוק עד 20, צהוב 20-50, אדום מעל 50
+          const loadColor=w<=20?'#16A34A':w<=50?'#D97706':'#DC2626';
+          const loadBg=w<=20?'#DCFCE7':w<=50?'#FEF9C3':'#FEE2E2';
           const age=daysAgo(g.oldestWaiting);
           html+=`<tr>
             <td class="name-cell">${act}</td>
-            <td><span class="num-cell ${g.waiting>0?'num-orange':'num-gray'}">${g.waiting}</span></td>
+            <td>
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:24px;font-weight:900;color:${loadColor};letter-spacing:-1px;background:${loadBg};padding:4px 14px;border-radius:10px">${w}</span>
+            </td>
             <td>${age?`<span class="age-chip ${age.cls}">${age.label}</span>`:'—'}</td>
           </tr>`;
         });
@@ -303,6 +328,84 @@
         console.error('Emails error:',e);
         body.innerHTML=`<tr class="empty-row"><td colspan="4">שגיאה: ${e.message}</td></tr>`;
       }finally{ spinning('eRefBtn',false); }
+    }
+
+    // ── Taqan ──
+    const SB_URL_Y='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
+    const SB_KEY_Y='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
+
+    const DIVISORS={מובמנט:9,מאוחדת:7,'פריפיט שירות':9,'פריפיט מכירות':9};
+
+    async function loadTaqan(){
+      spinning('tRefBtn',true);
+      const body=document.getElementById('taqanBody');
+      try{
+        const _n=new Date(); const today=new Date(_n.getTime()+3*60*60*1000).toISOString().slice(0,10);
+        const res=await fetch(SB_URL_Y+'/work_hours?select=activity,hours,updated_by,updated_at&work_date=eq.'+today,{
+          headers:{'apikey':SB_KEY_Y,'Authorization':'Bearer '+SB_KEY_Y}
+        });
+        const data=await res.json();
+        if(!Array.isArray(data)||!data.length){
+          body.innerHTML='<tr class="empty-row"><td colspan="4">אין נתוני שעות להיום</td></tr>';
+          return;
+        }
+        // קבץ לפי פעילות
+        const grouped={};
+        data.forEach(r=>{
+          const act=r.activity||'—';
+          if(!grouped[act]) grouped[act]={hours:0,updated_by:null,updated_at:null};
+          grouped[act].hours+=parseFloat(r.hours)||0;
+          if(r.updated_at&&(!grouped[act].updated_at||r.updated_at>grouped[act].updated_at)){
+            grouped[act].updated_at=r.updated_at;
+            grouped[act].updated_by=r.updated_by;
+          }
+        });
+
+        const order=['מובמנט','מאוחדת','פריפיט שירות','פריפיט מכירות'];
+        let html='';
+
+        // שורות רגילות
+        order.forEach((act,i)=>{
+          const g=grouped[act];
+          if(!g) return;
+          const div=DIVISORS[act]||9;
+          const taqan=(g.hours/div).toFixed(2);
+          const taqanNum=parseFloat(taqan);
+          const color=taqanNum>=1?'#16A34A':taqanNum>=0.8?'#D97706':'#DC2626';
+          const bg=taqanNum>=1?'#DCFCE7':taqanNum>=0.8?'#FEF9C3':'#FEE2E2';
+          const savedAt=g.updated_at?new Date(g.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+          html+=`<tr>
+            <td class="name-cell">${act}</td>
+            <td><span style="font-size:26px;font-weight:900;color:${color};background:${bg};padding:4px 14px;border-radius:10px;letter-spacing:-1px;display:inline-block">${taqan}</span></td>
+            <td style="font-size:16px;font-weight:600;color:#1A1A1A">${g.updated_by||'—'}</td>
+            <td style="font-size:14px;color:#888">${savedAt}</td>
+          </tr>`;
+          // שורת סה״כ אחרי מאוחדת
+          if(act==='מאוחדת'){
+            const movH=(grouped['מובמנט']?.hours||0);
+            const meuH=(grouped['מאוחדת']?.hours||0);
+            const totalH=movH+meuH;
+            // תקן משוקלל: movH/9 + meuH/7
+            const totalT=((movH/9)+(meuH/7)).toFixed(2);
+            const tNum=parseFloat(totalT);
+            const tc=tNum>=1.8?'#16A34A':tNum>=1.4?'#D97706':'#DC2626';
+            const tb=tNum>=1.8?'#DCFCE7':tNum>=1.4?'#FEF9C3':'#FEE2E2';
+            // שמירה אחרונה מבין השניים
+            const lastSave=[grouped['מובמנט'],grouped['מאוחדת']].filter(Boolean).sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
+            const lSavedAt=lastSave?.updated_at?new Date(lastSave.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+            html+=`<tr style="background:#F8F6F2;border-top:2px solid #E8E4DC">
+              <td style="font-weight:900;font-size:14px;color:#555">סה״כ מובמנט + מאוחדת</td>
+              <td><span style="font-size:26px;font-weight:900;color:${tc};background:${tb};padding:4px 14px;border-radius:10px;letter-spacing:-1px;display:inline-block">${totalT}</span></td>
+              <td style="font-size:16px;font-weight:600;color:#1A1A1A">${lastSave?.updated_by||'—'}</td>
+              <td style="font-size:14px;color:#888">${lSavedAt}</td>
+            </tr>`;
+          }
+        });
+
+        body.innerHTML=html||'<tr class="empty-row"><td colspan="4">אין נתונים</td></tr>';
+      }catch(e){
+        body.innerHTML=`<tr class="empty-row"><td colspan="4">שגיאה: ${e.message}</td></tr>`;
+      }finally{ spinning('tRefBtn',false); }
     }
 
     // Load on start
