@@ -11,7 +11,6 @@
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Heebo',sans-serif;direction:rtl;background:#F0EDE6;min-height:100vh}
 
-    /* ══ LOGIN ══ */
     .login-overlay{position:fixed;inset:0;background:#F0EDE6;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem}
     .login-overlay.hidden{display:none}
     .login-box{background:#fff;border:1px solid #E8E4DC;border-radius:20px;padding:2.2rem 2rem;width:340px;box-shadow:0 4px 24px rgba(0,0,0,.07)}
@@ -19,7 +18,7 @@
     .login-logo svg{width:26px;height:26px}
     .login-title{text-align:center;font-size:18px;font-weight:800;color:#1A1A1A;margin-bottom:4px}
     .login-sub{text-align:center;font-size:12.5px;color:#AAA;margin-bottom:1.4rem}
-    .manager-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.2rem}
+    .manager-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.2rem;max-height:240px;overflow-y:auto}
     .manager-btn{background:#FAFAF8;border:1.5px solid #E8E4DC;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:700;color:#1A1A1A;cursor:pointer;font-family:'Heebo',sans-serif;text-align:right;transition:all .18s;display:flex;align-items:center;justify-content:space-between}
     .manager-btn:hover{background:#F0EDE6;border-color:#C8C4BC}
     .manager-btn.selected{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
@@ -34,40 +33,48 @@
     .login-btn:hover{background:#333}
     .login-error{text-align:center;font-size:12px;color:#EF4444;min-height:18px}
 
-    /* ══ HEADER ══ */
-    .header{background:#1A1A1A;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
+    .header{background:#1A1A1A;padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between}
     .header-brand{display:flex;align-items:center;gap:12px}
-    .header-logo{width:40px;height:40px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center}
-    .header-logo svg{width:20px;height:20px}
-    .header-title{font-size:17px;font-weight:800;color:#fff}
-    .header-sub{font-size:11px;color:#666;margin-top:1px}
+    .header-logo{width:38px;height:38px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center}
+    .header-logo svg{width:19px;height:19px}
+    .header-title{font-size:16px;font-weight:800;color:#fff}
+    .header-sub{font-size:11px;color:#555;margin-top:1px}
     .header-right{display:flex;align-items:center;gap:.75rem}
-    .header-manager{font-size:12.5px;color:#aaa;display:flex;align-items:center;gap:6px}
-    .dot-green{width:6px;height:6px;border-radius:50%;background:#3DB870;animation:blink 2s infinite}
+    .header-clock{font-size:20px;font-weight:900;color:#fff;letter-spacing:-1px;font-variant-numeric:tabular-nums;direction:ltr}
+    .header-manager{font-size:12px;color:#aaa;display:flex;align-items:center;gap:5px}
+    .dot-green{width:6px;height:6px;border-radius:50%;background:#3DB870;animation:blink 2s infinite;flex-shrink:0}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
     .logout-btn{background:#2A2A2A;border:1px solid #333;border-radius:8px;padding:5px 12px;font-size:12px;color:#aaa;cursor:pointer;font-family:'Heebo',sans-serif;transition:background .18s}
     .logout-btn:hover{background:#333;color:#fff}
 
-    /* ══ NAV TABS ══ */
     .nav{background:#fff;border-bottom:1px solid #E8E4DC;padding:0 2rem;display:flex;gap:0}
     .nav-tab{padding:12px 18px;font-size:13px;font-weight:600;color:#AAA;cursor:pointer;border-bottom:2.5px solid transparent;transition:all .18s;white-space:nowrap}
     .nav-tab:hover{color:#555}
     .nav-tab.active{color:#1A1A1A;border-bottom-color:#1A1A1A}
-    .nav-tab.admin-tab{color:#6B7FDD}
     .nav-tab.admin-tab.active{color:#4F46E5;border-bottom-color:#4F46E5}
 
-    /* ══ MAIN ══ */
     .main{padding:1.5rem 2rem;max-width:1200px;margin:0 auto}
 
-    /* ══ DATE BAR ══ */
     .date-bar{background:#fff;border:1px solid #E8E4DC;border-radius:14px;padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem}
     .date-text{font-size:14px;font-weight:700;color:#1A1A1A}
     .date-sub{font-size:11.5px;color:#AAA}
     .reset-badge{font-size:10.5px;background:#FEF9C3;color:#854D0E;padding:3px 10px;border-radius:999px;font-weight:600}
 
-    /* ══ GROUP ══ */
+    /* SUMMARY */
+    .summary-wrap{background:#fff;border:1px solid #E8E4DC;border-radius:18px;overflow:hidden;margin-bottom:1.2rem;box-shadow:0 1px 6px rgba(0,0,0,.04)}
+    .summary-header{background:#FAFAF8;padding:.85rem 1.4rem;border-bottom:1px solid #F0EDE6;display:flex;align-items:center;gap:8px}
+    .summary-header-title{font-size:14px;font-weight:800;color:#1A1A1A}
+    .summary-tbl{width:100%;border-collapse:collapse}
+    .summary-tbl th{padding:.65rem 1.2rem;text-align:right;font-size:11px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.7px;border-bottom:1.5px solid #F0EDE6;background:#FAFAF8;white-space:nowrap}
+    .summary-tbl td{padding:.75rem 1.2rem;border-bottom:1px solid #F8F6F2;font-size:13.5px;vertical-align:middle}
+    .summary-tbl tr:last-child td{border-bottom:none}
+    .summary-tbl tr.total-row td{background:#F5F3EF;font-weight:800;border-top:2px solid #E8E4DC}
+    .filled-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;background:#DCFCE7;color:#166534;white-space:nowrap}
+    .empty-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;background:#F8F6F2;color:#C0BDB6}
+
+    /* GROUP */
     .group{background:#fff;border:1px solid #E8E4DC;border-radius:18px;overflow:hidden;margin-bottom:1.2rem;box-shadow:0 1px 6px rgba(0,0,0,.04)}
-    .group-header{background:#FAFAF8;padding:.85rem 1.4rem;border-bottom:1px solid #F0EDE6;display:flex;align-items:center;justify-content:space-between}
+    .group-header{background:#FAFAF8;padding:.85rem 1.4rem;border-bottom:1px solid #F0EDE6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
     .group-title{font-size:14px;font-weight:800;color:#1A1A1A;display:flex;align-items:center;gap:8px}
     .group-stats{display:flex;align-items:center;gap:1rem}
     .group-stat{text-align:center}
@@ -76,7 +83,6 @@
     .group-stat-val.green{color:#16A34A}
     .group-stat-val.blue{color:#2563EB}
 
-    /* ══ TABLE ══ */
     .tbl-wrap{overflow-x:auto}
     .tbl{width:100%;border-collapse:collapse}
     .tbl th{padding:.65rem 1.2rem;text-align:right;font-size:11px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid #F0EDE6;background:#FAFAF8;white-space:nowrap}
@@ -87,24 +93,22 @@
     .agent-id{font-size:11px;color:#C0BDB6}
     .hours-input{width:70px;background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:8px;padding:5px 8px;font-size:14px;font-weight:700;text-align:center;font-family:'Heebo',sans-serif;color:#1A1A1A;outline:none;transition:border-color .18s}
     .hours-input:focus{border-color:#1A1A1A;background:#fff}
-    .save-btn{background:#1A1A1A;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif;transition:background .18s;white-space:nowrap}
-    .save-btn:hover{background:#333}
-    .save-btn.saved{background:#16A34A}
     .activity-tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#F0EDE6;color:#666}
-
-    /* ══ DIVIDER ══ */
     .divider{height:1px;background:#F0EDE6;margin:.5rem 1.2rem}
 
-    /* ══ TOTALS ROW ══ */
-    .totals-row{background:#F8F6F2;padding:.7rem 1.2rem;display:flex;align-items:center;justify-content:space-between;border-top:1.5px solid #E8E4DC}
-    .totals-label{font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px}
-    .totals-vals{display:flex;align-items:center;gap:1.5rem}
+    .save-bar{background:#F8F6F2;padding:.75rem 1.4rem;display:flex;align-items:center;justify-content:space-between;border-top:1.5px solid #E8E4DC;flex-wrap:wrap;gap:.75rem}
+    .save-bar-stats{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
     .totals-item{text-align:center}
     .totals-num{font-size:20px;font-weight:900;color:#1A1A1A;letter-spacing:-1px}
     .totals-num.green{color:#16A34A}
+    .totals-num.blue{color:#2563EB}
     .totals-sub{font-size:10px;color:#AAA;font-weight:600}
+    .saved-by-text{font-size:11.5px;color:#16A34A;font-weight:600;display:flex;align-items:center;gap:4px}
+    .save-all-btn{background:#1A1A1A;color:#fff;border:none;border-radius:10px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:6px;transition:background .18s;flex-shrink:0}
+    .save-all-btn:hover{background:#333}
+    .save-all-btn:disabled{opacity:.6;cursor:not-allowed}
+    @keyframes spin{to{transform:rotate(360deg)}}
 
-    /* ══ ADMIN PANEL ══ */
     .admin-section{margin-bottom:1.5rem}
     .admin-section-title{font-size:13px;font-weight:800;color:#1A1A1A;margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
     .admin-form{background:#fff;border:1px solid #E8E4DC;border-radius:14px;padding:1.2rem}
@@ -116,31 +120,27 @@
     .form-select{width:100%;background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:10px;padding:9px 12px;font-size:13.5px;font-family:'Heebo',sans-serif;color:#1A1A1A;outline:none;cursor:pointer}
     .add-btn{background:#1A1A1A;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif;white-space:nowrap;transition:background .18s;display:flex;align-items:center;gap:5px}
     .add-btn:hover{background:#333}
-    .add-btn.green{background:#16A34A}
-    .add-btn.green:hover{background:#15803D}
-
+    .add-btn.green{background:#16A34A}.add-btn.green:hover{background:#15803D}
+    .add-btn.blue{background:#2563EB}.add-btn.blue:hover{background:#1D4ED8}
     .admin-table{width:100%;border-collapse:collapse;margin-top:.75rem}
     .admin-table th{padding:.6rem 1rem;text-align:right;font-size:11px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.7px;border-bottom:1.5px solid #F0EDE6}
     .admin-table td{padding:.65rem 1rem;border-bottom:1px solid #F8F6F2;font-size:13px;color:#1A1A1A;vertical-align:middle}
     .admin-table tr:last-child td{border-bottom:none}
-    .del-btn{background:#FEE2E2;color:#991B1B;border:none;border-radius:7px;padding:4px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif;transition:background .18s}
+    .del-btn{background:#FEE2E2;color:#991B1B;border:none;border-radius:7px;padding:4px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif}
     .del-btn:hover{background:#FECACA}
-    .edit-btn{background:#F0EDE6;color:#555;border:none;border-radius:7px;padding:4px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif;transition:background .18s;margin-left:4px}
+    .edit-btn{background:#F0EDE6;color:#555;border:none;border-radius:7px;padding:4px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif;margin-left:4px}
     .edit-btn:hover{background:#E8E4DC}
-
     .tab-content{display:none}
     .tab-content.active{display:block}
-
     .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
     .loading-msg{text-align:center;color:#AAA;padding:2rem;font-size:13px}
     .empty-msg{text-align:center;color:#C0BDB6;padding:1.5rem;font-size:13px}
   </style>
 </head>
 <body>
 
-<!-- ══ LOGIN ══ -->
+<!-- LOGIN -->
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
     <div class="login-logo">
@@ -153,9 +153,7 @@
     </div>
     <div class="login-title">ניהול נציגים</div>
     <div class="login-sub">בחר את שמך והזן 4 ספרות אחרונות של ת״ז</div>
-    <div class="manager-list" id="managerList">
-      <div class="loading-msg">טוען מנהלים...</div>
-    </div>
+    <div class="manager-list" id="managerList"><div class="loading-msg">טוען...</div></div>
     <div class="pin-wrap">
       <input class="pin-input" id="pinInput" type="password" maxlength="4" placeholder="• • • •" inputmode="numeric"/>
     </div>
@@ -164,7 +162,7 @@
   </div>
 </div>
 
-<!-- ══ APP ══ -->
+<!-- APP -->
 <div id="app" style="display:none">
   <div class="header">
     <div class="header-brand">
@@ -182,18 +180,19 @@
       </div>
     </div>
     <div class="header-right">
+      <div class="header-clock" id="headerClock">--:--:--</div>
       <div class="header-manager"><div class="dot-green"></div><span id="currentManagerName">—</span></div>
       <button class="logout-btn" onclick="doLogout()"><i class="ti ti-logout"></i> יציאה</button>
     </div>
   </div>
 
-  <div class="nav" id="navTabs">
+  <div class="nav">
     <div class="nav-tab active" onclick="switchTab('hours')" id="tab-hours">⏱️ שעות עבודה</div>
     <div class="nav-tab" onclick="switchTab('agents')" id="tab-agents">👥 נציגים</div>
-    <div class="nav-tab admin-tab" onclick="switchTab('admin')" id="tab-admin" style="display:none">⚙️ ניהול מנהלים</div>
+    <div class="nav-tab admin-tab" onclick="switchTab('admin')" id="tab-admin" style="display:none">⚙️ מנהלים</div>
   </div>
 
-  <!-- HOURS TAB -->
+  <!-- HOURS -->
   <div class="tab-content active main" id="content-hours">
     <div class="date-bar">
       <div>
@@ -202,18 +201,22 @@
       </div>
       <div class="reset-badge">⟳ איפוס יומי ב-06:00</div>
     </div>
-
-    <!-- GROUP 1: כללית + עובדים בריא + לאומית + מעוף -->
-    <div class="group" id="group1"></div>
-
-    <!-- GROUP 2: מאוחדת + כללית אקטיב (חוצץ) -->
-    <div class="group" id="group2"></div>
-
-    <!-- GROUP 3: פריפיט שירות + פריפיט מכירות (חוצץ) -->
-    <div class="group" id="group3"></div>
+    <div id="summarySection" style="display:none;margin-bottom:1.2rem">
+      <div class="summary-wrap">
+        <div class="summary-header">
+          <i class="ti ti-table" style="font-size:16px;color:#2563EB"></i>
+          <span class="summary-header-title">סיכום תקן יומי</span>
+        </div>
+        <table class="summary-tbl">
+          <thead><tr><th>פעילות</th><th>שעות</th><th>תקן יומי</th><th>סטטוס מילוי</th></tr></thead>
+          <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="groupsWrap"></div>
   </div>
 
-  <!-- AGENTS TAB -->
+  <!-- AGENTS -->
   <div class="tab-content main" id="content-agents">
     <div class="admin-section">
       <div class="admin-section-title"><i class="ti ti-user-plus"></i> הוספת נציג חדש</div>
@@ -223,9 +226,8 @@
           <div class="form-group"><label>ת״ז</label><input class="form-input" id="newAgentId" placeholder="000000000" maxlength="9"/></div>
           <div class="form-group"><label>פעילות</label>
             <select class="form-select" id="newAgentActivity">
-              <option value="מובמנט">מובמנט (כללית + עובדים בריא + לאומית + מעוף)</option>
+              <option value="מובמנט">מובמנט</option>
               <option value="מאוחדת">מאוחדת</option>
-              <option value="כללית מאוחדת">כללית מאוחדת</option>
               <option value="פריפיט שירות">פריפיט שירות</option>
               <option value="פריפיט מכירות">פריפיט מכירות</option>
             </select>
@@ -234,28 +236,20 @@
         </div>
       </div>
     </div>
-
-    <!-- ייבוא מאקסל -->
     <div class="admin-section">
       <div class="admin-section-title"><i class="ti ti-file-spreadsheet"></i> ייבוא מאקסל</div>
       <div class="admin-form">
+        <div style="font-size:12px;color:#AAA;margin-bottom:8px">עמודה A = ת״ז &nbsp;|&nbsp; עמודה B = שם מלא &nbsp;|&nbsp; עמודה C = פעילות</div>
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-          <div>
-            <div style="font-size:12px;color:#AAA;margin-bottom:6px">עמודה A = ת״ז &nbsp;|&nbsp; עמודה B = שם מלא &nbsp;|&nbsp; עמודה C = פעילות</div>
-            <input type="file" id="xlsxInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this)"/>
-            <button class="add-btn" style="background:#2563EB" onclick="document.getElementById('xlsxInput').click()">
-              <i class="ti ti-upload"></i> בחר קובץ אקסל
-            </button>
-          </div>
-          <div id="importStatus" style="font-size:12.5px;color:#AAA"></div>
+          <input type="file" id="xlsxInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this)"/>
+          <button class="add-btn blue" onclick="document.getElementById('xlsxInput').click()"><i class="ti ti-upload"></i> בחר קובץ אקסל</button>
+          <span id="importStatus" style="font-size:12px;color:#AAA"></span>
         </div>
         <div id="importPreview" style="margin-top:.75rem;display:none">
           <div style="font-size:12px;font-weight:700;color:#1A1A1A;margin-bottom:.5rem" id="importPreviewTitle"></div>
-          <div style="max-height:200px;overflow-y:auto;border:1px solid #E8E4DC;border-radius:8px">
-            <table class="admin-table" id="importPreviewTable">
-              <thead><tr><th>ת״ז</th><th>שם מלא</th><th>פעילות</th><th>סטטוס</th></tr></thead>
-              <tbody id="importPreviewBody"></tbody>
-            </table>
+          <div style="max-height:180px;overflow-y:auto;border:1px solid #E8E4DC;border-radius:8px">
+            <table class="admin-table"><thead><tr><th>ת״ז</th><th>שם</th><th>פעילות</th><th>סטטוס</th></tr></thead>
+            <tbody id="importPreviewBody"></tbody></table>
           </div>
           <div style="display:flex;gap:.75rem;margin-top:.75rem">
             <button class="add-btn green" onclick="confirmImport()"><i class="ti ti-check"></i> ייבא הכל</button>
@@ -265,14 +259,14 @@
       </div>
     </div>
     <div class="admin-form">
-      <table class="admin-table" id="agentsTable">
-        <thead><tr><th>שם</th><th>ת״ז</th><th>פעילות</th><th>פעיל</th><th>פעולות</th></tr></thead>
+      <table class="admin-table">
+        <thead><tr><th>שם</th><th>ת״ז</th><th>פעילות</th><th>סטטוס</th><th>פעולות</th></tr></thead>
         <tbody id="agentsBody"><tr><td colspan="5" class="loading-msg">טוען...</td></tr></tbody>
       </table>
     </div>
   </div>
 
-  <!-- ADMIN TAB (super admin only) -->
+  <!-- ADMIN -->
   <div class="tab-content main" id="content-admin">
     <div class="admin-section">
       <div class="admin-section-title"><i class="ti ti-user-shield"></i> הוספת מנהל חדש</div>
@@ -280,12 +274,11 @@
         <div class="form-row-3">
           <div class="form-group"><label>שם מלא</label><input class="form-input" id="newMgrName" placeholder="שם המנהל"/></div>
           <div class="form-group"><label>4 ספרות ת״ז</label><input class="form-input" id="newMgrPin" placeholder="1234" maxlength="4" inputmode="numeric"/></div>
-          <div class="form-group"><label>הרשאת פעילות</label>
+          <div class="form-group"><label>הרשאה</label>
             <select class="form-select" id="newMgrActivity">
               <option value="הכל">הכל</option>
               <option value="מובמנט">מובמנט</option>
               <option value="מאוחדת">מאוחדת</option>
-              <option value="כללית מאוחדת">כללית מאוחדת</option>
               <option value="פריפיט שירות">פריפיט שירות</option>
               <option value="פריפיט מכירות">פריפיט מכירות</option>
             </select>
@@ -295,7 +288,7 @@
       </div>
     </div>
     <div class="admin-form">
-      <table class="admin-table" id="managersTable">
+      <table class="admin-table">
         <thead><tr><th>שם</th><th>הרשאה</th><th>פעולות</th></tr></thead>
         <tbody id="managersBody"><tr><td colspan="3" class="loading-msg">טוען...</td></tr></tbody>
       </table>
@@ -309,58 +302,46 @@
 const SB_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
 const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
-const SUPER_ADMIN_NAME='אדיר לוי';
+const SUPER_ADMIN='אדיר לוי';
+// מנהלים שרואים טבלת סיכום
+const SUMMARY_MANAGERS=['אדיר לוי','הודיה מזרחי','בקי ביטון'];
+const FULL_ADMIN=['אדיר לוי'];
 
-// Groups config
+// הגדרות קבוצות ומחלק
 const GROUPS=[
   {
-    id:'group1',
-    title:'מובמנט',
-    icon:'🏥',
-    subGroups:[
-      {label:'מובמנט', activities:['מובמנט']}
-    ]
+    id:'g1',title:'מובמנט',icon:'🏥',
+    subs:[{label:'מובמנט',acts:['מובמנט'],divisor:9}]
   },
   {
-    id:'group2',
-    title:'מאוחדת + כללית',
-    icon:'🏢',
-    subGroups:[
-      {label:'מאוחדת', activities:['מאוחדת']},
-      {label:'כללית מאוחדת', activities:['כללית מאוחדת']}
-    ]
+    id:'g2',title:'מאוחדת',icon:'🏢',
+    subs:[{label:'מאוחדת',acts:['מאוחדת'],divisor:7}]
   },
   {
-    id:'group3',
-    title:'פריפיט',
-    icon:'💪',
-    subGroups:[
-      {label:'פריפיט שירות', activities:['פריפיט שירות']},
-      {label:'פריפיט מכירות', activities:['פריפיט מכירות']}
+    id:'g3',title:'פריפיט',icon:'💪',
+    subs:[
+      {label:'פריפיט שירות',acts:['פריפיט שירות'],divisor:9},
+      {label:'פריפיט מכירות',acts:['פריפיט מכירות'],divisor:9}
     ]
   }
 ];
 
-let currentManager=null;
-let allAgents=[];
-let allHours={};
+// טבלת סיכום — שורות לפי מנהל
+// כולם שרואים סיכום: מובמנט, מאוחדת, סה״כ שניהם
+const SUMMARY_ROWS=[
+  {label:'מובמנט',acts:['מובמנט'],divisor:9},
+  {label:'מאוחדת',acts:['מאוחדת'],divisor:7},
+  {label:'סה״כ מובמנט + מאוחדת',acts:['מובמנט','מאוחדת'],divisor:null,isTotal:true}
+];
 
-// ── Helpers ──
-function sb(path,opts={}){
-  return fetch(SB_URL+path,{...opts,headers:{...H,...(opts.headers||{})}}).then(r=>r.json());
-}
-function toast(msg,ms=2000){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),ms);
-}
+let currentManager=null, allAgents=[], allHours={};
+
+function sb(path){return fetch(SB_URL+path,{headers:H}).then(r=>r.json());}
+function toast(msg,ms=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms);}
+
 function getToday(){
   const n=new Date();
-  // אם לפני 06:00 — עדיין "אתמול" לוגית
-  if(n.getHours()<6){
-    const y=new Date(n.getTime()-24*60*60*1000);
-    return y.toISOString().slice(0,10);
-  }
+  if(n.getHours()<6){const y=new Date(n.getTime()-864e5);return y.toISOString().slice(0,10);}
   return n.toISOString().slice(0,10);
 }
 function formatDateHe(d){
@@ -369,33 +350,41 @@ function formatDateHe(d){
   const months=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   return 'יום '+days[dt.getDay()]+' · '+dt.getDate()+' '+months[dt.getMonth()]+' '+dt.getFullYear();
 }
+function fmtDateTime(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
 
-// ── LOGIN ──
+// שעון
+function tickClock(){
+  const n=new Date();
+  document.getElementById('headerClock').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+}
+tickClock(); setInterval(tickClock,1000);
+
+// ── Login ──
 async function loadManagers(){
   const data=await sb('/managers?select=*&order=name.asc');
   const list=document.getElementById('managerList');
   if(!Array.isArray(data)||!data.length){list.innerHTML='<div class="empty-msg">אין מנהלים</div>';return;}
   list.innerHTML=data.map(m=>`
-    <button class="manager-btn" onclick="selectManager(this,'${m.id}','${m.name}','${m.activity}')" data-id="${m.id}">
-      <span>${m.name}</span>
-      <span class="act-tag">${m.activity}</span>
+    <button class="manager-btn" onclick="selectMgr(this,'${m.id}','${m.name.replace(/'/g,"\\'")}','${m.activity}')">
+      <span>${m.name}</span><span class="act-tag">${m.activity}</span>
     </button>`).join('');
 }
-
-function selectManager(el,id,name,activity){
+function selectMgr(el,id,name,activity){
   document.querySelectorAll('.manager-btn').forEach(b=>b.classList.remove('selected'));
   el.classList.add('selected');
   el._mgr={id,name,activity};
   document.getElementById('pinInput').focus();
 }
-
 async function doLogin(){
-  const selected=document.querySelector('.manager-btn.selected');
-  if(!selected){document.getElementById('loginError').textContent='בחר מנהל תחילה';return;}
+  const sel=document.querySelector('.manager-btn.selected');
+  if(!sel){document.getElementById('loginError').textContent='בחר מנהל';return;}
   const pin=document.getElementById('pinInput').value.trim();
   if(pin.length!==4){document.getElementById('loginError').textContent='הזן 4 ספרות';return;}
-  const mgr=selected._mgr;
-  // verify pin
+  const mgr=sel._mgr;
   const data=await sb('/managers?id=eq.'+mgr.id+'&id_last4=eq.'+pin+'&select=*');
   if(!Array.isArray(data)||!data.length){
     document.getElementById('pinInput').classList.add('error');
@@ -407,13 +396,16 @@ async function doLogin(){
   document.getElementById('loginOverlay').classList.add('hidden');
   document.getElementById('app').style.display='block';
   document.getElementById('currentManagerName').textContent=currentManager.name;
-  // super admin
-  if(currentManager.name===SUPER_ADMIN_NAME){
+  // הצג לשונית מנהלים רק לsuper admin
+  if(FULL_ADMIN.includes(currentManager.name)){
     document.getElementById('tab-admin').style.display='';
+  }
+  // הצג סיכום למנהלים מורשים
+  if(SUMMARY_MANAGERS.includes(currentManager.name)){
+    document.getElementById('summarySection').style.display='';
   }
   initApp();
 }
-
 function doLogout(){
   currentManager=null;
   document.getElementById('loginOverlay').classList.remove('hidden');
@@ -422,8 +414,8 @@ function doLogout(){
   document.getElementById('loginError').textContent='';
   document.querySelectorAll('.manager-btn').forEach(b=>b.classList.remove('selected'));
 }
+document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
-// ── TABS ──
 function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
@@ -433,134 +425,145 @@ function switchTab(tab){
   if(tab==='admin') loadManagersTable();
 }
 
-// ── INIT ──
 async function initApp(){
   const today=getToday();
   document.getElementById('todayText').textContent=formatDateHe(today);
   await loadAllAgents();
   await loadTodayHours(today);
-  renderGroups(today);
+  renderAll(today);
 }
-
 async function loadAllAgents(){
   const data=await sb('/agents_roster?select=*&active=eq.true&order=activity.asc,name.asc');
   allAgents=Array.isArray(data)?data:[];
 }
-
 async function loadTodayHours(today){
   const data=await sb('/work_hours?select=*&work_date=eq.'+today);
   allHours={};
   if(Array.isArray(data)) data.forEach(r=>{allHours[r.agent_id]=r;});
 }
+function renderAll(today){renderSummary();renderGroups(today);}
 
-// ── RENDER GROUPS ──
+// ── Summary ──
+function renderSummary(){
+  if(!SUMMARY_MANAGERS.includes(currentManager.name)) return;
+  let html='';
+  SUMMARY_ROWS.forEach(row=>{
+    const agents=allAgents.filter(a=>row.acts.includes(a.activity));
+    const totalHrs=agents.reduce((s,a)=>s+(parseFloat(allHours[a.id]?.hours)||0),0);
+    const taqan=row.divisor?+(totalHrs/row.divisor).toFixed(2):'—';
+    // מצא שמירה אחרונה בקבוצה
+    const savedRows=agents.map(a=>allHours[a.id]).filter(Boolean).filter(r=>r.updated_by).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
+    const lastSave=savedRows[0];
+    const isFilled=agents.length>0&&agents.every(a=>(parseFloat(allHours[a.id]?.hours)||0)>0);
+    const statusCell=isFilled&&lastSave
+      ?`<span class="filled-chip"><i class="ti ti-check" style="font-size:10px"></i>&nbsp;${lastSave.updated_by} · ${fmtDateTime(lastSave.updated_at)}</span>`
+      :`<span class="empty-chip">לא מולא</span>`;
+    html+=`<tr${row.isTotal?' class="total-row"':''}>
+      <td style="font-weight:${row.isTotal?900:700}">${row.label}</td>
+      <td style="font-size:17px;font-weight:800;color:#1A1A1A">${totalHrs}</td>
+      <td style="font-size:17px;font-weight:800;color:#2563EB">${taqan}</td>
+      <td>${statusCell}</td>
+    </tr>`;
+  });
+  document.getElementById('summaryBody').innerHTML=html||'<tr><td colspan="4" class="empty-msg">אין נתונים</td></tr>';
+}
+
+// ── Groups ──
 function renderGroups(today){
+  const wrap=document.getElementById('groupsWrap');
+  let html='';
   GROUPS.forEach(g=>{
-    const el=document.getElementById(g.id);
-    // filter by manager activity
-    let groupAgents=allAgents;
-    if(currentManager.activity!=='הכל'){
-      groupAgents=allAgents.filter(a=>a.activity===currentManager.activity);
-    }
-    // get agents for this group
-    const allActivities=g.subGroups.flatMap(s=>s.activities);
-    const grpAgents=groupAgents.filter(a=>allActivities.includes(a.activity));
-    if(!grpAgents.length){el.style.display='none';return;}
-    el.style.display='';
+    let vis=allAgents;
+    if(currentManager.activity!=='הכל') vis=allAgents.filter(a=>a.activity===currentManager.activity);
+    const allActs=g.subs.flatMap(s=>s.acts);
+    const grpAgents=vis.filter(a=>allActs.includes(a.activity));
+    if(!grpAgents.length) return;
+    const grpHrs=grpAgents.reduce((s,a)=>s+(parseFloat(allHours[a.id]?.hours)||0),0);
+    const grpDiv=g.subs[0].divisor;
+    const grpTaqan=(grpHrs/grpDiv).toFixed(2);
 
-    let totalHours=0;
-    grpAgents.forEach(a=>{totalHours+=(allHours[a.id]?.hours||0);});
-    const std=grpAgents.length*9;
-    const pct=std>0?(totalHours/std*100).toFixed(0):0;
+    html+=`<div class="group">
+      <div class="group-header">
+        <div class="group-title">${g.icon} ${g.title}</div>
+        <div class="group-stats">
+          <div class="group-stat"><div class="group-stat-val">${grpAgents.length}</div><div class="group-stat-label">נציגים</div></div>
+          <div class="group-stat"><div class="group-stat-val green">${grpHrs}</div><div class="group-stat-label">שעות</div></div>
+          <div class="group-stat"><div class="group-stat-val blue">${grpTaqan}</div><div class="group-stat-label">תקן יומי</div></div>
+        </div>
+      </div>`;
 
-    let html=`<div class="group-header">
-      <div class="group-title">${g.icon} ${g.title}</div>
-      <div class="group-stats">
-        <div class="group-stat"><div class="group-stat-val">${grpAgents.length}</div><div class="group-stat-label">נציגים</div></div>
-        <div class="group-stat"><div class="group-stat-val green">${totalHours}</div><div class="group-stat-label">שעות</div></div>
-        <div class="group-stat"><div class="group-stat-val blue">${pct}%</div><div class="group-stat-label">תקן</div></div>
-      </div>
-    </div>`;
-
-    g.subGroups.forEach((sg,si)=>{
-      const sgAgents=grpAgents.filter(a=>sg.activities.includes(a.activity));
+    g.subs.forEach((sg,si)=>{
+      const sgAgents=grpAgents.filter(a=>sg.acts.includes(a.activity));
       if(!sgAgents.length) return;
+      const sgHrs=sgAgents.reduce((s,a)=>s+(parseFloat(allHours[a.id]?.hours)||0),0);
+      const sgTaqan=(sgHrs/sg.divisor).toFixed(2);
+      const lastSave=[...sgAgents.map(a=>allHours[a.id]).filter(r=>r?.updated_by)].sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at))[0];
+
       if(si>0) html+=`<div class="divider"></div>`;
-
-      let sgHours=0;
-      sgAgents.forEach(a=>{sgHours+=(allHours[a.id]?.hours||0);});
-      const sgStd=sgAgents.length*9;
-      const sgPct=sgStd>0?(sgHours/sgStd*100).toFixed(1):0;
-
-      html+=`<div style="padding:.4rem 0">
-        <div style="padding:.3rem 1.2rem;font-size:11px;font-weight:700;color:#AAA;letter-spacing:.8px;text-transform:uppercase">${sg.label}</div>
-        <table class="tbl"><thead><tr><th>שם נציג</th><th>פעילות</th><th>שעות עבודה</th><th>שמירה</th></tr></thead><tbody>`;
-
+      html+=`<div>
+        <div style="padding:.4rem 1.4rem;font-size:11px;font-weight:700;color:#AAA;letter-spacing:.8px;text-transform:uppercase">${sg.label}</div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>שם נציג</th><th>ת״ז</th><th>שעות עבודה</th></tr></thead>
+          <tbody>`;
       sgAgents.forEach(a=>{
-        const hrs=allHours[a.id]?.hours||0;
+        const hrs=parseFloat(allHours[a.id]?.hours)||0;
         html+=`<tr>
-          <td><div class="agent-name">${a.name}</div><div class="agent-id">${a.id_number}</div></td>
-          <td><span class="activity-tag">${a.activity}</span></td>
-          <td><input class="hours-input" id="h_${a.id}" type="number" min="0" max="24" step="0.5" value="${hrs}" onkeydown="if(event.key==='Enter')saveHours('${a.id}','${a.name}','${a.activity}','${today}')"/></td>
-          <td><button class="save-btn" id="btn_${a.id}" onclick="saveHours('${a.id}','${a.name}','${a.activity}','${today}')">שמור</button></td>
+          <td><div class="agent-name">${a.name}</div></td>
+          <td><div class="agent-id">${a.id_number}</div></td>
+          <td><input class="hours-input" id="h_${a.id}" type="number" min="0" max="24" step="0.5" value="${hrs||''}"/></td>
         </tr>`;
       });
-
-      html+=`</tbody></table>`;
-      html+=`<div class="totals-row">
-        <span class="totals-label">סה״כ ${sg.label}</span>
-        <div class="totals-vals">
-          <div class="totals-item"><div class="totals-num green">${sgHours}</div><div class="totals-sub">שעות</div></div>
-          <div class="totals-item"><div class="totals-num">${sgStd}</div><div class="totals-sub">תקן (×9)</div></div>
-          <div class="totals-item"><div class="totals-num blue">${sgPct}%</div><div class="totals-sub">ביצוע</div></div>
+      html+=`</tbody></table></div>
+        <div class="save-bar">
+          <div class="save-bar-stats">
+            <div class="totals-item"><div class="totals-num green">${sgHrs}</div><div class="totals-sub">שעות</div></div>
+            <div class="totals-item"><div class="totals-num blue">${sgTaqan}</div><div class="totals-sub">תקן יומי (÷${sg.divisor})</div></div>
+            ${lastSave?`<div class="saved-by-text"><i class="ti ti-check" style="font-size:11px"></i>&nbsp;נשמר ע״י ${lastSave.updated_by} · ${fmtDateTime(lastSave.updated_at)}</div>`:''}
+          </div>
+          <button class="save-all-btn" id="sbtn_${g.id}_${si}"
+            onclick="saveSubGroup(${JSON.stringify(sgAgents.map(a=>a.id))},'${today}','${g.id}_${si}')">
+            <i class="ti ti-device-floppy"></i>&nbsp;שמור
+          </button>
         </div>
-      </div></div>`;
+      </div>`;
     });
-
-    el.innerHTML=html;
+    html+=`</div>`;
   });
+  wrap.innerHTML=html||'<div class="empty-msg">אין נציגים</div>';
 }
 
-// ── SAVE HOURS ──
-async function saveHours(agentId,agentName,activity,today){
-  const inp=document.getElementById('h_'+agentId);
-  const btn=document.getElementById('btn_'+agentId);
-  const hrs=parseFloat(inp.value)||0;
-  btn.textContent='שומר...';
-  try{
+// ── Save ──
+async function saveSubGroup(agentIds,today,btnKey){
+  const btn=document.getElementById('sbtn_'+btnKey);
+  if(btn){btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin .6s linear infinite;display:inline-block"></i>&nbsp;שומר...';btn.disabled=true;}
+  for(const agentId of agentIds){
+    const inp=document.getElementById('h_'+agentId);
+    if(!inp) continue;
+    const hrs=parseFloat(inp.value)||0;
+    const agent=allAgents.find(a=>a.id===agentId);
     const existing=allHours[agentId];
-    let res;
+    const payload={hours:hrs,updated_by:currentManager.name,updated_at:new Date().toISOString()};
     if(existing){
-      res=await fetch(SB_URL+'/work_hours?id=eq.'+existing.id,{
-        method:'PATCH',headers:{...H,'Prefer':'return=representation'},
-        body:JSON.stringify({hours:hrs,updated_by:currentManager.name,updated_at:new Date().toISOString()})
-      });
+      await fetch(SB_URL+'/work_hours?id=eq.'+existing.id,{method:'PATCH',headers:H,body:JSON.stringify(payload)});
     } else {
-      res=await fetch(SB_URL+'/work_hours',{
-        method:'POST',headers:{...H,'Prefer':'return=representation'},
-        body:JSON.stringify({agent_id:agentId,agent_name:agentName,activity,work_date:today,hours:hrs,updated_by:currentManager.name})
-      });
+      await fetch(SB_URL+'/work_hours',{method:'POST',headers:H,body:JSON.stringify({
+        agent_id:agentId,agent_name:agent?.name||'',activity:agent?.activity||'',work_date:today,...payload
+      })});
     }
-    const data=await res.json();
-    if(Array.isArray(data)&&data.length){
-      allHours[agentId]=data[0];
-      btn.textContent='✓';btn.classList.add('saved');
-      setTimeout(()=>{btn.textContent='שמור';btn.classList.remove('saved');},1500);
-      // re-render totals
-      await loadTodayHours(today);
-      renderGroups(today);
-    }
-  }catch(e){btn.textContent='שמור';toast('שגיאה בשמירה');}
+  }
+  await loadTodayHours(today);
+  renderAll(today);
+  toast('נשמר ✓ — '+currentManager.name+' · '+fmtDateTime(new Date().toISOString()));
 }
 
-// ── AGENTS ADMIN ──
+// ── Agents ──
 async function loadAgentsTable(){
   const data=await sb('/agents_roster?select=*&order=activity.asc,name.asc');
   const tbody=document.getElementById('agentsBody');
   if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="5" class="empty-msg">אין נציגים</td></tr>';return;}
   tbody.innerHTML=data.map(a=>`<tr>
     <td style="font-weight:700">${a.name}</td>
-    <td style="color:#888">${a.id_number}</td>
+    <td style="color:#888;font-size:12px">${a.id_number}</td>
     <td><span class="activity-tag">${a.activity}</span></td>
     <td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:${a.active?'#DCFCE7':'#FEE2E2'};color:${a.active?'#166534':'#991B1B'}">${a.active?'פעיל':'לא פעיל'}</span></td>
     <td>
@@ -569,155 +572,102 @@ async function loadAgentsTable(){
     </td>
   </tr>`).join('');
 }
-
-// ── EXCEL IMPORT ──
-const VALID_ACTIVITIES=['מובמנט','מאוחדת','כללית מאוחדת','פריפיט שירות','פריפיט מכירות'];
-let importRows=[];
-
-function importExcel(input){
-  const file=input.files[0];
-  if(!file) return;
-  const status=document.getElementById('importStatus');
-  status.textContent='קורא קובץ...';
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      // skip header row if first cell looks like header
-      const startRow=(rows[0]&&String(rows[0][0]).includes('ת'))||String(rows[0]?.[0]).length<3?1:0;
-      importRows=[];
-      const preview=[];
-      rows.slice(startRow).forEach((r,i)=>{
-        const idNum=String(r[0]||'').trim();
-        const name=String(r[1]||'').trim();
-        const activity=String(r[2]||'').trim();
-        if(!idNum&&!name) return;
-        const valid=VALID_ACTIVITIES.includes(activity);
-        importRows.push({id_number:idNum,name,activity,active:true,valid});
-        preview.push({idNum,name,activity,valid,row:i+startRow+1});
-      });
-      status.textContent=`נמצאו ${importRows.length} שורות`;
-      document.getElementById('importPreviewTitle').textContent=`תצוגה מקדימה — ${importRows.length} נציגים`;
-      document.getElementById('importPreviewBody').innerHTML=preview.map(p=>`<tr>
-        <td style="font-size:12px">${p.idNum}</td>
-        <td style="font-size:12px;font-weight:600">${p.name}</td>
-        <td style="font-size:12px"><span class="activity-tag">${p.activity}</span></td>
-        <td><span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;background:${p.valid?'#DCFCE7':'#FEE2E2'};color:${p.valid?'#166534':'#991B1B'}">${p.valid?'תקין':'פעילות לא מוכרת'}</span></td>
-      </tr>`).join('');
-      document.getElementById('importPreview').style.display='block';
-    }catch(err){
-      status.textContent='שגיאה בקריאת הקובץ: '+err.message;
-    }
-  };
-  reader.readAsArrayBuffer(file);
-  input.value='';
-}
-
-async function confirmImport(){
-  const validRows=importRows.filter(r=>r.valid);
-  if(!validRows.length){toast('אין שורות תקינות לייבוא');return;}
-  document.getElementById('importStatus').textContent='מייבא...';
-  let success=0,fail=0;
-  for(const r of validRows){
-    const res=await fetch(SB_URL+'/agents_roster',{method:'POST',headers:H,
-      body:JSON.stringify({name:r.name,id_number:r.id_number,activity:r.activity,active:true})});
-    if(res.ok||res.status===201) success++;
-    else fail++;
-  }
-  document.getElementById('importStatus').textContent=`יובאו ${success} נציגים${fail>0?' ('+fail+' נכשלו)':''}`;
-  document.getElementById('importPreview').style.display='none';
-  importRows=[];
-  toast(`יובאו ${success} נציגים ✓`);
-  await loadAllAgents();
-  await loadTodayHours(getToday());
-  renderGroups(getToday());
-  loadAgentsTable();
-}
-
-function cancelImport(){
-  document.getElementById('importPreview').style.display='none';
-  document.getElementById('importStatus').textContent='';
-  importRows=[];
-}
-
 async function addAgent(){
   const name=document.getElementById('newAgentName').value.trim();
   const idNum=document.getElementById('newAgentId').value.trim();
   const activity=document.getElementById('newAgentActivity').value;
   if(!name||!idNum){toast('מלא שם ות״ז');return;}
   const res=await fetch(SB_URL+'/agents_roster',{method:'POST',headers:H,body:JSON.stringify({name,id_number:idNum,activity,active:true})});
-  const data=await res.json();
-  if(res.ok||Array.isArray(data)){
-    document.getElementById('newAgentName').value='';
-    document.getElementById('newAgentId').value='';
+  if(res.ok||res.status===201){
+    document.getElementById('newAgentName').value=''; document.getElementById('newAgentId').value='';
     toast('נציג נוסף ✓');
-    await loadAllAgents();
-    await loadTodayHours(getToday());
-    renderGroups(getToday());
-    loadAgentsTable();
-  } else {
-    toast('שגיאה: '+JSON.stringify(data));
-  }
+    await loadAllAgents(); await loadTodayHours(getToday()); renderAll(getToday()); loadAgentsTable();
+  } else {const e=await res.json();toast('שגיאה: '+JSON.stringify(e));}
 }
-
 async function toggleAgent(id,active){
   await fetch(SB_URL+'/agents_roster?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({active:!active})});
-  toast((active?'הנציג הושבת':'הנציג הופעל')+' ✓');
-  loadAgentsTable();
+  toast((active?'הושבת':'הופעל')+' ✓'); loadAgentsTable();
 }
-
 async function deleteAgent(id,name){
   if(!confirm('למחוק את '+name+'?')) return;
   await fetch(SB_URL+'/agents_roster?id=eq.'+id,{method:'DELETE',headers:H});
-  toast('נמחק ✓');
-  loadAgentsTable();
-  loadAllAgents();
+  toast('נמחק ✓'); await loadAllAgents(); await loadTodayHours(getToday()); renderAll(getToday()); loadAgentsTable();
 }
 
-// ── MANAGERS ADMIN ──
+// ── Excel ──
+let importRows=[];
+const VALID_ACTS=['מובמנט','מאוחדת','פריפיט שירות','פריפיט מכירות'];
+function importExcel(input){
+  const file=input.files[0]; if(!file) return;
+  document.getElementById('importStatus').textContent='קורא...';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      const startRow=String(rows[0]?.[1]||'').length<3?1:0;
+      importRows=[];
+      rows.slice(startRow).forEach(r=>{
+        const idNum=String(r[0]||'').trim(),name=String(r[1]||'').trim(),activity=String(r[2]||'').trim();
+        if(!idNum&&!name) return;
+        importRows.push({id_number:idNum,name,activity,valid:VALID_ACTS.includes(activity)});
+      });
+      document.getElementById('importStatus').textContent=importRows.length+' שורות';
+      document.getElementById('importPreviewTitle').textContent='תצוגה מקדימה — '+importRows.length+' נציגים';
+      document.getElementById('importPreviewBody').innerHTML=importRows.map(p=>`<tr>
+        <td style="font-size:12px">${p.id_number}</td>
+        <td style="font-size:12px;font-weight:600">${p.name}</td>
+        <td><span class="activity-tag">${p.activity}</span></td>
+        <td><span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;background:${p.valid?'#DCFCE7':'#FEE2E2'};color:${p.valid?'#166534':'#991B1B'}">${p.valid?'✓':'לא מוכרת'}</span></td>
+      </tr>`).join('');
+      document.getElementById('importPreview').style.display='block';
+    }catch(err){document.getElementById('importStatus').textContent='שגיאה: '+err.message;}
+  };
+  reader.readAsArrayBuffer(file); input.value='';
+}
+async function confirmImport(){
+  const valid=importRows.filter(r=>r.valid); if(!valid.length){toast('אין שורות תקינות');return;}
+  let ok=0;
+  for(const r of valid){
+    const res=await fetch(SB_URL+'/agents_roster',{method:'POST',headers:H,body:JSON.stringify({name:r.name,id_number:r.id_number,activity:r.activity,active:true})});
+    if(res.ok||res.status===201) ok++;
+  }
+  document.getElementById('importPreview').style.display='none'; importRows=[];
+  toast('יובאו '+ok+' נציגים ✓');
+  await loadAllAgents(); await loadTodayHours(getToday()); renderAll(getToday()); loadAgentsTable();
+}
+function cancelImport(){document.getElementById('importPreview').style.display='none';importRows=[];}
+
+// ── Managers ──
 async function loadManagersTable(){
   const data=await sb('/managers?select=*&order=name.asc');
   const tbody=document.getElementById('managersBody');
-  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="3" class="empty-msg">אין מנהלים</td></tr>';return;}
+  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="3" class="empty-msg">אין</td></tr>';return;}
   tbody.innerHTML=data.map(m=>`<tr>
     <td style="font-weight:700">${m.name}</td>
     <td><span class="activity-tag">${m.activity}</span></td>
-    <td>
-      <button class="del-btn" onclick="deleteManager('${m.id}','${m.name}')"${m.name===SUPER_ADMIN_NAME?' disabled style="opacity:.4;cursor:not-allowed"':''}>מחק</button>
-    </td>
+    <td><button class="del-btn" onclick="deleteManager('${m.id}','${m.name.replace(/'/g,"\\'")}'"${FULL_ADMIN.includes(m.name)?' disabled style="opacity:.4;cursor:not-allowed"':''}>מחק</button></td>
   </tr>`).join('');
 }
-
 async function addManager(){
   const name=document.getElementById('newMgrName').value.trim();
   const pin=document.getElementById('newMgrPin').value.trim();
   const activity=document.getElementById('newMgrActivity').value;
-  if(!name||pin.length!==4){toast('מלא שם ו-4 ספרות ת״ז');return;}
+  if(!name||pin.length!==4){toast('מלא שם ו-4 ספרות');return;}
   const res=await fetch(SB_URL+'/managers',{method:'POST',headers:H,body:JSON.stringify({name,id_last4:pin,activity})});
-  const data=await res.json();
-  if(res.ok||Array.isArray(data)){
-    document.getElementById('newMgrName').value='';
-    document.getElementById('newMgrPin').value='';
-    toast('מנהל נוסף ✓');
-    loadManagersTable();
-    loadManagers();
-  } else {
-    toast('שגיאה: '+JSON.stringify(data));
-  }
+  if(res.ok||res.status===201){
+    document.getElementById('newMgrName').value=''; document.getElementById('newMgrPin').value='';
+    toast('מנהל נוסף ✓'); loadManagersTable(); loadManagers();
+  } else {const e=await res.json();toast('שגיאה: '+JSON.stringify(e));}
 }
-
 async function deleteManager(id,name){
-  if(name===SUPER_ADMIN_NAME){toast('לא ניתן למחוק מנהל עליון');return;}
+  if(FULL_ADMIN.includes(name)){toast('לא ניתן למחוק');return;}
   if(!confirm('למחוק את '+name+'?')) return;
   await fetch(SB_URL+'/managers?id=eq.'+id,{method:'DELETE',headers:H});
-  toast('נמחק ✓');
-  loadManagersTable();
+  toast('נמחק ✓'); loadManagersTable();
 }
 
-// ── INIT ──
-document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 loadManagers();
 </script>
 </body>
