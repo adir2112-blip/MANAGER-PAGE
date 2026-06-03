@@ -221,9 +221,10 @@
     <div class="admin-section">
       <div class="admin-section-title"><i class="ti ti-user-plus"></i> הוספת נציג חדש</div>
       <div class="admin-form">
-        <div class="form-row">
+        <div class="form-row" style="grid-template-columns:1fr 1fr 1fr 1fr auto">
           <div class="form-group"><label>שם מלא</label><input class="form-input" id="newAgentName" placeholder="ישראל ישראלי"/></div>
           <div class="form-group"><label>ת״ז</label><input class="form-input" id="newAgentId" placeholder="000000000" maxlength="9"/></div>
+          <div class="form-group"><label>מייל</label><input class="form-input" id="newAgentEmail" placeholder="name@email.com" type="email"/></div>
           <div class="form-group"><label>פעילות</label>
             <select class="form-select" id="newAgentActivity">
               <option value="מובמנט">מובמנט</option>
@@ -258,10 +259,27 @@
         </div>
       </div>
     </div>
+    <div class="admin-form" style="margin-bottom:1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:700;color:#888">הורדה לאקסל:</span>
+          <select class="form-select" id="downloadFilter" style="width:180px;padding:6px 10px;font-size:12.5px">
+            <option value="הכל">כל הנציגים</option>
+            <option value="מובמנט">מובמנט</option>
+            <option value="מאוחדת">מאוחדת</option>
+            <option value="פריפיט שירות">פריפיט שירות</option>
+            <option value="פריפיט מכירות">פריפיט מכירות</option>
+          </select>
+          <button class="add-btn" style="background:#16A34A;padding:7px 16px" onclick="downloadAgentsExcel()">
+            <i class="ti ti-download"></i> הורד אקסל
+          </button>
+        </div>
+      </div>
+    </div>
     <div class="admin-form">
       <table class="admin-table">
-        <thead><tr><th>שם</th><th>ת״ז</th><th>פעילות</th><th>סטטוס</th><th>פעולות</th></tr></thead>
-        <tbody id="agentsBody"><tr><td colspan="5" class="loading-msg">טוען...</td></tr></tbody>
+        <thead><tr><th>שם</th><th>ת״ז</th><th>מייל</th><th>פעילות</th><th>סטטוס</th><th>פעולות</th></tr></thead>
+        <tbody id="agentsBody"><tr><td colspan="6" class="loading-msg">טוען...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -573,35 +591,60 @@ async function saveSubGroup(btn){
 async function loadAgentsTable(){
   const data=await sb('/agents_roster?select=*&order=activity.asc,name.asc');
   const tbody=document.getElementById('agentsBody');
-  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="5" class="empty-msg">אין נציגים</td></tr>';return;}
+  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="6" class="empty-msg">אין נציגים</td></tr>';return;}
   tbody.innerHTML=data.map(a=>`<tr>
     <td style="font-weight:700">${a.name}</td>
     <td style="color:#888;font-size:12px">${a.id_number}</td>
+    <td style="font-size:12px;color:#555">${a.email||'—'}</td>
     <td><span class="activity-tag">${a.activity}</span></td>
     <td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:${a.active?'#DCFCE7':'#FEE2E2'};color:${a.active?'#166534':'#991B1B'}">${a.active?'פעיל':'לא פעיל'}</span></td>
     <td>
-      <button class="edit-btn" onclick="toggleAgent('${a.id}',${a.active})">${a.active?'השבת':'הפעל'}</button>
-      <button class="del-btn" onclick="deleteAgent('${a.id}','${a.name}')">מחק</button>
+      <button class="edit-btn" data-id="${a.id}" data-name="${a.name.replace(/"/g,'&quot;')}" data-email="${(a.email||'').replace(/"/g,'&quot;')}" data-activity="${a.activity}" onclick="editAgent(this)">עריכה</button>
+      <button class="edit-btn" data-id="${a.id}" data-active="${a.active}" onclick="toggleAgent(this)">${a.active?'השבת':'הפעל'}</button>
+      <button class="del-btn" data-id="${a.id}" data-name="${a.name.replace(/"/g,'&quot;')}" onclick="deleteAgent(this)">מחק</button>
     </td>
   </tr>`).join('');
 }
 async function addAgent(){
   const name=document.getElementById('newAgentName').value.trim();
   const idNum=document.getElementById('newAgentId').value.trim();
+  const email=document.getElementById('newAgentEmail').value.trim();
   const activity=document.getElementById('newAgentActivity').value;
   if(!name||!idNum){toast('מלא שם ות״ז');return;}
-  const res=await fetch(SB_URL+'/agents_roster',{method:'POST',headers:H,body:JSON.stringify({name,id_number:idNum,activity,active:true})});
+  const res=await fetch(SB_URL+'/agents_roster',{method:'POST',headers:H,body:JSON.stringify({name,id_number:idNum,email,activity,active:true})});
   if(res.ok||res.status===201){
-    document.getElementById('newAgentName').value=''; document.getElementById('newAgentId').value='';
+    document.getElementById('newAgentName').value='';
+    document.getElementById('newAgentId').value='';
+    document.getElementById('newAgentEmail').value='';
     toast('נציג נוסף ✓');
     await loadAllAgents(); await loadTodayHours(getToday()); renderAll(getToday()); loadAgentsTable();
   } else {const e=await res.json();toast('שגיאה: '+JSON.stringify(e));}
 }
-async function toggleAgent(id,active){
+
+async function downloadAgentsExcel(){
+  const filter=document.getElementById('downloadFilter').value;
+  const query=filter==='הכל'
+    ?'/agents_roster?select=*&active=eq.true&order=activity.asc,name.asc'
+    :'/agents_roster?select=*&active=eq.true&activity=eq.'+encodeURIComponent(filter)+'&order=name.asc';
+  const data=await sb(query);
+  if(!Array.isArray(data)||!data.length){toast('אין נציגים להורדה');return;}
+  const rows=[['שם מלא','ת״ז','מייל','פעילות'],...data.map(a=>[a.name,a.id_number,a.email||'',a.activity])];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  // רוחב עמודות
+  ws['!cols']=[{wch:20},{wch:12},{wch:28},{wch:18}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'נציגים');
+  const fileName='נציגים'+(filter==='הכל'?'':'_'+filter)+'.xlsx';
+  XLSX.writeFile(wb,fileName);
+  toast('הקובץ הורד ✓');
+}
+async function toggleAgent(btn){
+  const id=btn.dataset.id, active=btn.dataset.active==='true';
   await fetch(SB_URL+'/agents_roster?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({active:!active})});
   toast((active?'הושבת':'הופעל')+' ✓'); loadAgentsTable();
 }
-async function deleteAgent(id,name){
+async function deleteAgent(btn){
+  const id=btn.dataset.id, name=btn.dataset.name;
   if(!confirm('למחוק את '+name+'?')) return;
   await fetch(SB_URL+'/agents_roster?id=eq.'+id,{method:'DELETE',headers:H});
   toast('נמחק ✓'); await loadAllAgents(); await loadTodayHours(getToday()); renderAll(getToday()); loadAgentsTable();
@@ -660,7 +703,10 @@ async function loadManagersTable(){
   tbody.innerHTML=data.map(m=>`<tr>
     <td style="font-weight:700">${m.name}</td>
     <td><span class="activity-tag">${m.activity}</span></td>
-    <td><button class="del-btn" onclick="deleteManager('${m.id}','${m.name.replace(/'/g,"\\'")}'"${FULL_ADMIN.includes(m.name)?' disabled style="opacity:.4;cursor:not-allowed"':''}>מחק</button></td>
+    <td>
+      <button class="edit-btn" data-id="${m.id}" data-name="${m.name.replace(/"/g,'&quot;')}" data-activity="${m.activity}" onclick="editManager(this)">עריכה</button>
+      <button class="del-btn" data-id="${m.id}" data-name="${m.name.replace(/"/g,'&quot;')}" onclick="deleteManager(this)"${FULL_ADMIN.includes(m.name)?' disabled style="opacity:.4;cursor:not-allowed"':''}>מחק</button>
+    </td>
   </tr>`).join('');
 }
 async function addManager(){
@@ -674,14 +720,81 @@ async function addManager(){
     toast('מנהל נוסף ✓'); loadManagersTable(); loadManagers();
   } else {const e=await res.json();toast('שגיאה: '+JSON.stringify(e));}
 }
-async function deleteManager(id,name){
+async function deleteManager(btn){
+  const id=btn.dataset.id, name=btn.dataset.name;
   if(FULL_ADMIN.includes(name)){toast('לא ניתן למחוק');return;}
   if(!confirm('למחוק את '+name+'?')) return;
   await fetch(SB_URL+'/managers?id=eq.'+id,{method:'DELETE',headers:H});
   toast('נמחק ✓'); loadManagersTable();
 }
 
+// ── Edit Modal ──
+let editState={};
+function openEditModal(){document.getElementById('editModal').style.display='flex';}
+function closeEditModal(){document.getElementById('editModal').style.display='none';editState={};}
+
+function editManager(btn){
+  const id=btn.dataset.id,name=btn.dataset.name,activity=btn.dataset.activity;
+  editState={type:'manager',id};
+  document.getElementById('editModalTitle').textContent='עריכת מנהל — '+name;
+  document.getElementById('editModalBody').innerHTML=`
+    <div class="form-group" style="margin-bottom:.75rem">
+      <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">הרשאת פעילות</label>
+      <select class="form-select" id="editMgrActivity">
+        ${['הכל','מובמנט','מאוחדת','פריפיט שירות','פריפיט מכירות'].map(a=>`<option value="${a}"${a===activity?' selected':''}>${a}</option>`).join('')}
+      </select>
+    </div>`;
+  openEditModal();
+}
+
+function editAgent(btn){
+  const id=btn.dataset.id,name=btn.dataset.name,email=btn.dataset.email,activity=btn.dataset.activity;
+  editState={type:'agent',id};
+  document.getElementById('editModalTitle').textContent='עריכת נציג — '+name;
+  document.getElementById('editModalBody').innerHTML=`
+    <div class="form-group" style="margin-bottom:.75rem">
+      <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">מייל</label>
+      <input class="form-input" id="editAgentEmail" type="email" value="${email||''}" placeholder="name@email.com"/>
+    </div>
+    <div class="form-group">
+      <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">פעילות</label>
+      <select class="form-select" id="editAgentActivity">
+        ${['מובמנט','מאוחדת','פריפיט שירות','פריפיט מכירות'].map(a=>`<option value="${a}"${a===activity?' selected':''}>${a}</option>`).join('')}
+      </select>
+    </div>`;
+  openEditModal();
+}
+
+async function saveEdit(){
+  if(editState.type==='manager'){
+    const activity=document.getElementById('editMgrActivity').value;
+    await fetch(SB_URL+'/managers?id=eq.'+editState.id,{method:'PATCH',headers:H,body:JSON.stringify({activity})});
+    toast('עודכן ✓'); closeEditModal(); loadManagersTable(); loadManagers();
+  } else if(editState.type==='agent'){
+    const email=document.getElementById('editAgentEmail').value.trim();
+    const activity=document.getElementById('editAgentActivity').value;
+    await fetch(SB_URL+'/agents_roster?id=eq.'+editState.id,{method:'PATCH',headers:H,body:JSON.stringify({email,activity})});
+    toast('עודכן ✓'); closeEditModal();
+    await loadAllAgents(); await loadTodayHours(getToday()); renderAll(getToday()); loadAgentsTable();
+  }
+}
+
 loadManagers();
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('editModal').addEventListener('click',function(e){if(e.target===this)closeEditModal();});
+});
 </script>
+
+<!-- EDIT MODALS -->
+<div id="editModal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:18px;padding:1.8rem;width:380px;box-shadow:0 8px 40px rgba(0,0,0,.15);position:relative">
+    <div style="font-size:16px;font-weight:800;color:#1A1A1A;margin-bottom:1.2rem" id="editModalTitle">עריכה</div>
+    <div id="editModalBody"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1.2rem">
+      <button class="add-btn green" style="flex:1" onclick="saveEdit()"><i class="ti ti-check"></i> שמור</button>
+      <button class="add-btn" style="background:#888;flex:1" onclick="closeEditModal()">ביטול</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
