@@ -326,12 +326,18 @@ const GROUPS=[
   }
 ];
 
-// טבלת סיכום — שורות לפי מנהל
-// כולם שרואים סיכום: מובמנט, מאוחדת, סה״כ שניהם
-const SUMMARY_ROWS=[
+// טבלת סיכום לפי מנהל
+const SUMMARY_ROWS_FULL=[
   {label:'מובמנט',acts:['מובמנט'],divisor:9},
   {label:'מאוחדת',acts:['מאוחדת'],divisor:7},
-  {label:'סה״כ מובמנט + מאוחדת',acts:['מובמנט','מאוחדת'],divisor:null,isTotal:true}
+  {label:'סה״כ מובמנט + מאוחדת',acts:['מובמנט','מאוחדת'],divisor:null,isTotal:true},
+  {label:'פריפיט שירות',acts:['פריפיט שירות'],divisor:9},
+  {label:'פריפיט מכירות',acts:['פריפיט מכירות'],divisor:9},
+];
+const SUMMARY_ROWS_LIMITED=[
+  {label:'מובמנט',acts:['מובמנט'],divisor:9},
+  {label:'מאוחדת',acts:['מאוחדת'],divisor:7},
+  {label:'סה״כ מובמנט + מאוחדת',acts:['מובמנט','מאוחדת'],divisor:null,isTotal:true},
 ];
 
 let currentManager=null, allAgents=[], allHours={};
@@ -446,17 +452,18 @@ function renderAll(today){renderSummary();renderGroups(today);}
 // ── Summary ──
 function renderSummary(){
   if(!SUMMARY_MANAGERS.includes(currentManager.name)) return;
+  const rows=FULL_ADMIN.includes(currentManager.name)?SUMMARY_ROWS_FULL:SUMMARY_ROWS_LIMITED;
   let html='';
-  SUMMARY_ROWS.forEach(row=>{
+  rows.forEach(row=>{
     const agents=allAgents.filter(a=>row.acts.includes(a.activity));
     const totalHrs=agents.reduce((s,a)=>s+(parseFloat(allHours[a.id]?.hours)||0),0);
     const taqan=row.divisor?+(totalHrs/row.divisor).toFixed(2):'—';
     // מצא שמירה אחרונה בקבוצה
     const savedRows=agents.map(a=>allHours[a.id]).filter(Boolean).filter(r=>r.updated_by).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
     const lastSave=savedRows[0];
-    const isFilled=agents.length>0&&agents.every(a=>(parseFloat(allHours[a.id]?.hours)||0)>0);
-    const statusCell=isFilled&&lastSave
-      ?`<span class="filled-chip"><i class="ti ti-check" style="font-size:10px"></i>&nbsp;${lastSave.updated_by} · ${fmtDateTime(lastSave.updated_at)}</span>`
+    const isFilled=totalHrs>0&&!!lastSave;
+    const statusCell=isFilled
+      ?`<span class="filled-chip"><i class="ti ti-check" style="font-size:10px"></i>&nbsp;מולא ע״י ${lastSave.updated_by||'לא ידוע'} · ${fmtDateTime(lastSave.updated_at)}</span>`
       :`<span class="empty-chip">לא מולא</span>`;
     html+=`<tr${row.isTotal?' class="total-row"':''}>
       <td style="font-weight:${row.isTotal?900:700}">${row.label}</td>
@@ -521,7 +528,10 @@ function renderGroups(today){
             ${lastSave?`<div class="saved-by-text"><i class="ti ti-check" style="font-size:11px"></i>&nbsp;נשמר ע״י ${lastSave.updated_by} · ${fmtDateTime(lastSave.updated_at)}</div>`:''}
           </div>
           <button class="save-all-btn" id="sbtn_${g.id}_${si}"
-            onclick="saveSubGroup(${JSON.stringify(sgAgents.map(a=>a.id))},'${today}','${g.id}_${si}')">
+            data-agents='${JSON.stringify(sgAgents.map(a=>a.id))}'
+            data-today="${today}"
+            data-key="${g.id}_${si}"
+            onclick="saveSubGroup(this)">
             <i class="ti ti-device-floppy"></i>&nbsp;שמור
           </button>
         </div>
@@ -533,9 +543,12 @@ function renderGroups(today){
 }
 
 // ── Save ──
-async function saveSubGroup(agentIds,today,btnKey){
-  const btn=document.getElementById('sbtn_'+btnKey);
-  if(btn){btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin .6s linear infinite;display:inline-block"></i>&nbsp;שומר...';btn.disabled=true;}
+async function saveSubGroup(btn){
+  const agentIds=JSON.parse(btn.dataset.agents);
+  const today=btn.dataset.today;
+  const btnKey=btn.dataset.key;
+  const saveBtn=document.getElementById('sbtn_'+btnKey);
+  if(saveBtn){saveBtn.innerHTML='<i class="ti ti-loader-2" style="animation:spin .6s linear infinite;display:inline-block"></i>&nbsp;שומר...';saveBtn.disabled=true;}
   for(const agentId of agentIds){
     const inp=document.getElementById('h_'+agentId);
     if(!inp) continue;
