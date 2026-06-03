@@ -181,6 +181,7 @@
     </div>
     <div class="header-right">
       <div class="header-clock" id="headerClock">--:--:--</div>
+      <div style="font-size:10px;color:#444;font-variant-numeric:tabular-nums">⟳ <span id="refreshCount">30</span>ש׳</div>
       <div class="header-manager"><div class="dot-green"></div><span id="currentManagerName">—</span></div>
       <button class="logout-btn" onclick="doLogout()"><i class="ti ti-logout"></i> יציאה</button>
     </div>
@@ -380,8 +381,14 @@ function fmtDateTime(iso){
   return new Date(iso).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
 
-// שעון
-function tickClock(){
+// שעון + ספירה לאחור לרענון
+let refreshCountdown=30;
+setInterval(()=>{
+  refreshCountdown--;
+  const el=document.getElementById('refreshCount');
+  if(el) el.textContent=refreshCountdown;
+  if(refreshCountdown<=0) refreshCountdown=30;
+},1000);
   const n=new Date();
   document.getElementById('headerClock').textContent=
     String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
@@ -781,9 +788,22 @@ async function saveEdit(){
 }
 
 loadManagers();
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('editModal').addEventListener('click',function(e){if(e.target===this)closeEditModal();});
+
+// סגירת מודל בלחיצה על הרקע
+window.addEventListener('load',()=>{
+  const m=document.getElementById('editModal');
+  if(m) m.addEventListener('click',function(e){if(e.target===this)closeEditModal();});
 });
+
+// רענון אוטומטי כל 30 שניות
+setInterval(async ()=>{
+  if(!currentManager) return;
+  refreshCountdown=30;
+  const today=getToday();
+  await loadAllAgents();
+  await loadTodayHours(today);
+  renderAll(today);
+},30000);
 </script>
 
 <!-- EDIT MODALS -->
