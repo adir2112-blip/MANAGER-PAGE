@@ -205,16 +205,15 @@
     }
   }
 
-  function isWaiting(status){
-    return (status||'').trim() === 'טרם טופל';
-  }
-
   async function loadYR(){
     try{
-      const r=await fetch(Y_URL+'/yirutim?select=activity,status,created_at&order=created_at.asc',{headers:H(Y_KEY)});
+      // סנן ישירות בשרת רק טרם טופל — פותר בעיית הגבלת 1000 שורות
+      const r=await fetch(Y_URL+'/yirutim?select=activity,created_at&status=eq.טרם טופל&order=created_at.asc',{
+        headers:{...H(Y_KEY),'Range-Unit':'items','Range':'0-4999'}
+      });
       const d=await r.json();
       if(!Array.isArray(d)||!d.length){
-        document.getElementById('yrBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים</td></tr>';
+        document.getElementById('yrBody').innerHTML='<tr><td colspan="3" class="loading">אין ממתינים</td></tr>';
         document.getElementById('tWait').textContent='0';
         return;
       }
@@ -222,14 +221,10 @@
       d.forEach(x=>{
         const a=x.activity||'—';
         if(!g[a])g[a]={w:0,oldestWaiting:null};
-        if(isWaiting(x.status)){
-          g[a].w++;
-          if(!g[a].oldestWaiting || x.created_at < g[a].oldestWaiting){
-            g[a].oldestWaiting = x.created_at;
-          }
-        }
+        g[a].w++;
+        if(!g[a].oldestWaiting||x.created_at<g[a].oldestWaiting)g[a].oldestWaiting=x.created_at;
       });
-      document.getElementById('tWait').textContent=Object.values(g).reduce((s,x)=>s+x.w,0);
+      document.getElementById('tWait').textContent=d.length;
       const sorted=Object.entries(g).sort((a,b)=>b[1].w-a[1].w);
       document.getElementById('yrBody').innerHTML=sorted.map(([act,x])=>{
         const age=daysAgo(x.oldestWaiting);
@@ -248,7 +243,7 @@
 
   async function loadEmails(){
     try{
-      const res=await fetch('https://crm-movement.vercel.app/api/emails-stats',{mode:'cors',headers:{'Accept':'application/json'}});
+      const res=await fetch('https://crm-al.vercel.app/api/emails-stats',{mode:'cors',headers:{'Accept':'application/json'}});
       if(!res.ok) throw new Error('HTTP '+res.status);
       const data=await res.json();
       const depts=(data.departments||[]).filter(d=>d.name!=='לא ידוע');
