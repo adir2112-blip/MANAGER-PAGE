@@ -389,6 +389,8 @@ setInterval(()=>{
   if(el) el.textContent=refreshCountdown;
   if(refreshCountdown<=0) refreshCountdown=30;
 },1000);
+
+function tickClock(){
   const n=new Date();
   document.getElementById('headerClock').textContent=
     String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
@@ -397,13 +399,28 @@ tickClock(); setInterval(tickClock,1000);
 
 // ── Login ──
 async function loadManagers(){
-  const data=await sb('/managers?select=*&order=name.asc');
   const list=document.getElementById('managerList');
-  if(!Array.isArray(data)||!data.length){list.innerHTML='<div class="empty-msg">אין מנהלים</div>';return;}
-  list.innerHTML=data.map(m=>`
-    <button class="manager-btn" onclick="selectMgr(this,'${m.id}','${m.name.replace(/'/g,"\\'")}','${m.activity}')">
-      <span>${m.name}</span><span class="act-tag">${m.activity}</span>
-    </button>`).join('');
+  try{
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),10000);
+    const res=await fetch(SB_URL+'/managers?select=*&order=name.asc',{
+      headers:H,
+      signal:controller.signal
+    });
+    clearTimeout(timeout);
+    const data=await res.json();
+    if(!Array.isArray(data)||!data.length){list.innerHTML='<div style="text-align:center;color:#C0BDB6;padding:1rem">אין מנהלים</div>';return;}
+    list.innerHTML=data.map(m=>`
+      <button class="manager-btn" onclick="selectMgr(this,'${m.id}','${m.name.replace(/'/g,"\\'")}','${m.activity}')">
+        <span>${m.name}</span><span class="act-tag">${m.activity}</span>
+      </button>`).join('');
+  }catch(e){
+    if(e.name==='AbortError'){
+      list.innerHTML='<div style="text-align:center;color:#EF4444;padding:1rem;font-size:12px">פסק זמן — בדוק חיבור אינטרנט</div>';
+    } else {
+      list.innerHTML=`<div style="text-align:center;color:#EF4444;padding:1rem;font-size:12px">שגיאה: ${e.message}<br/><button onclick="loadManagers()" style="margin-top:8px;background:#1A1A1A;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:Heebo,sans-serif">נסה שוב</button></div>`;
+    }
+  }
 }
 function selectMgr(el,id,name,activity){
   document.querySelectorAll('.manager-btn').forEach(b=>b.classList.remove('selected'));
