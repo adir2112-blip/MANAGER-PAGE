@@ -9,7 +9,7 @@
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{width:100%;height:100%;background:#F0EDE6;font-family:'Heebo',sans-serif;direction:rtl;overflow:hidden}
 
-    .root{display:grid;grid-template-rows:28px 1fr 1fr 1fr;height:100vh;width:100vw}
+    .root{display:grid;grid-template-rows:28px 1fr 1fr 1fr 1fr;height:100vh;width:100vw}
 
     /* HEADER */
     .header{
@@ -146,6 +146,20 @@
     </div>
   </div>
 
+  <!-- TAQAN -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-label">⏱️ תקינה יומית</div>
+      <div class="panel-total">פעילויות</div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl" style="table-layout:fixed;width:100%">
+        <colgroup><col style="width:38%"/><col style="width:62%"/></colgroup>
+        <tbody id="tqBody"><tr><td colspan="3" class="loading">טוען...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 <script>
   const Y_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
@@ -272,7 +286,65 @@
     }
   }
 
-  function loadAll(){loadFF();loadYR();loadEmails();}
+  async function loadTaqan(){
+    try{
+      const _n=new Date(); const today=new Date(_n.getTime()+3*60*60*1000).toISOString().slice(0,10);
+      const r=await fetch(Y_URL+'/work_hours?select=activity,hours,updated_by,updated_at&work_date=eq.'+today,{headers:H(Y_KEY)});
+      const d=await r.json();
+      if(!Array.isArray(d)||!d.length){
+        document.getElementById('tqBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים</td></tr>';
+        return;
+      }
+      const g={};
+      d.forEach(x=>{
+        const a=x.activity||'—';
+        if(!g[a])g[a]={hours:0,updated_by:null,updated_at:null};
+        g[a].hours+=parseFloat(x.hours)||0;
+        if(x.updated_at&&(!g[a].updated_at||x.updated_at>g[a].updated_at)){g[a].updated_at=x.updated_at;g[a].updated_by=x.updated_by;}
+      });
+      const DIVS={מובמנט:9,מאוחדת:7,'פריפיט שירות':9,'פריפיט מכירות':9};
+      const order=['מובמנט','מאוחדת','פריפיט שירות','פריפיט מכירות'];
+      let html='';
+      order.forEach((act,i)=>{
+        const ag=g[act]; if(!ag) return;
+        const div=DIVS[act]||9;
+        const tq=(ag.hours/div).toFixed(2);
+        const tn=parseFloat(tq);
+        const c=tn>=1?'#16A34A':tn>=0.8?'#D97706':'#DC2626';
+        const bg=tn>=1?'#DCFCE7':tn>=0.8?'#FEF9C3':'#FEE2E2';
+        html+=`<tr class="ff-row">
+          <td class="ff-name" style="width:35%">${act}</td>
+          <td style="width:65%;direction:ltr;text-align:left">
+            <div style="display:inline-flex;align-items:center;gap:6px">
+              <span style="font-size:13px;font-weight:900;color:${c};background:${bg};padding:2px 7px;border-radius:6px;flex-shrink:0">${tq}</span>
+              <div style="font-size:9px;color:#888;line-height:1.4;direction:rtl;text-align:right"><div style="font-weight:700;color:#555">${ag.updated_by||'—'}</div><div>${ag.updated_at?new Date(ag.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</div></div>
+            </div>
+          </td>
+        </tr>`;
+        // סה״כ אחרי מאוחדת
+        if(act==='מאוחדת'){
+          const mH=g['מובמנט']?.hours||0, meH=g['מאוחדת']?.hours||0;
+          const tot=((mH/9)+(meH/7)).toFixed(2);
+          const tn2=parseFloat(tot);
+          const c2=tn2>=1.8?'#16A34A':tn2>=1.4?'#D97706':'#DC2626';
+          const bg2=tn2>=1.8?'#DCFCE7':tn2>=1.4?'#FEF9C3':'#FEE2E2';
+          html+=`<tr style="background:#F8F6F2;border-top:1px solid #E8E4DC">
+            <td class="ff-name" style="font-size:10px;color:#888;width:38%">סה״כ</td>
+            <td style="width:62%">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:13px;font-weight:900;color:${c2};background:${bg2};padding:2px 7px;border-radius:6px;flex-shrink:0">${tot}</span>
+              </div>
+            </td>
+          </tr>`;
+        }
+      });
+      document.getElementById('tqBody').innerHTML=html||'<tr><td colspan="3" class="loading">אין</td></tr>';
+    }catch(e){
+      document.getElementById('tqBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה</td></tr>';
+    }
+  }
+
+  function loadAll(){loadFF();loadYR();loadEmails();loadTaqan();}
   let cd=60;
   setInterval(()=>{
     cd--;document.getElementById('cd').textContent=cd;
