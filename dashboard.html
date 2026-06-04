@@ -364,8 +364,7 @@
         const order=['מובמנט','מאוחדת','פריפיט שירות','פריפיט מכירות'];
         let html='';
 
-        // שורות רגילות
-        order.forEach((act,i)=>{
+        order.forEach((act)=>{
           const g=grouped[act];
           if(!g) return;
           const div=DIVISORS[act]||9;
@@ -386,36 +385,32 @@
               </div>
             </td>
           </tr>`;
-          // סה״כ מחושב מחוץ ללולאה
-          if(false){}
+          // שורת סה״כ מיד אחרי מאוחדת
+          if(act==='מאוחדת'){
+            const movH=parseFloat(grouped['מובמנט']?.hours)||0;
+            const meuH=parseFloat(grouped['מאוחדת']?.hours)||0;
+            const totalT=((movH/9)+(meuH/7)).toFixed(2);
+            const tNum=parseFloat(totalT);
+            const tc=tNum>=1.8?'#16A34A':tNum>=1.4?'#D97706':'#DC2626';
+            const tb=tNum>=1.8?'#DCFCE7':tNum>=1.4?'#FEF9C3':'#FEE2E2';
+            const lastSave=[grouped['מובמנט'],grouped['מאוחדת']].filter(Boolean).sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
+            const lSavedAt=lastSave?.updated_at?new Date(lastSave.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+            html+=`<tr style="background:#F8F6F2;border-top:2px solid #E8E4DC">
+              <td style="font-weight:900;font-size:14px;color:#555">סה״כ מובמנט + מאוחדת</td>
+              <td colspan="3">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="font-size:26px;font-weight:900;color:${tc};background:${tb};padding:4px 14px;border-radius:10px;letter-spacing:-1px;display:inline-block;flex-shrink:0">${totalT}</span>
+                  <div>
+                    <div style="font-size:14px;font-weight:700;color:#1A1A1A">${lastSave?.updated_by||'—'}</div>
+                    <div style="font-size:12px;color:#AAA">${lSavedAt}</div>
+                  </div>
+                </div>
+              </td>
+            </tr>`;
+          }
         });
 
-        // שורת סה״כ מובמנט + מאוחדת — תמיד מציג בסוף
-        const movH=parseFloat(grouped['מובמנט']?.hours)||0;
-        const meuH=parseFloat(grouped['מאוחדת']?.hours)||0;
-        const totalT=((movH/9)+(meuH/7)).toFixed(2);
-        const tNum=parseFloat(totalT);
-        const tc=tNum>=1.8?'#16A34A':tNum>=1.4?'#D97706':'#DC2626';
-        const tb=tNum>=1.8?'#DCFCE7':tNum>=1.4?'#FEF9C3':'#FEE2E2';
-        const lastSave=[grouped['מובמנט'],grouped['מאוחדת']].filter(Boolean).sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
-        const lSavedAt=lastSave?.updated_at?new Date(lastSave.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
-
-        // הכנס שורת סה"כ אחרי מאוחדת (אחרי השורה השנייה)
-        const meuIdx=html.lastIndexOf('</tr>',html.indexOf('פריפיט שירות')>-1?html.indexOf('פריפיט שירות'):html.length);
-        const totalRow=`<tr style="background:#F8F6F2;border-top:2px solid #E8E4DC">
-          <td style="font-weight:900;font-size:14px;color:#555">סה״כ מובמנט + מאוחדת</td>
-          <td colspan="3">
-            <div style="display:flex;align-items:center;gap:12px">
-              <span style="font-size:26px;font-weight:900;color:${tc};background:${tb};padding:4px 14px;border-radius:10px;letter-spacing:-1px;display:inline-block;flex-shrink:0">${totalT}</span>
-              <div>
-                <div style="font-size:14px;font-weight:700;color:#1A1A1A">${lastSave?.updated_by||'—'}</div>
-                <div style="font-size:12px;color:#AAA">${lSavedAt}</div>
-              </div>
-            </div>
-          </td>
-        </tr>`;
-
-        body.innerHTML=html+totalRow||'<tr class="empty-row"><td colspan="4">אין נתונים</td></tr>';
+        body.innerHTML=html||'<tr class="empty-row"><td colspan="4">אין נתונים</td></tr>';
       }catch(e){
         body.innerHTML=`<tr class="empty-row"><td colspan="4">שגיאה: ${e.message}</td></tr>`;
       }finally{ spinning('tRefBtn',false); }
