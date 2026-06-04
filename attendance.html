@@ -490,6 +490,34 @@ async function loadTodayHours(today){
   allHours={};
   if(Array.isArray(data)) data.forEach(r=>{allHours[r.agent_id]=r;});
 }
+// עדכון סיכומים בלבד ללא rebuild
+function refreshTotals(today){
+  GROUPS.forEach(g=>{
+    let vis=allAgents;
+    if(currentManager.activity!=='הכל') vis=allAgents.filter(a=>a.activity===currentManager.activity);
+    const allActs=g.subs.flatMap(s=>s.acts);
+    const grpAgents=vis.filter(a=>allActs.includes(a.activity));
+    if(!grpAgents.length) return;
+    g.subs.forEach((sg,si)=>{
+      const sgAgents=grpAgents.filter(a=>sg.acts.includes(a.activity));
+      if(!sgAgents.length) return;
+      // קרא ערכים מה-inputs (לא מה-allHours) כדי לא לאפס מה שנכתב
+      const sgHrs=sgAgents.reduce((s,a)=>{
+        const inp=document.getElementById('h_'+a.id);
+        return s+(parseFloat(inp?.value)||0);
+      },0);
+      const sgTaqan=(sgHrs/sg.divisor).toFixed(2);
+      const lastSave=sgAgents.map(a=>allHours[a.id]).filter(r=>r?.updated_by).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at))[0];
+      // עדכן את כפתור השמירה עם saved-by אחרון
+      const btn=document.getElementById('sbtn_'+g.id+'_'+si);
+      if(btn&&lastSave){
+        const savedByEl=btn.closest('.save-bar')?.querySelector('.saved-by-text');
+        if(savedByEl) savedByEl.innerHTML=`<i class="ti ti-check" style="font-size:11px"></i>&nbsp;נשמר ע״י ${lastSave.updated_by} · ${fmtDateTime(lastSave.updated_at)}`;
+      }
+    });
+  });
+}
+
 function renderAll(today){renderSummary();renderGroups(today);}
 
 // ── Summary ──
@@ -812,17 +840,24 @@ window.addEventListener('load',()=>{
   if(m) m.addEventListener('click',function(e){if(e.target===this)closeEditModal();});
 });
 
-// רענון אוטומטי כל 30 שניות — לא מרענן אם המשתמש ממלא שדה
-let userIsTyping=false;
-document.addEventListener('focusin',e=>{if(e.target.classList.contains('hours-input')) userIsTyping=true;});
-document.addEventListener('focusout',e=>{if(e.target.classList.contains('hours-input')) setTimeout(()=>{userIsTyping=false;},2000);});
-
+// רענון אוטומטי כל 30 שניות — מעדכן ערכים שמורים בלי לאפס inputs פתוחים
 setInterval(async ()=>{
-  if(!currentManager||userIsTyping) return;
+  if(!currentManager) return;
   const today=getToday();
   await loadAllAgents();
   await loadTodayHours(today);
-  renderAll(today);
+  // עדכן רק inputs שאינם בפוקוס
+  allAgents.forEach(a=>{
+    const inp=document.getElementById('h_'+a.id);
+    if(inp && document.activeElement!==inp){
+      const saved=allHours[a.id]?.hours||0;
+      inp.value=saved||'';
+    }
+  });
+  // עדכן סיכומים בלבד
+  renderSummary();
+  // עדכן save-bar totals ללא rebuild
+  refreshTotals(today);
 },30000);
 </script>
 
