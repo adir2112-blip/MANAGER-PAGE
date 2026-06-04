@@ -389,6 +389,7 @@
           if(act==='מאוחדת'){
             const movH=parseFloat(grouped['מובמנט']?.hours)||0;
             const meuH=parseFloat(grouped['מאוחדת']?.hours)||0;
+            console.log('Total calc: movH=',movH,' meuH=',meuH,' result=',((movH/9)+(meuH/7)).toFixed(2));
             const totalT=((movH/9)+(meuH/7)).toFixed(2);
             const tNum=parseFloat(totalT);
             const tc=tNum>=1.8?'#16A34A':tNum>=1.4?'#D97706':'#DC2626';
