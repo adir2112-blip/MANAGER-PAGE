@@ -635,8 +635,20 @@ async function saveSubGroup(btn){
       })});
     }
   }
+  // עדכן allHours בלי לבנות מחדש
   await loadTodayHours(today);
-  renderAll(today);
+  // עדכן רק את כפתור השמירה וה-saved-by — לא את ה-inputs
+  if(saveBtn){
+    saveBtn.innerHTML='<i class="ti ti-device-floppy"></i>&nbsp;שמור';
+    saveBtn.disabled=false;
+  }
+  // עדכן saved-by text ב-save-bar
+  const savedByEl=saveBtn?.closest('.save-bar')?.querySelector('.saved-by-text');
+  if(savedByEl){
+    savedByEl.innerHTML=`<i class="ti ti-check" style="font-size:11px"></i>&nbsp;נשמר ע״י ${currentManager.name} · ${fmtDateTime(new Date().toISOString())}`;
+  }
+  // עדכן סיכום בלבד
+  renderSummary();
   toast('נשמר ✓ — '+currentManager.name+' · '+fmtDateTime(new Date().toISOString()));
 }
 
