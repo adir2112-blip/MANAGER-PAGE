@@ -812,10 +812,13 @@ window.addEventListener('load',()=>{
   if(m) m.addEventListener('click',function(e){if(e.target===this)closeEditModal();});
 });
 
-// רענון אוטומטי כל 30 שניות
+// רענון אוטומטי כל 30 שניות — לא מרענן אם המשתמש ממלא שדה
+let userIsTyping=false;
+document.addEventListener('focusin',e=>{if(e.target.classList.contains('hours-input')) userIsTyping=true;});
+document.addEventListener('focusout',e=>{if(e.target.classList.contains('hours-input')) setTimeout(()=>{userIsTyping=false;},2000);});
+
 setInterval(async ()=>{
-  if(!currentManager) return;
-  refreshCountdown=30;
+  if(!currentManager||userIsTyping) return;
   const today=getToday();
   await loadAllAgents();
   await loadTodayHours(today);
