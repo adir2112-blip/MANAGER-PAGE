@@ -169,7 +169,7 @@
       </div>
       <div class="dash-table-wrap">
         <table class="dash-table">
-          <thead><tr><th>פעילות</th><th>תקינה</th><th>גורם מאשר</th><th>תאריך ושעה</th></tr></thead>
+          <thead><tr><th>פעילות</th><th>תקינה + גורם מאשר</th></tr></thead>
           <tbody id="taqanBody"><tr class="loading-row"><td colspan="4">טוען נתונים...</td></tr></tbody>
         </table>
       </div>
@@ -298,7 +298,7 @@
       spinning('eRefBtn',true);
       const body=document.getElementById('emailBody');
       try{
-        const res=await fetch('https://crm-al.vercel.app/api/emails-stats',{mode:'cors',headers:{'Accept':'application/json'}});
+        const res=await fetch('https://crm-movement.vercel.app/api/glassix-refresh',{});
         if(!res.ok) throw new Error('HTTP '+res.status);
         const data=await res.json();
         const depts=(data.departments||[]).filter(d=>d.name!=='לא ידוע');
@@ -376,33 +376,46 @@
           const savedAt=g.updated_at?new Date(g.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
           html+=`<tr>
             <td class="name-cell">${act}</td>
-            <td><span style="font-size:26px;font-weight:900;color:${color};background:${bg};padding:4px 14px;border-radius:10px;letter-spacing:-1px;display:inline-block">${taqan}</span></td>
-            <td style="font-size:16px;font-weight:600;color:#1A1A1A">${g.updated_by||'—'}</td>
-            <td style="font-size:14px;color:#888">${savedAt}</td>
+            <td colspan="3">
+              <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-size:26px;font-weight:900;color:${color};background:${bg};padding:4px 14px;border-radius:10px;letter-spacing:-1px;display:inline-block;flex-shrink:0">${taqan}</span>
+                <div>
+                  <div style="font-size:14px;font-weight:700;color:#1A1A1A">${g.updated_by||'—'}</div>
+                  <div style="font-size:12px;color:#AAA">${savedAt}</div>
+                </div>
+              </div>
+            </td>
           </tr>`;
-          // שורת סה״כ אחרי מאוחדת
-          if(act==='מאוחדת'){
-            const movH=(grouped['מובמנט']?.hours||0);
-            const meuH=(grouped['מאוחדת']?.hours||0);
-            const totalH=movH+meuH;
-            // תקן משוקלל: movH/9 + meuH/7
-            const totalT=((movH/9)+(meuH/7)).toFixed(2);
-            const tNum=parseFloat(totalT);
-            const tc=tNum>=1.8?'#16A34A':tNum>=1.4?'#D97706':'#DC2626';
-            const tb=tNum>=1.8?'#DCFCE7':tNum>=1.4?'#FEF9C3':'#FEE2E2';
-            // שמירה אחרונה מבין השניים
-            const lastSave=[grouped['מובמנט'],grouped['מאוחדת']].filter(Boolean).sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
-            const lSavedAt=lastSave?.updated_at?new Date(lastSave.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
-            html+=`<tr style="background:#F8F6F2;border-top:2px solid #E8E4DC">
-              <td style="font-weight:900;font-size:14px;color:#555">סה״כ מובמנט + מאוחדת</td>
-              <td><span style="font-size:26px;font-weight:900;color:${tc};background:${tb};padding:4px 14px;border-radius:10px;letter-spacing:-1px;display:inline-block">${totalT}</span></td>
-              <td style="font-size:16px;font-weight:600;color:#1A1A1A">${lastSave?.updated_by||'—'}</td>
-              <td style="font-size:14px;color:#888">${lSavedAt}</td>
-            </tr>`;
-          }
+          // סה״כ מחושב מחוץ ללולאה
+          if(false){}
         });
 
-        body.innerHTML=html||'<tr class="empty-row"><td colspan="4">אין נתונים</td></tr>';
+        // שורת סה״כ מובמנט + מאוחדת — תמיד מציג בסוף
+        const movH=parseFloat(grouped['מובמנט']?.hours)||0;
+        const meuH=parseFloat(grouped['מאוחדת']?.hours)||0;
+        const totalT=((movH/9)+(meuH/7)).toFixed(2);
+        const tNum=parseFloat(totalT);
+        const tc=tNum>=1.8?'#16A34A':tNum>=1.4?'#D97706':'#DC2626';
+        const tb=tNum>=1.8?'#DCFCE7':tNum>=1.4?'#FEF9C3':'#FEE2E2';
+        const lastSave=[grouped['מובמנט'],grouped['מאוחדת']].filter(Boolean).sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
+        const lSavedAt=lastSave?.updated_at?new Date(lastSave.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+
+        // הכנס שורת סה"כ אחרי מאוחדת (אחרי השורה השנייה)
+        const meuIdx=html.lastIndexOf('</tr>',html.indexOf('פריפיט שירות')>-1?html.indexOf('פריפיט שירות'):html.length);
+        const totalRow=`<tr style="background:#F8F6F2;border-top:2px solid #E8E4DC">
+          <td style="font-weight:900;font-size:14px;color:#555">סה״כ מובמנט + מאוחדת</td>
+          <td colspan="3">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="font-size:26px;font-weight:900;color:${tc};background:${tb};padding:4px 14px;border-radius:10px;letter-spacing:-1px;display:inline-block;flex-shrink:0">${totalT}</span>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#1A1A1A">${lastSave?.updated_by||'—'}</div>
+                <div style="font-size:12px;color:#AAA">${lSavedAt}</div>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+
+        body.innerHTML=html+totalRow||'<tr class="empty-row"><td colspan="4">אין נתונים</td></tr>';
       }catch(e){
         body.innerHTML=`<tr class="empty-row"><td colspan="4">שגיאה: ${e.message}</td></tr>`;
       }finally{ spinning('tRefBtn',false); }
@@ -410,6 +423,8 @@
 
     // Load on start
     loadAll();
+    // רענון אימיילים כל 5 דקות (נפרד)
+    setInterval(()=>{ loadEmails(); }, 5*60*1000);
   </script>
 </body>
 </html>
