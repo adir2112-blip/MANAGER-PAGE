@@ -528,7 +528,15 @@ function renderSummary(){
   rows.forEach(row=>{
     const agents=allAgents.filter(a=>row.acts.includes(a.activity));
     const totalHrs=agents.reduce((s,a)=>s+(parseFloat(allHours[a.id]?.hours)||0),0);
-    const taqan=row.divisor?+(totalHrs/row.divisor).toFixed(2):'—';
+    // חישוב תקן: לשורת סה"כ חשב משוקלל, אחרת חלק ב-divisor
+    let taqan;
+    if(row.isTotal){
+      const movH=allAgents.filter(a=>a.activity==='מובמנט').reduce((s,a)=>s+(parseFloat(allHours[a.id]?.hours)||0),0);
+      const meuH=allAgents.filter(a=>a.activity==='מאוחדת').reduce((s,a)=>s+(parseFloat(allHours[a.id]?.hours)||0),0);
+      taqan=+((movH/9)+(meuH/7)).toFixed(2);
+    } else {
+      taqan=row.divisor?+(totalHrs/row.divisor).toFixed(2):'—';
+    }
     // מצא שמירה אחרונה בקבוצה
     const savedRows=agents.map(a=>allHours[a.id]).filter(Boolean).filter(r=>r.updated_by).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
     const lastSave=savedRows[0];
