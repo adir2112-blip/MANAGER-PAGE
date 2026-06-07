@@ -860,24 +860,25 @@ window.addEventListener('load',()=>{
   if(m) m.addEventListener('click',function(e){if(e.target===this)closeEditModal();});
 });
 
-// רענון אוטומטי כל 30 שניות — מעדכן ערכים שמורים בלי לאפס inputs פתוחים
+// רענון אוטומטי כל 30 שניות — שומר על מה שהמשתמש הזין
 setInterval(async ()=>{
   if(!currentManager) return;
   const today=getToday();
+  // שמור את כל הערכים הנוכחיים לפני הרענון
+  const snapshot={};
+  document.querySelectorAll('.hours-input').forEach(inp=>{
+    if(inp.id) snapshot[inp.id]=inp.value;
+  });
+  // עדכן נתונים מהשרת בשקט
   await loadAllAgents();
   await loadTodayHours(today);
-  // עדכן רק inputs שאינם בפוקוס
-  allAgents.forEach(a=>{
-    const inp=document.getElementById('h_'+a.id);
-    if(inp && document.activeElement!==inp){
-      const saved=allHours[a.id]?.hours||0;
-      inp.value=saved||'';
-    }
+  // שחזר את כל הערכים שהיו לפני הרענון
+  Object.entries(snapshot).forEach(([id,val])=>{
+    const inp=document.getElementById(id);
+    if(inp) inp.value=val;
   });
-  // עדכן סיכומים בלבד
+  // עדכן רק סיכום
   renderSummary();
-  // עדכן save-bar totals ללא rebuild
-  refreshTotals(today);
 },30000);
 </script>
 
