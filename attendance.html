@@ -346,41 +346,81 @@
         </div>
       </div>
     </div>
-    <!-- אדיר: תצוגת סיכום -->
+    <!-- אדיר: הזנה + צפייה -->
     <div id="tasksAdminView" style="display:none">
-      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1.2rem">
-        <div class="form-group">
-          <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">נציג</label>
-          <select class="tasks-agent-select" id="adminTasksAgent" onchange="loadAdminTasks()">
-            <option value="">כל הנציגים</option>
-          </select>
+      <div style="display:flex;gap:.4rem;margin-bottom:1.2rem">
+        <button class="tasks-month-tab active" id="adminSubEntry" onclick="setAdminSubTab('entry')">📋 הזנת משימה</button>
+        <button class="tasks-month-tab" id="adminSubView" onclick="setAdminSubTab('view')">📊 צפייה וסיכום</button>
+      </div>
+      <!-- הזנה -->
+      <div id="adminEntryPane">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem">
+          <div class="form-group">
+            <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">בחר נציג</label>
+            <select class="tasks-agent-select" id="adminEntryAgentSelect" onchange="loadAdminEntryDates()">
+              <option value="">— בחר נציג —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">חודש</label>
+            <div class="tasks-month-tabs">
+              <button class="tasks-month-tab active" id="adminEntryMonthCurrent" onclick="setAdminEntryMonth('current')">חודש נוכחי</button>
+              <button class="tasks-month-tab" id="adminEntryMonthPrev" onclick="setAdminEntryMonth('prev')">חודש קודם</button>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">פעילות</label>
-          <select class="tasks-agent-select" id="adminTasksActivity" onchange="loadAdminTasks()">
-            <option value="">כל הפעילויות</option>
-            <option value="מובמנט">מובמנט</option>
-            <option value="מאוחדת">מאוחדת</option>
-            <option value="פריפיט שירות">פריפיט שירות</option>
-            <option value="פריפיט מכירות">פריפיט מכירות</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">חודש</label>
-          <div class="tasks-month-tabs">
-            <button class="tasks-month-tab active" id="adminMonthCurrent" onclick="setAdminMonth('current')">חודש נוכחי</button>
-            <button class="tasks-month-tab" id="adminMonthPrev" onclick="setAdminMonth('prev')">חודש קודם</button>
+        <div id="adminEntryWrap" style="display:none">
+          <div class="group">
+            <div class="group-header">
+              <div class="group-title">⭐ <span id="adminEntryPeriodLabel">—</span></div>
+              <button class="save-all-btn" onclick="saveAdminEntryTasks()"><i class="ti ti-device-floppy"></i>&nbsp;שמור הכל</button>
+            </div>
+            <div class="tbl-wrap">
+              <table class="tasks-tbl">
+                <thead><tr><th>תאריך</th><th>שם נציג</th><th>ת״ז</th><th>שעות משימה</th><th>הערות</th></tr></thead>
+                <tbody id="adminEntryDatesBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-      <div class="group">
-        <div class="group-header">
-          <div class="group-title">⭐ סיכום משימות מיוחדות — <span id="adminTasksPeriodLabel">—</span></div>
+      <!-- צפייה -->
+      <div id="adminViewPane" style="display:none">
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1.2rem">
+          <div class="form-group">
+            <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">נציג</label>
+            <select class="tasks-agent-select" id="adminTasksAgent" onchange="loadAdminTasks()">
+              <option value="">כל הנציגים</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">פעילות</label>
+            <select class="tasks-agent-select" id="adminTasksActivity" onchange="loadAdminTasks()">
+              <option value="">כל הפעילויות</option>
+              <option value="מובמנט">מובמנט</option>
+              <option value="מאוחדת">מאוחדת</option>
+              <option value="פריפיט שירות">פריפיט שירות</option>
+              <option value="פריפיט מכירות">פריפיט מכירות</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">חודש</label>
+            <div class="tasks-month-tabs">
+              <button class="tasks-month-tab active" id="adminMonthCurrent" onclick="setAdminMonth('current')">חודש נוכחי</button>
+              <button class="tasks-month-tab" id="adminMonthPrev" onclick="setAdminMonth('prev')">חודש קודם</button>
+            </div>
+          </div>
         </div>
-        <div class="tbl-wrap">
-          <table class="tasks-tbl">
-            <thead><tr><th></th><th>שם נציג</th><th>ת״ז</th><th>פעילות</th><th>סה״כ שעות</th></tr></thead>            <tbody id="adminTasksBody"><tr><td colspan="5" class="loading-msg">טוען...</td></tr></tbody>
-          </table>
+        <div class="group">
+          <div class="group-header">
+            <div class="group-title">⭐ סיכום — <span id="adminTasksPeriodLabel">—</span></div>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tasks-tbl">
+              <thead><tr><th></th><th>שם נציג</th><th>ת״ז</th><th>פעילות</th><th>סה״כ שעות</th></tr></thead>
+              <tbody id="adminTasksBody"><tr><td colspan="5" class="loading-msg">טוען...</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -577,7 +617,9 @@ function switchTab(tab){
     if(FULL_ADMIN.includes(currentManager.name)){
       document.getElementById('tasksManagerView').style.display='none';
       document.getElementById('tasksAdminView').style.display='';
-      loadAdminTasks();
+      // ברירת מחדל: הזנה
+      setAdminSubTab('entry');
+      populateAdminEntryAgents();
     } else {
       document.getElementById('tasksManagerView').style.display='';
       document.getElementById('tasksAdminView').style.display='none';
@@ -976,7 +1018,88 @@ async function saveEdit(){
   }
 }
 
-// ── Special Tasks ──
+// ── Admin Sub-tabs ──
+let adminEntryMonth='current';
+
+function setAdminSubTab(tab){
+  document.getElementById('adminSubEntry').classList.toggle('active',tab==='entry');
+  document.getElementById('adminSubView').classList.toggle('active',tab==='view');
+  document.getElementById('adminEntryPane').style.display=tab==='entry'?'':'none';
+  document.getElementById('adminViewPane').style.display=tab==='view'?'':'none';
+  if(tab==='view') loadAdminTasks();
+}
+
+function setAdminEntryMonth(p){
+  adminEntryMonth=p;
+  document.getElementById('adminEntryMonthCurrent').classList.toggle('active',p==='current');
+  document.getElementById('adminEntryMonthPrev').classList.toggle('active',p==='prev');
+  loadAdminEntryDates();
+}
+
+function populateAdminEntryAgents(){
+  const sorted=[...allAgents].sort((a,b)=>a.name.localeCompare(b.name,'he'));
+  const opts=sorted.map(a=>`<option value="${a.id}" data-name="${a.name.replace(/"/g,'&quot;')}" data-id="${a.id_number}" data-act="${a.activity}">${a.name} (${a.activity})</option>`).join('');
+  const sel=document.getElementById('adminEntryAgentSelect');
+  if(sel) sel.innerHTML='<option value="">— בחר נציג —</option>'+opts;
+}
+
+async function loadAdminEntryDates(){
+  const sel=document.getElementById('adminEntryAgentSelect');
+  const agentId=sel.value;
+  if(!agentId){document.getElementById('adminEntryWrap').style.display='none';return;}
+  const opt=sel.options[sel.selectedIndex];
+  const agentName=opt.dataset.name, agentIdNum=opt.dataset.id;
+  const offset=adminEntryMonth==='current'?0:-1;
+  const {from,to,label}=getMonthRange(offset);
+  document.getElementById('adminEntryPeriodLabel').textContent=agentName+' · '+label;
+  const data=await sb('/special_tasks?select=*&agent_id=eq.'+agentId+'&task_date=gte.'+from+'&task_date=lte.'+to+'&order=task_date.asc');
+  const existing={};
+  if(Array.isArray(data)) data.forEach(r=>{existing[r.task_date]={id:r.id,hours:r.hours,notes:r.notes||''};});
+  const days=getMonthDates(offset);
+  let html='';
+  days.forEach(d=>{
+    const ex=existing[d]||{};
+    const fmtD=new Date(d+'T12:00:00').toLocaleDateString('he-IL',{weekday:'short',day:'2-digit',month:'2-digit'});
+    html+=`<tr>
+      <td style="font-weight:600;white-space:nowrap">${fmtD}</td>
+      <td style="font-size:13px;font-weight:700">${agentName}</td>
+      <td style="font-size:12px;color:#888">${agentIdNum}</td>
+      <td><input class="tasks-input" id="aeh_${d}" type="number" min="0" max="24" step="0.5" value="${ex.hours||''}" placeholder="0"/></td>
+      <td><input class="tasks-notes" id="aen_${d}" type="text" value="${ex.notes||''}" placeholder="הערה..."/></td>
+    </tr>`;
+  });
+  document.getElementById('adminEntryDatesBody').innerHTML=html;
+  document.getElementById('adminEntryWrap').style.display='';
+  const wrap=document.getElementById('adminEntryWrap');
+  wrap.dataset.agentId=agentId;
+  wrap.dataset.agentName=agentName;
+  wrap.dataset.agentIdNum=agentIdNum;
+  wrap.dataset.activity=opt.dataset.act;
+  wrap.dataset.days=JSON.stringify(days);
+}
+
+async function saveAdminEntryTasks(){
+  const wrap=document.getElementById('adminEntryWrap');
+  const {agentId,agentName,agentIdNum,activity}=wrap.dataset;
+  const days=JSON.parse(wrap.dataset.days||'[]');
+  if(!agentId){toast('בחר נציג');return;}
+  let saved=0;
+  for(const d of days){
+    const hrsEl=document.getElementById('aeh_'+d);
+    const notesEl=document.getElementById('aen_'+d);
+    if(!hrsEl) continue;
+    const hrs=parseFloat(hrsEl.value)||0;
+    const notes=notesEl?.value||'';
+    if(hrs===0&&!notes) continue;
+    await fetch(SB_URL+'/special_tasks',{
+      method:'POST',
+      headers:{...H,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({agent_id:agentId,agent_name:agentName,agent_id_number:agentIdNum,activity,task_date:d,hours:hrs,notes,created_by:currentManager.name})
+    });
+    saved++;
+  }
+  toast('נשמרו '+saved+' רשומות ✓');
+}
 let tasksMonth='current', adminTasksMonth='current';
 
 function getMonthDates(offset=0){
@@ -1020,16 +1143,17 @@ function setAdminMonth(p){
 }
 
 function populateTasksAgentSelects(){
-  // סנן לפי הרשאת מנהל
+  // מנהל רגיל — רק הנציגים שלו
   let filtered=allAgents;
   if(currentManager.activity!=='הכל') filtered=allAgents.filter(a=>a.activity===currentManager.activity);
   const sorted=[...filtered].sort((a,b)=>a.name.localeCompare(b.name,'he'));
   const opts=sorted.map(a=>`<option value="${a.id}" data-name="${a.name.replace(/"/g,'&quot;')}" data-id="${a.id_number}" data-act="${a.activity}">${a.name} (${a.activity})</option>`).join('');
   document.getElementById('tasksAgentSelect').innerHTML='<option value="">— בחר נציג —</option>'+opts;
-  // אדיר רואה הכל
+  // אדיר — כל הנציגים בסיכום
   const allSorted=[...allAgents].sort((a,b)=>a.name.localeCompare(b.name,'he'));
   const allOpts=allSorted.map(a=>`<option value="${a.id}" data-name="${a.name.replace(/"/g,'&quot;')}" data-id="${a.id_number}" data-act="${a.activity}">${a.name} (${a.activity})</option>`).join('');
-  document.getElementById('adminTasksAgent').innerHTML='<option value="">כל הנציגים</option>'+allOpts;
+  const adminSel=document.getElementById('adminTasksAgent');
+  if(adminSel) adminSel.innerHTML='<option value="">כל הנציגים</option>'+allOpts;
 }
 
 async function loadTasksDates(){
