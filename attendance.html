@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ניהול נציגים — אדיר לוי</title>
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231A1A1A'/><rect x='4' y='4' width='11' height='11' rx='2' fill='white' opacity='.9'/><rect x='17' y='4' width='11' height='11' rx='2' fill='white' opacity='.6'/><rect x='4' y='17' width='11' height='11' rx='2' fill='white' opacity='.6'/><rect x='17' y='17' width='11' height='11' rx='2' fill='white' opacity='.3'/></svg>"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -132,6 +132,30 @@
     .edit-btn:hover{background:#E8E4DC}
     .tab-content{display:none}
     .tab-content.active{display:block}
+    /* SPECIAL TASKS */
+    .tasks-agent-select{background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:12px;padding:10px 14px;font-size:14px;font-family:'Heebo',sans-serif;color:#1A1A1A;outline:none;min-width:220px;cursor:pointer}
+    .tasks-agent-select:focus{border-color:#1A1A1A}
+    .tasks-month-tabs{display:flex;gap:.4rem;flex-wrap:wrap}
+    .tasks-month-tab{background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:8px;padding:6px 14px;font-size:12.5px;font-weight:600;color:#888;cursor:pointer;font-family:'Heebo',sans-serif;transition:all .18s}
+    .tasks-month-tab:hover{border-color:#C8C4BC;color:#555}
+    .tasks-month-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+    .tasks-tbl{width:100%;border-collapse:collapse}
+    .tasks-tbl th{padding:.65rem 1.2rem;text-align:right;font-size:11px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.8px;border-bottom:1.5px solid #F0EDE6;background:#FAFAF8;white-space:nowrap}
+    .tasks-tbl td{padding:.6rem 1.2rem;border-bottom:1px solid #F8F6F2;vertical-align:middle}
+    .tasks-tbl tr:last-child td{border-bottom:none}
+    .tasks-tbl tr:hover td{background:#FAFAF8}
+    .tasks-input{width:70px;background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:8px;padding:5px 8px;font-size:14px;font-weight:700;text-align:center;font-family:'Heebo',sans-serif;color:#1A1A1A;outline:none;transition:border-color .18s}
+    .tasks-input:focus{border-color:#1A1A1A;background:#fff}
+    .tasks-notes{width:100%;background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:8px;padding:5px 8px;font-size:13px;font-family:'Heebo',sans-serif;color:#1A1A1A;outline:none;transition:border-color .18s}
+    .tasks-notes:focus{border-color:#1A1A1A;background:#fff}
+    /* ADMIN TASKS VIEW */
+    .agent-row-summary{cursor:pointer;transition:background .18s}
+    .agent-row-summary:hover td{background:#F0EDE6!important}
+    .agent-detail-row{display:none}
+    .agent-detail-row.open{display:table-row}
+    .expand-icon{transition:transform .2s}
+    .expand-icon.open{transform:rotate(90deg)}
+
     .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .loading-msg{text-align:center;color:#AAA;padding:2rem;font-size:13px}
@@ -190,6 +214,7 @@
   <div class="nav">
     <div class="nav-tab active" onclick="switchTab('hours')" id="tab-hours">⏱️ שעות עבודה</div>
     <div class="nav-tab" onclick="switchTab('agents')" id="tab-agents">👥 נציגים</div>
+    <div class="nav-tab" onclick="switchTab('tasks')" id="tab-tasks">⭐ משימות מיוחדות</div>
     <div class="nav-tab" onclick="window.open('history.html','_blank')" id="tab-history">📊 היסטוריה</div>
     <div class="nav-tab admin-tab" onclick="switchTab('admin')" id="tab-admin" style="display:none">⚙️ מנהלים</div>
   </div>
@@ -264,14 +289,15 @@
     <div class="admin-form" style="margin-bottom:1rem">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
         <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:700;color:#888">הורדה לאקסל:</span>
-          <select class="form-select" id="downloadFilter" style="width:180px;padding:6px 10px;font-size:12.5px">
+          <span style="font-size:12px;font-weight:700;color:#888">סינון:</span>
+          <select class="form-select" id="downloadFilter" style="width:180px;padding:6px 10px;font-size:12.5px" onchange="filterAgentsTable()">
             <option value="הכל">כל הנציגים</option>
             <option value="מובמנט">מובמנט</option>
             <option value="מאוחדת">מאוחדת</option>
             <option value="פריפיט שירות">פריפיט שירות</option>
             <option value="פריפיט מכירות">פריפיט מכירות</option>
           </select>
+          <input class="form-input" id="agentSearch" placeholder="חיפוש שם..." style="width:160px;padding:6px 10px;font-size:12.5px" oninput="filterAgentsTable()"/>
           <button class="add-btn" style="background:#16A34A;padding:7px 16px" onclick="downloadAgentsExcel()">
             <i class="ti ti-download"></i> הורד אקסל
           </button>
@@ -283,6 +309,80 @@
         <thead><tr><th>שם</th><th>ת״ז</th><th>מייל</th><th>פעילות</th><th>סטטוס</th><th>פעולות</th></tr></thead>
         <tbody id="agentsBody"><tr><td colspan="6" class="loading-msg">טוען...</td></tr></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- SPECIAL TASKS -->
+  <div class="tab-content main" id="content-tasks">
+    <!-- מנהל: הזנת משימות -->
+    <div id="tasksManagerView">
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem">
+        <div class="form-group">
+          <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">בחר נציג</label>
+          <select class="tasks-agent-select" id="tasksAgentSelect" onchange="loadTasksDates()">
+            <option value="">— בחר נציג —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">חודש</label>
+          <div class="tasks-month-tabs">
+            <button class="tasks-month-tab active" id="tasksMonthCurrent" onclick="setTasksMonth('current')">חודש נוכחי</button>
+            <button class="tasks-month-tab" id="tasksMonthPrev" onclick="setTasksMonth('prev')">חודש קודם</button>
+          </div>
+        </div>
+      </div>
+      <div id="tasksDatesWrap" style="display:none">
+        <div class="group">
+          <div class="group-header">
+            <div class="group-title">⭐ <span id="tasksPeriodLabel">—</span></div>
+            <button class="save-all-btn" onclick="saveAllTasks()"><i class="ti ti-device-floppy"></i>&nbsp;שמור הכל</button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tasks-tbl">
+              <thead><tr><th>תאריך</th><th>שם נציג</th><th>ת״ז</th><th>שעות משימה</th><th>הערות</th></tr></thead>
+              <tbody id="tasksDatesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- אדיר: תצוגת סיכום -->
+    <div id="tasksAdminView" style="display:none">
+      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1.2rem">
+        <div class="form-group">
+          <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">נציג</label>
+          <select class="tasks-agent-select" id="adminTasksAgent" onchange="loadAdminTasks()">
+            <option value="">כל הנציגים</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">פעילות</label>
+          <select class="tasks-agent-select" id="adminTasksActivity" onchange="loadAdminTasks()">
+            <option value="">כל הפעילויות</option>
+            <option value="מובמנט">מובמנט</option>
+            <option value="מאוחדת">מאוחדת</option>
+            <option value="פריפיט שירות">פריפיט שירות</option>
+            <option value="פריפיט מכירות">פריפיט מכירות</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">חודש</label>
+          <div class="tasks-month-tabs">
+            <button class="tasks-month-tab active" id="adminMonthCurrent" onclick="setAdminMonth('current')">חודש נוכחי</button>
+            <button class="tasks-month-tab" id="adminMonthPrev" onclick="setAdminMonth('prev')">חודש קודם</button>
+          </div>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-header">
+          <div class="group-title">⭐ סיכום משימות מיוחדות — <span id="adminTasksPeriodLabel">—</span></div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tasks-tbl">
+            <thead><tr><th></th><th>שם נציג</th><th>ת״ז</th><th>פעילות</th><th>סה״כ שעות</th></tr></thead>            <tbody id="adminTasksBody"><tr><td colspan="5" class="loading-msg">טוען...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -472,6 +572,17 @@ function switchTab(tab){
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='agents') loadAgentsTable();
   if(tab==='admin') loadManagersTable();
+  if(tab==='tasks'){
+    populateTasksAgentSelects();
+    if(FULL_ADMIN.includes(currentManager.name)){
+      document.getElementById('tasksManagerView').style.display='none';
+      document.getElementById('tasksAdminView').style.display='';
+      loadAdminTasks();
+    } else {
+      document.getElementById('tasksManagerView').style.display='';
+      document.getElementById('tasksAdminView').style.display='none';
+    }
+  }
 }
 
 async function initApp(){
@@ -661,6 +772,19 @@ async function saveSubGroup(btn){
 }
 
 // ── Agents ──
+function filterAgentsTable(){
+  const filter=document.getElementById('downloadFilter').value;
+  const search=(document.getElementById('agentSearch').value||'').trim().toLowerCase();
+  const rows=document.querySelectorAll('#agentsBody tr');
+  rows.forEach(row=>{
+    const name=row.cells?.[0]?.textContent?.toLowerCase()||'';
+    const act=row.cells?.[3]?.textContent||'';
+    const matchAct=filter==='הכל'||act.includes(filter);
+    const matchSearch=!search||name.includes(search);
+    row.style.display=matchAct&&matchSearch?'':'none';
+  });
+}
+
 async function loadAgentsTable(){
   const data=await sb('/agents_roster?select=*&order=activity.asc,name.asc');
   const tbody=document.getElementById('agentsBody');
@@ -850,6 +974,190 @@ async function saveEdit(){
     toast('עודכן ✓'); closeEditModal();
     await loadAllAgents(); await loadTodayHours(getToday()); renderAll(getToday()); loadAgentsTable();
   }
+}
+
+// ── Special Tasks ──
+let tasksMonth='current', adminTasksMonth='current';
+
+function getMonthDates(offset=0){
+  const n=new Date();
+  const y=n.getFullYear(), m=n.getMonth()+offset;
+  const days=[];
+  const last=new Date(y,m+1,0).getDate();
+  const maxDay=offset===0?n.getDate():last;
+  for(let i=1;i<=maxDay;i++){
+    const dt=new Date(y,m,i);
+    const dow=dt.getDay();
+    if(dow!==5&&dow!==6){
+      // פורמט תאריך לפי שעון מקומי (לא UTC)
+      const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(i).padStart(2,'0');
+      days.push(ds);
+    }
+  }
+  return days;
+}
+
+function getMonthRange(offset=0){
+  const n=new Date();
+  const y=n.getFullYear(), m=n.getMonth()+offset;
+  const from=new Date(y,m,1).toISOString().slice(0,10);
+  const to=new Date(y,m+1,0).toISOString().slice(0,10);
+  const label=(m+1<10?'0'+(m+1):(m+1))+'/'+String(y).slice(2);
+  return{from,to,label};
+}
+
+function setTasksMonth(p){
+  tasksMonth=p;
+  document.getElementById('tasksMonthCurrent').classList.toggle('active',p==='current');
+  document.getElementById('tasksMonthPrev').classList.toggle('active',p==='prev');
+  loadTasksDates();
+}
+function setAdminMonth(p){
+  adminTasksMonth=p;
+  document.getElementById('adminMonthCurrent').classList.toggle('active',p==='current');
+  document.getElementById('adminMonthPrev').classList.toggle('active',p==='prev');
+  loadAdminTasks();
+}
+
+function populateTasksAgentSelects(){
+  // סנן לפי הרשאת מנהל
+  let filtered=allAgents;
+  if(currentManager.activity!=='הכל') filtered=allAgents.filter(a=>a.activity===currentManager.activity);
+  const sorted=[...filtered].sort((a,b)=>a.name.localeCompare(b.name,'he'));
+  const opts=sorted.map(a=>`<option value="${a.id}" data-name="${a.name.replace(/"/g,'&quot;')}" data-id="${a.id_number}" data-act="${a.activity}">${a.name} (${a.activity})</option>`).join('');
+  document.getElementById('tasksAgentSelect').innerHTML='<option value="">— בחר נציג —</option>'+opts;
+  // אדיר רואה הכל
+  const allSorted=[...allAgents].sort((a,b)=>a.name.localeCompare(b.name,'he'));
+  const allOpts=allSorted.map(a=>`<option value="${a.id}" data-name="${a.name.replace(/"/g,'&quot;')}" data-id="${a.id_number}" data-act="${a.activity}">${a.name} (${a.activity})</option>`).join('');
+  document.getElementById('adminTasksAgent').innerHTML='<option value="">כל הנציגים</option>'+allOpts;
+}
+
+async function loadTasksDates(){
+  const sel=document.getElementById('tasksAgentSelect');
+  const agentId=sel.value;
+  if(!agentId){document.getElementById('tasksDatesWrap').style.display='none';return;}
+  const opt=sel.options[sel.selectedIndex];
+  const agentName=opt.dataset.name, agentIdNum=opt.dataset.id;
+  const offset=tasksMonth==='current'?0:-1;
+  const {from,to,label}=getMonthRange(offset);
+  document.getElementById('tasksPeriodLabel').textContent=label;
+  const data=await sb('/special_tasks?select=*&agent_id=eq.'+agentId+'&task_date=gte.'+from+'&task_date=lte.'+to+'&order=task_date.asc');
+  const existing={};
+  if(Array.isArray(data)) data.forEach(r=>{existing[r.task_date]={id:r.id,hours:r.hours,notes:r.notes||''};});
+  const days=getMonthDates(offset);
+  let html='';
+  days.forEach(d=>{
+    const ex=existing[d]||{};
+    const fmtD=new Date(d+'T12:00:00').toLocaleDateString('he-IL',{weekday:'short',day:'2-digit',month:'2-digit'});
+    html+=`<tr>
+      <td style="font-weight:600;white-space:nowrap">${fmtD}</td>
+      <td style="font-size:13px;font-weight:700">${agentName}</td>
+      <td style="font-size:12px;color:#888">${agentIdNum}</td>
+      <td><input class="tasks-input" id="th_${d}" type="number" min="0" max="24" step="0.5" value="${ex.hours||''}" placeholder="0"/></td>
+      <td><input class="tasks-notes" id="tn_${d}" type="text" value="${ex.notes||''}" placeholder="הערה..."/></td>
+    </tr>`;
+  });
+  document.getElementById('tasksDatesBody').innerHTML=html;
+  document.getElementById('tasksDatesWrap').style.display='';
+  const wrap=document.getElementById('tasksDatesWrap');
+  wrap.dataset.agentId=agentId;
+  wrap.dataset.agentName=agentName;
+  wrap.dataset.agentIdNum=agentIdNum;
+  wrap.dataset.activity=opt.dataset.act;
+  wrap.dataset.days=JSON.stringify(days);
+}
+
+async function saveAllTasks(){
+  const wrap=document.getElementById('tasksDatesWrap');
+  const {agentId,agentName,agentIdNum,activity}=wrap.dataset;
+  const days=JSON.parse(wrap.dataset.days||'[]');
+  if(!agentId){toast('בחר נציג');return;}
+  let saved=0;
+  for(const d of days){
+    const hrsEl=document.getElementById('th_'+d);
+    const notesEl=document.getElementById('tn_'+d);
+    if(!hrsEl) continue;
+    const hrs=parseFloat(hrsEl.value)||0;
+    const notes=notesEl?.value||'';
+    if(hrs===0&&!notes) continue;
+    await fetch(SB_URL+'/special_tasks',{
+      method:'POST',
+      headers:{...H,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({agent_id:agentId,agent_name:agentName,agent_id_number:agentIdNum,activity,task_date:d,hours:hrs,notes,created_by:currentManager.name})
+    });
+    saved++;
+  }
+  toast('נשמרו '+saved+' רשומות ✓');
+}
+
+async function loadAdminTasks(){
+  const agentFilter=document.getElementById('adminTasksAgent').value;
+  const actFilter=document.getElementById('adminTasksActivity').value;
+  const offset=adminTasksMonth==='current'?0:-1;
+  const {from,to,label}=getMonthRange(offset);
+  document.getElementById('adminTasksPeriodLabel').textContent=label;
+
+  // סנן את רשימת הנציגים לפי פעילות
+  const agentSel=document.getElementById('adminTasksAgent');
+  Array.from(agentSel.options).forEach(opt=>{
+    if(!opt.value) return; // "כל הנציגים"
+    const act=opt.dataset.act||'';
+    opt.style.display=(!actFilter||act===actFilter)?'':'none';
+  });
+  // אם הנציג הנבחר לא שייך לפעילות — אפס
+  if(agentFilter){
+    const selOpt=agentSel.options[agentSel.selectedIndex];
+    if(actFilter&&selOpt?.dataset.act!==actFilter){
+      agentSel.value='';
+    }
+  }
+
+  let query=`/special_tasks?select=*&task_date=gte.${from}&task_date=lte.${to}&order=agent_name.asc,task_date.asc`;
+  if(agentSel.value) query+=`&agent_id=eq.${agentSel.value}`;
+  if(actFilter) query+=`&activity=eq.${encodeURIComponent(actFilter)}`;
+  const data=await sb(query);
+  const tbody=document.getElementById('adminTasksBody');
+  if(!Array.isArray(data)||!data.length){
+    tbody.innerHTML='<tr><td colspan="5" class="empty-msg">אין משימות מיוחדות</td></tr>';
+    return;
+  }
+  const byAgent={};
+  data.forEach(r=>{
+    if(!byAgent[r.agent_id]) byAgent[r.agent_id]={name:r.agent_name,idNum:r.agent_id_number,activity:r.activity,total:0,rows:[]};
+    byAgent[r.agent_id].total+=parseFloat(r.hours)||0;
+    byAgent[r.agent_id].rows.push(r);
+  });
+  let html='';
+  Object.entries(byAgent).forEach(([aid,ag])=>{
+    html+=`<tr class="agent-row-summary" onclick="toggleAgentTasks('${aid}')">
+      <td style="width:30px"><i class="ti ti-chevron-left expand-icon" id="exp_${aid}"></i></td>
+      <td style="font-weight:700">${ag.name}</td>
+      <td style="color:#888;font-size:12px">${ag.idNum}</td>
+      <td><span class="activity-tag">${ag.activity}</span></td>
+      <td style="font-size:18px;font-weight:900;color:#2563EB">${ag.total.toFixed(1)}</td>
+    </tr>`;
+    ag.rows.forEach(r=>{
+      const fmtD=new Date(r.task_date+'T12:00:00').toLocaleDateString('he-IL',{weekday:'short',day:'2-digit',month:'2-digit'});
+      const fmtAt=r.created_at?new Date(r.created_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+      html+=`<tr class="agent-detail-row" id="detail_${aid}">
+        <td></td>
+        <td style="font-size:12px;color:#888">${fmtD}</td>
+        <td style="font-size:12px;color:#888">${r.agent_id_number}</td>
+        <td style="font-size:13px;font-weight:700;color:#2563EB">${r.hours} שע׳</td>
+        <td style="font-size:12px;color:#555">${r.notes||'—'}</td>
+        <td style="font-size:11px;color:#AAA;white-space:nowrap">${r.created_by||'—'} · ${fmtAt}</td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML=html;
+}
+
+function toggleAgentTasks(aid){
+  const rows=document.querySelectorAll(`[id="detail_${aid}"]`);
+  const icon=document.getElementById('exp_'+aid);
+  const isOpen=icon?.classList.contains('open');
+  rows.forEach(r=>r.classList.toggle('open',!isOpen));
+  icon?.classList.toggle('open',!isOpen);
 }
 
 loadManagers();
