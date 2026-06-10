@@ -144,6 +144,15 @@
   </div>
 
   <div class="main">
+
+    <!-- NAV TABS -->
+    <div style="display:flex;gap:.4rem;margin-bottom:1.2rem">
+      <button class="period-tab active" id="mainTabHistory" onclick="switchMainTab('history')">📊 היסטוריה תקינה</button>
+      <button class="period-tab" id="mainTabCalls" onclick="switchMainTab('calls')">📞 חריגות שיחות מנהל</button>
+    </div>
+
+    <!-- TAB: HISTORY -->
+    <div id="paneHistory">
     <!-- FILTERS -->
     <div class="filters-bar">
       <div class="filter-group">
@@ -203,6 +212,53 @@
         </table>
       </div>
     </div>
+    </div>
+
+    <!-- TAB: CALLS -->
+    <div id="paneCalls" style="display:none">
+      <div class="filters-bar">
+        <div class="filter-group">
+          <div class="filter-label">תקופה</div>
+          <div class="period-tabs">
+            <button class="period-tab active" id="callsTabMonth" onclick="setCallsPeriod('month')">חודש נוכחי</button>
+            <button class="period-tab" id="callsTabPrev" onclick="setCallsPeriod('prev')">חודש קודם</button>
+            <button class="period-tab" id="callsTabRange" onclick="setCallsPeriod('range')">טווח</button>
+          </div>
+        </div>
+        <div class="filter-group" id="callsRangeGroup" style="display:none">
+          <div class="filter-label">מתאריך</div>
+          <input class="filter-input" type="date" id="callsDateFrom"/>
+        </div>
+        <div class="filter-group" id="callsRangeGroup2" style="display:none">
+          <div class="filter-label">עד תאריך</div>
+          <input class="filter-input" type="date" id="callsDateTo"/>
+        </div>
+        <button class="filter-btn" onclick="loadCallsHistory()"><i class="ti ti-search"></i> הצג</button>
+        <button class="filter-btn green" onclick="exportCallsExcel()"><i class="ti ti-download"></i> אקסל</button>
+      </div>
+      <div class="results-wrap">
+        <div class="results-header">
+          <div class="results-title"><i class="ti ti-phone-call" style="font-size:16px;color:#DC2626"></i> חריגות שיחות מנהל</div>
+          <span class="results-count" id="callsResultsCount"></span>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>תאריך</th>
+              <th>שיחות מנהל בחריגה</th>
+              <th>תאריך ישן ביותר</th>
+              <th>בטיפול לאחר שיחה</th>
+              <th>תאריך ישן ביותר</th>
+              <th>מעדכן</th>
+            </tr></thead>
+            <tbody id="callsHistoryBody">
+              <tr class="loading-row"><td colspan="6">בחר תקופה ולחץ הצג</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -367,6 +423,82 @@ function exportExcel(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'היסטוריה');
   XLSX.writeFile(wb,'היסטוריה_תקינה.xlsx');
+  toast('הקובץ הורד ✓');
+}
+
+// ── Main tab switch ──
+function switchMainTab(tab){
+  document.getElementById('mainTabHistory').classList.toggle('active',tab==='history');
+  document.getElementById('mainTabCalls').classList.toggle('active',tab==='calls');
+  document.getElementById('paneHistory').style.display=tab==='history'?'':'none';
+  document.getElementById('paneCalls').style.display=tab==='calls'?'':'none';
+}
+
+// ── Calls period ──
+let callsPeriod='month';
+function setCallsPeriod(p){
+  callsPeriod=p;
+  ['month','prev','range'].forEach(x=>document.getElementById('callsTab'+x.charAt(0).toUpperCase()+x.slice(1))?.classList.toggle('active',x===p));
+  const show=p==='range';
+  document.getElementById('callsRangeGroup').style.display=show?'':'none';
+  document.getElementById('callsRangeGroup2').style.display=show?'':'none';
+  if(p==='range'){
+    const r=getMonthRange(-1);
+    document.getElementById('callsDateFrom').value=r.from;
+    document.getElementById('callsDateTo').value=r.to;
+  }
+}
+
+function getMonthRange(offset=0){
+  const n=new Date();
+  const y=n.getFullYear(), m=n.getMonth()+offset;
+  return{
+    from:new Date(y,m,1).toISOString().slice(0,10),
+    to:new Date(y,m+1,0).toISOString().slice(0,10)
+  };
+}
+
+let callsData=[];
+async function loadCallsHistory(){
+  document.getElementById('callsHistoryBody').innerHTML='<tr class="loading-row"><td colspan="6">טוען...</td></tr>';
+  let from,to;
+  if(callsPeriod==='month'){const r=getMonthRange(0);from=r.from;to=r.to;}
+  else if(callsPeriod==='prev'){const r=getMonthRange(-1);from=r.from;to=r.to;}
+  else{from=document.getElementById('callsDateFrom').value;to=document.getElementById('callsDateTo').value;}
+  if(!from||!to){toast('בחר טווח תאריכים');return;}
+
+  const data=await sb('/manager_calls_history?select=*&work_date=gte.'+from+'&work_date=lte.'+to+'&order=work_date.desc');
+  callsData=Array.isArray(data)?data:[];
+  document.getElementById('callsResultsCount').textContent=callsData.length+' רשומות';
+  if(!callsData.length){
+    document.getElementById('callsHistoryBody').innerHTML='<tr class="empty-row"><td colspan="6">אין נתונים לתקופה</td></tr>';
+    return;
+  }
+  document.getElementById('callsHistoryBody').innerHTML=callsData.map(r=>{
+    const fmtD=fmtDate(r.work_date);
+    const fmtCalls=r.calls_oldest_date?new Date(r.calls_oldest_date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—';
+    const fmtTreat=r.treatment_oldest_date?new Date(r.treatment_oldest_date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—';
+    return`<tr>
+      <td style="font-weight:600;white-space:nowrap">${fmtD}</td>
+      <td><span style="font-size:18px;font-weight:900;color:#DC2626">${r.calls_overdue??0}</span></td>
+      <td style="font-size:13px;color:#888">${fmtCalls}</td>
+      <td><span style="font-size:18px;font-weight:900;color:#D97706">${r.in_treatment_overdue??0}</span></td>
+      <td style="font-size:13px;color:#888">${fmtTreat}</td>
+      <td style="font-size:12px;color:#555">${r.updated_by||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCallsExcel(){
+  if(!callsData.length){toast('אין נתונים לייצוא');return;}
+  const rows=[['תאריך','שיחות מנהל בחריגה','תאריך ישן ביותר','בטיפול לאחר שיחה','תאריך ישן ביותר','מעדכן'],
+    ...callsData.map(r=>[r.work_date,r.calls_overdue||0,r.calls_oldest_date||'',r.in_treatment_overdue||0,r.treatment_oldest_date||'',r.updated_by||''])
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:12},{wch:18},{wch:14},{wch:18},{wch:14},{wch:16}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'חריגות');
+  XLSX.writeFile(wb,'חריגות_שיחות_מנהל.xlsx');
   toast('הקובץ הורד ✓');
 }
 
