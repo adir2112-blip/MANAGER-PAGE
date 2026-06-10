@@ -1082,18 +1082,23 @@ async function saveManagerCalls(){
   const callsDate=document.getElementById('callsOldestDate').value||null;
   const treatDate=document.getElementById('treatmentOldestDate').value||null;
   const now=new Date().toISOString();
-  const res=await fetch(SB_URL+'/manager_calls',{
-    method:'POST',
-    headers:{...H,'Prefer':'resolution=merge-duplicates'},
-    body:JSON.stringify({work_date:today,calls_overdue:calls,in_treatment_overdue:treat,calls_oldest_date:callsDate,treatment_oldest_date:treatDate,updated_by:currentManager.name,updated_at:now})
-  });
+  const payload={work_date:today,calls_overdue:calls,in_treatment_overdue:treat,calls_oldest_date:callsDate,treatment_oldest_date:treatDate,updated_by:currentManager.name,updated_at:now};
+  // בדוק אם כבר קיים
+  const existing=await sb('/manager_calls?select=id&work_date=eq.'+today);
+  let res;
+  if(Array.isArray(existing)&&existing.length){
+    res=await fetch(SB_URL+'/manager_calls?id=eq.'+existing[0].id,{method:'PATCH',headers:H,body:JSON.stringify(payload)});
+  } else {
+    res=await fetch(SB_URL+'/manager_calls',{method:'POST',headers:H,body:JSON.stringify(payload)});
+  }
   if(res.ok||res.status===200||res.status===201){
     const t=fmtDateTime(now);
     document.getElementById('callsOverdueSaved').textContent='✓ '+currentManager.name+' · '+t;
     document.getElementById('inTreatmentSaved').textContent='✓ '+currentManager.name+' · '+t;
     toast('נשמר ✓');
   } else {
-    toast('שגיאה בשמירה');
+    const e=await res.json();
+    toast('שגיאה: '+JSON.stringify(e));
   }
 }
 
