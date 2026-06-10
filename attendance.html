@@ -240,6 +240,40 @@
         </table>
       </div>
     </div>
+
+    <!-- שיחות מנהל — בקי + הודיה בלבד -->
+    <div id="managerCallsSection" style="display:none;margin-bottom:1.2rem">
+      <div class="summary-wrap">
+        <div class="summary-header">
+          <i class="ti ti-phone-call" style="font-size:16px;color:#DC2626"></i>
+          <span class="summary-header-title">שיחות מנהל — מובמנט</span>
+          <span style="font-size:11px;color:#AAA;margin-right:auto">מתאפס ב-06:00</span>
+        </div>
+        <div style="padding:1rem 1.4rem;display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">שיחות מנהל בחריגה מעל 2 ימי עסקים</div>
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:6px">
+              <input class="hours-input" id="callsOverdueInput" type="number" min="0" max="999" step="1" placeholder="0" style="width:80px"/>
+              <div id="callsOverdueSaved" style="font-size:11px;color:#16A34A;font-weight:600"></div>
+            </div>
+            <div style="font-size:11px;color:#888;margin-bottom:4px">תאריך הפניה הישנה ביותר</div>
+            <input class="form-input" id="callsOldestDate" type="date" style="width:160px;padding:6px 10px;font-size:13px"/>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">בטיפול לאחר שיחה מנהל בחריגה מעל 2 ימי עסקים</div>
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:6px">
+              <input class="hours-input" id="inTreatmentInput" type="number" min="0" max="999" step="1" placeholder="0" style="width:80px"/>
+              <div id="inTreatmentSaved" style="font-size:11px;color:#16A34A;font-weight:600"></div>
+            </div>
+            <div style="font-size:11px;color:#888;margin-bottom:4px">תאריך הפניה הישנה ביותר</div>
+            <input class="form-input" id="treatmentOldestDate" type="date" style="width:160px;padding:6px 10px;font-size:13px"/>
+          </div>
+          <div style="align-self:flex-end">
+            <button class="save-all-btn" onclick="saveManagerCalls()"><i class="ti ti-device-floppy"></i>&nbsp;שמור</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="groupsWrap"></div>
   </div>
 
@@ -466,6 +500,7 @@ const SUPER_ADMIN='אדיר לוי';
 // מנהלים שרואים טבלת סיכום
 const SUMMARY_MANAGERS=['אדיר לוי','הודיה מזרחי','בקי ביטון'];
 const FULL_ADMIN=['אדיר לוי'];
+const CALLS_MANAGERS=['הודיה מזרחי','בקי ביטון'];
 
 // הגדרות קבוצות ומחלק
 const GROUPS=[
@@ -592,6 +627,10 @@ async function doLogin(){
   // הצג סיכום למנהלים מורשים
   if(SUMMARY_MANAGERS.includes(currentManager.name)){
     document.getElementById('summarySection').style.display='';
+  }
+  if(CALLS_MANAGERS.includes(currentManager.name)){
+    document.getElementById('managerCallsSection').style.display='';
+    loadManagerCalls();
   }
   initApp();
 }
@@ -1018,6 +1057,46 @@ async function saveEdit(){
   }
 }
 
+// ── Manager Calls ──
+async function loadManagerCalls(){
+  const today=getToday();
+  const data=await sb('/manager_calls?select=*&work_date=eq.'+today);
+  if(Array.isArray(data)&&data.length){
+    const r=data[0];
+    document.getElementById('callsOverdueInput').value=r.calls_overdue||'';
+    document.getElementById('inTreatmentInput').value=r.in_treatment_overdue||'';
+    document.getElementById('callsOldestDate').value=r.calls_oldest_date||'';
+    document.getElementById('treatmentOldestDate').value=r.treatment_oldest_date||'';
+    if(r.updated_by){
+      const t=fmtDateTime(r.updated_at);
+      document.getElementById('callsOverdueSaved').textContent='✓ '+r.updated_by+' · '+t;
+      document.getElementById('inTreatmentSaved').textContent='✓ '+r.updated_by+' · '+t;
+    }
+  }
+}
+
+async function saveManagerCalls(){
+  const today=getToday();
+  const calls=parseInt(document.getElementById('callsOverdueInput').value)||0;
+  const treat=parseInt(document.getElementById('inTreatmentInput').value)||0;
+  const callsDate=document.getElementById('callsOldestDate').value||null;
+  const treatDate=document.getElementById('treatmentOldestDate').value||null;
+  const now=new Date().toISOString();
+  const res=await fetch(SB_URL+'/manager_calls',{
+    method:'POST',
+    headers:{...H,'Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify({work_date:today,calls_overdue:calls,in_treatment_overdue:treat,calls_oldest_date:callsDate,treatment_oldest_date:treatDate,updated_by:currentManager.name,updated_at:now})
+  });
+  if(res.ok||res.status===200||res.status===201){
+    const t=fmtDateTime(now);
+    document.getElementById('callsOverdueSaved').textContent='✓ '+currentManager.name+' · '+t;
+    document.getElementById('inTreatmentSaved').textContent='✓ '+currentManager.name+' · '+t;
+    toast('נשמר ✓');
+  } else {
+    toast('שגיאה בשמירה');
+  }
+}
+
 // ── Admin Sub-tabs ──
 let adminEntryMonth='current';
 
@@ -1311,6 +1390,7 @@ setInterval(async ()=>{
   });
   // עדכן רק סיכום
   renderSummary();
+  if(CALLS_MANAGERS.includes(currentManager.name)) loadManagerCalls();
 },30000);
 </script>
 
