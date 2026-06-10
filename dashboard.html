@@ -175,6 +175,25 @@
       </div>
     </div>
 
+    <!-- MANAGER CALLS -->
+    <div class="dash-section">
+      <div class="dash-section-header">
+        <div class="dash-section-title">
+          <i class="ti ti-phone-call" style="color:#DC2626;font-size:20px"></i>
+          שיחות מנהל — מובמנט
+        </div>
+        <button class="dash-refresh" id="mcRefBtn" onclick="loadMgrCalls()">
+          <i class="ti ti-refresh" style="font-size:13px"></i> רענון
+        </button>
+      </div>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead><tr><th>סוג</th><th>כמות + מעדכן</th></tr></thead>
+          <tbody id="mgrCallsBody"><tr class="loading-row"><td colspan="2">טוען...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -195,7 +214,55 @@
       if(countdown<=0){ countdown=60; loadAll(); }
     },1000);
 
-    function loadAll(){ loadYirutim(); loadFreefit(); loadEmails(); loadTaqan(); }
+    function loadAll(){ loadYirutim(); loadFreefit(); loadEmails(); loadTaqan(); loadMgrCalls(); }
+
+    async function loadMgrCalls(){
+      spinning('mcRefBtn',true);
+      const body=document.getElementById('mgrCallsBody');
+      try{
+        const n=new Date();
+        const today=new Date(n.getTime()+3*60*60*1000).toISOString().slice(0,10);
+        const res=await fetch(SB_URL_Y+'/manager_calls?select=*&work_date=eq.'+today,{
+          headers:{'apikey':SB_KEY_Y,'Authorization':'Bearer '+SB_KEY_Y}
+        });
+        const data=await res.json();
+        if(!Array.isArray(data)||!data.length){
+          body.innerHTML='<tr class="empty-row"><td colspan="2">אין נתונים להיום</td></tr>';
+          return;
+        }
+        const r=data[0];
+        const t=r.updated_at?new Date(r.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+        body.innerHTML=`
+          <tr>
+            <td class="name-cell">שיחות מנהל בחריגה</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:28px;font-weight:900;color:#DC2626;background:#FEE2E2;padding:4px 14px;border-radius:10px">${r.calls_overdue??0}</span>
+                <div>
+                  <div style="font-size:12px;color:#888">תאריך ישן ביותר: <b style="color:#1A1A1A">${r.calls_oldest_date?new Date(r.calls_oldest_date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—'}</b></div>
+                  <div style="font-size:13px;font-weight:700;color:#1A1A1A">${r.updated_by||'—'}</div>
+                  <div style="font-size:11px;color:#AAA">${t}</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="name-cell">בטיפול לאחר שיחה</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:28px;font-weight:900;color:#D97706;background:#FEF9C3;padding:4px 14px;border-radius:10px">${r.in_treatment_overdue??0}</span>
+                <div>
+                  <div style="font-size:12px;color:#888">תאריך ישן ביותר: <b style="color:#1A1A1A">${r.treatment_oldest_date?new Date(r.treatment_oldest_date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—'}</b></div>
+                  <div style="font-size:13px;font-weight:700;color:#1A1A1A">${r.updated_by||'—'}</div>
+                  <div style="font-size:11px;color:#AAA">${t}</div>
+                </div>
+              </div>
+            </td>
+          </tr>`;
+      }catch(e){
+        body.innerHTML=`<tr class="empty-row"><td colspan="2">שגיאה</td></tr>`;
+      }finally{ spinning('mcRefBtn',false); }
+    }
 
     // ── Supabase ──
     const Y_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
