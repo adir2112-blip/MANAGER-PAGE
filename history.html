@@ -309,6 +309,7 @@ const SB_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
 const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
 const SUMMARY_MANAGERS=['אדיר לוי','הודיה מזרחי','בקי ביטון'];
+const FULL_ADMIN=['אדיר לוי'];
 
 let currentManager=null, currentPeriod='month', historyData=[];
 
@@ -559,10 +560,20 @@ function setClHistPeriod(p){
 }
 
 async function loadClManagersSelect(){
-  const data=await sb('/managers?select=name&order=name.asc');
-  if(!Array.isArray(data)) return;
   const sel=document.getElementById('clHistManager');
-  if(sel) sel.innerHTML='<option value="">כל המנהלים</option>'+data.map(m=>`<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}</option>`).join('');
+  if(!sel) return;
+  // תמיד אפס disabled
+  sel.disabled=false;
+  // אדיר רואה כולם, אחרים רואים רק את עצמם
+  if(!FULL_ADMIN.includes(currentManager.name)){
+    sel.innerHTML=`<option value="${currentManager.name.replace(/"/g,'&quot;')}">${currentManager.name}</option>`;
+    sel.disabled=true;
+    return;
+  }
+  const data=await sb('/managers?select=name&order=name.asc');
+  if(Array.isArray(data)){
+    sel.innerHTML='<option value="">כל המנהלים</option>'+data.map(m=>`<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}</option>`).join('');
+  }
 }
 
 async function loadClHistory(){
@@ -574,7 +585,12 @@ async function loadClHistory(){
   else if(clHistPeriod==='prev'){from=new Date(y,mo-1,1).toISOString().slice(0,10);to=new Date(y,mo,0).toISOString().slice(0,10);}
   else{from=document.getElementById('clHistFrom').value;to=document.getElementById('clHistTo').value;}
   if(!from||!to){toast('בחר טווח');return;}
-  const mgrFilter=document.getElementById('clHistManager')?.value||'';
+
+  // אדיר — לפי בחירה, אחרים — רק שלהם
+  const mgrFilter=FULL_ADMIN.includes(currentManager.name)
+    ?(document.getElementById('clHistManager')?.value||'')
+    :currentManager.name;
+
   let query=`/checklist_completions?select=manager_name,work_date,item_id&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,manager_name.asc`;
   if(mgrFilter) query+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
   const comps=await sb(query);
