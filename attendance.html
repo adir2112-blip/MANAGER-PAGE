@@ -490,7 +490,27 @@
   <div class="tab-content main" id="content-checklist">
     <!-- מנהל רגיל: צ'ק ליסט שלו -->
     <div id="clManagerView">
-      <div class="group" id="clManagerCard">
+      <!-- מנהל: הוספת משימה לעצמו -->
+    <div class="admin-form" style="margin-bottom:1rem">
+      <div style="font-size:12px;font-weight:700;color:#888;margin-bottom:.6rem">➕ הוסף משימה לצ'ק ליסט שלך</div>
+      <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+        <div class="form-group"><label>שעה (אופציונלי)</label><input class="form-input" id="clSelfTime" placeholder="08:30" style="width:90px"/></div>
+        <div class="form-group" style="flex:1"><label>תיאור משימה</label><input class="form-input" id="clSelfText" placeholder="תיאור המשימה..."/></div>
+        <div class="form-group">
+          <label>יום</label>
+          <select class="form-select" id="clSelfDay" style="width:130px">
+            <option value="null">כל הימים</option>
+            <option value="0">א׳</option>
+            <option value="1">ב׳</option>
+            <option value="2">ג׳</option>
+            <option value="3">ד׳</option>
+            <option value="4">ה׳</option>
+          </select>
+        </div>
+        <button class="add-btn green" onclick="addClSelfItem()"><i class="ti ti-plus"></i> הוסף</button>
+      </div>
+    </div>
+    <div class="group" id="clManagerCard">
         <div class="group-header">
           <div class="group-title">✅ צ'ק ליסט יומי — <span id="clManagerName">—</span></div>
           <div style="display:flex;align-items:center;gap:.75rem">
@@ -765,6 +785,7 @@ function switchTab(tab){
       loadClManager();
     }
   }
+  if(tab==='tasks'){
     populateTasksAgentSelects();
     if(FULL_ADMIN.includes(currentManager.name)){
       document.getElementById('tasksManagerView').style.display='none';
@@ -1215,7 +1236,7 @@ async function loadClManager(){
   const filtered=Array.isArray(items)?items.filter(i=>i.day_of_week===null||i.day_of_week===dow):[];
   const comps=await sb('/checklist_completions?select=*&manager_name=eq.'+encodeURIComponent(currentManager.name)+'&work_date=eq.'+today);
   const doneIds={};
-  if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]=c.completed_at;});
+  if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]={completed_at:c.completed_at,notes:c.notes||''};});
   renderClManagerTasks(filtered,doneIds,today);
 }
 
@@ -1226,6 +1247,7 @@ function renderClManagerTasks(items,doneIds,today){
   let html='';
   items.forEach(item=>{
     const isDone=!!doneIds[item.id];
+    const existingNotes=doneIds[item.id]?.notes||'';
     let taskMin=null;
     if(item.task_time){const[h,m]=(item.task_time+':00').split(':');taskMin=parseInt(h)*60+parseInt(m);}
     const isFuture=taskMin!==null&&taskMin>nowMin;
@@ -1233,14 +1255,25 @@ function renderClManagerTasks(items,doneIds,today){
     if(isDone) done++;
     let cls='cl-task'+(isDone?' done':isFuture?' future':isOverdue?' overdue':'');
     const checkCls='cl-check'+(isDone?' done':isFuture?' future':'');
-    html+=`<div class="${cls}">
-      <div class="${checkCls}" onclick="${isFuture?'':(`toggleClItem('${item.id}','${today}',${isDone})`)}">
-        ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}
+    html+=`<div class="${cls}" style="flex-wrap:wrap;gap:.5rem">
+      <div style="display:flex;align-items:center;gap:.75rem;width:100%">
+        <div class="${checkCls}" onclick="${isFuture?'':(`toggleClItem('${item.id}','${today}',${isDone})`)}">
+          ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}
+        </div>
+        <span class="cl-time">${item.task_time||''}</span>
+        <span class="cl-text">${item.task_text}</span>
+        ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id]?.completed_at||doneIds[item.id])}</span>`:''}
+        ${isOverdue?`<span class="cl-overdue-badge">⚠ לא בוצע</span>`:''}
       </div>
-      <span class="cl-time">${item.task_time||''}</span>
-      <span class="cl-text">${item.task_text}</span>
-      ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id])}</span>`:''}
-      ${isOverdue?`<span class="cl-overdue-badge">⚠ לא בוצע</span>`:''}
+      <div style="display:flex;align-items:center;gap:.5rem;padding-right:2.5rem;width:100%">
+        <input type="text" placeholder="הוסף הערה..." value="${existingNotes}" id="clnote_${item.id}"
+          style="flex:1;background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:8px;padding:4px 10px;font-size:12px;font-family:'Heebo',sans-serif;color:#1A1A1A;outline:none"
+          onfocus="this.style.borderColor='#1A1A1A'" onblur="this.style.borderColor='#E8E4DC'"
+          ${isFuture?'disabled':''}/>
+        <button onclick="saveClNote('${item.id}','${today}')" 
+          style="background:#1A1A1A;color:#fff;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif;white-space:nowrap"
+          ${isFuture?'disabled':''}>שמור הערה</button>
+      </div>
     </div>`;
   });
   document.getElementById('clTasksList').innerHTML=html||'<div class="empty-msg">אין משימות להיום</div>';
@@ -1251,11 +1284,40 @@ function renderClManagerTasks(items,doneIds,today){
   document.getElementById('clProgressBar').style.background=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
 }
 
+async function addClSelfItem(){
+  const time=document.getElementById('clSelfTime').value.trim()||null;
+  const text=document.getElementById('clSelfText').value.trim();
+  const dayVal=document.getElementById('clSelfDay').value;
+  const day=dayVal==='null'?null:parseInt(dayVal);
+  if(!text){toast('הזן תיאור משימה');return;}
+  await fetch(SB_URL+'/checklist_items',{method:'POST',headers:H,body:JSON.stringify({
+    manager_name:currentManager.name,task_text:text,task_time:time,day_of_week:day,sort_order:99,active:true
+  })});
+  document.getElementById('clSelfTime').value='';
+  document.getElementById('clSelfText').value='';
+  toast('נוסף ✓');
+  loadClManager();
+}
+
+async function saveClNote(itemId,today){
+  const notes=document.getElementById('clnote_'+itemId)?.value||'';
+  // אם כבר קיים — עדכן; אם לא — צור
+  const existing=await sb('/checklist_completions?select=id&item_id=eq.'+itemId+'&work_date=eq.'+today);
+  if(Array.isArray(existing)&&existing.length){
+    await fetch(SB_URL+'/checklist_completions?id=eq.'+existing[0].id,{method:'PATCH',headers:H,body:JSON.stringify({notes})});
+  } else {
+    await fetch(SB_URL+'/checklist_completions',{method:'POST',headers:H,body:JSON.stringify({item_id:itemId,manager_name:currentManager.name,work_date:today,completed_at:new Date().toISOString(),notes})});
+  }
+  toast('הערה נשמרה ✓');
+  loadClManager();
+}
+
 async function toggleClItem(itemId,today,isDone){
   if(isDone){
     await fetch(SB_URL+'/checklist_completions?item_id=eq.'+itemId+'&work_date=eq.'+today,{method:'DELETE',headers:H});
   } else {
-    await fetch(SB_URL+'/checklist_completions',{method:'POST',headers:H,body:JSON.stringify({item_id:itemId,manager_name:currentManager.name,work_date:today,completed_at:new Date().toISOString()})});
+    const notes=document.getElementById('clnote_'+itemId)?.value||'';
+    await fetch(SB_URL+'/checklist_completions',{method:'POST',headers:H,body:JSON.stringify({item_id:itemId,manager_name:currentManager.name,work_date:today,completed_at:new Date().toISOString(),notes})});
   }
   loadClManager();
 }
@@ -1274,7 +1336,7 @@ async function loadClOverview(){
     if(!filtered.length) continue;
     const comps=await sb('/checklist_completions?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&work_date=eq.'+today);
     const doneIds={};
-    if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]=c.completed_at;});
+    if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]={completed_at:c.completed_at,notes:c.notes||''};});
     const done=filtered.filter(i=>doneIds[i.id]).length;
     const pct=filtered.length?Math.round(done/filtered.length*100):0;
     const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
@@ -1297,13 +1359,17 @@ async function loadClOverview(){
       <div id="cle_${uid}" style="display:none">
         ${filtered.map(item=>{
           const isDone=!!doneIds[item.id];
+          const notes=doneIds[item.id]?.notes||'';
           return`<div class="cl-task${isDone?' done':''}">
             <div class="cl-check${isDone?' done':''}">
               ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}
             </div>
             <span class="cl-time">${item.task_time||''}</span>
-            <span class="cl-text">${item.task_text}</span>
-            ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id])}</span>`:''}
+            <div style="flex:1">
+              <div class="cl-text">${item.task_text}</div>
+              ${notes?`<div style="font-size:11px;color:#2563EB;margin-top:2px">💬 ${notes}</div>`:''}
+            </div>
+            ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id]?.completed_at||doneIds[item.id])}</span>`:''}
           </div>`;
         }).join('')}
       </div>
@@ -1323,10 +1389,24 @@ function toggleClExpand(uid){
 async function loadClEdit(){
   const mgr=document.getElementById('clEditManager')?.value;
   if(!mgr){document.getElementById('clEditList').innerHTML='<div class="empty-msg">בחר מנהל</div>';return;}
-  let query=`/checklist_items?select=*&manager_name=eq.${encodeURIComponent(mgr)}&active=eq.true&order=task_time.asc.nullslast,sort_order.asc`;
-  if(clEditDay!==null) query+=`&day_of_week=eq.${clEditDay}`;
-  else query+=`&day_of_week=is.null`;
-  const items=await sb(query);
+  let items;
+  if(clEditDay===null){
+    // כל הימים — רק null
+    items=await sb(`/checklist_items?select=*&manager_name=eq.${encodeURIComponent(mgr)}&active=eq.true&day_of_week=is.null&order=task_time.asc.nullslast,sort_order.asc`);
+  } else {
+    // יום ספציפי — הבא גם null (כל הימים) וגם הספציפי
+    const [allDays,specific]=await Promise.all([
+      sb(`/checklist_items?select=*&manager_name=eq.${encodeURIComponent(mgr)}&active=eq.true&day_of_week=is.null&order=task_time.asc.nullslast`),
+      sb(`/checklist_items?select=*&manager_name=eq.${encodeURIComponent(mgr)}&active=eq.true&day_of_week=eq.${clEditDay}&order=task_time.asc.nullslast`)
+    ]);
+    // מיזוג וסידור לפי שעה
+    const all=[...(Array.isArray(allDays)?allDays:[]),...(Array.isArray(specific)?specific:[])];
+    all.sort((a,b)=>{
+      const ta=a.task_time||'99:99', tb=b.task_time||'99:99';
+      return ta.localeCompare(tb);
+    });
+    items=all;
+  }
   if(!Array.isArray(items)||!items.length){
     document.getElementById('clEditList').innerHTML='<div class="empty-msg">אין משימות — הוסף למטה</div>';
     return;
@@ -1335,6 +1415,7 @@ async function loadClEdit(){
     <div class="cl-task">
       <span class="cl-time">${item.task_time||'—'}</span>
       <span class="cl-text" style="flex:1">${item.task_text}</span>
+      <span style="font-size:10px;color:#AAA;padding:2px 6px;background:#F0EDE6;border-radius:4px;margin-left:4px">${item.day_of_week===null?'כל הימים':['א׳','ב׳','ג׳','ד׳','ה׳'][item.day_of_week]||''}</span>
       <button class="del-btn" data-id="${item.id}" onclick="delClItem(this)">מחק</button>
     </div>`).join('');
 }
