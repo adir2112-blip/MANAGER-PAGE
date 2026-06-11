@@ -149,6 +149,7 @@
     <div style="display:flex;gap:.4rem;margin-bottom:1.2rem">
       <button class="period-tab active" id="mainTabHistory" onclick="switchMainTab('history')">📊 היסטוריה תקינה</button>
       <button class="period-tab" id="mainTabCalls" onclick="switchMainTab('calls')">📞 חריגות שיחות מנהל</button>
+      <button class="period-tab" id="mainTabChecklist" onclick="switchMainTab('checklist')">✅ היסטוריית צ'ק ליסט</button>
     </div>
 
     <!-- TAB: HISTORY -->
@@ -254,6 +255,45 @@
             <tbody id="callsHistoryBody">
               <tr class="loading-row"><td colspan="6">בחר תקופה ולחץ הצג</td></tr>
             </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CHECKLIST -->
+    <div id="paneChecklist" style="display:none">
+      <div class="filters-bar">
+        <div class="filter-group">
+          <div class="filter-label">מנהל</div>
+          <select class="filter-select" id="clHistManager" style="min-width:180px" onchange="loadClHistory()">
+            <option value="">כל המנהלים</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">תקופה</div>
+          <div class="period-tabs">
+            <button class="period-tab active" id="clHistTabMonth" onclick="setClHistPeriod('month')">חודש נוכחי</button>
+            <button class="period-tab" id="clHistTabPrev" onclick="setClHistPeriod('prev')">חודש קודם</button>
+            <button class="period-tab" id="clHistTabRange" onclick="setClHistPeriod('range')">טווח</button>
+          </div>
+        </div>
+        <div class="filter-group" id="clHistRangeGroup" style="display:none">
+          <div class="filter-label">מתאריך</div><input class="filter-input" type="date" id="clHistFrom"/>
+        </div>
+        <div class="filter-group" id="clHistRangeGroup2" style="display:none">
+          <div class="filter-label">עד תאריך</div><input class="filter-input" type="date" id="clHistTo"/>
+        </div>
+        <button class="filter-btn" onclick="loadClHistory()"><i class="ti ti-search"></i> הצג</button>
+      </div>
+      <div class="results-wrap">
+        <div class="results-header">
+          <div class="results-title"><i class="ti ti-checkbox" style="font-size:16px;color:#16A34A"></i> היסטוריית צ'ק ליסט</div>
+          <span class="results-count" id="clHistCount"></span>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th></th><th>תאריך</th><th>מנהל</th><th>ציון</th><th>בוצעו</th><th>לא בוצעו</th></tr></thead>
+            <tbody id="clHistBody"><tr class="loading-row"><td colspan="6">בחר פרמטרים ולחץ הצג</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -428,10 +468,13 @@ function exportExcel(){
 
 // ── Main tab switch ──
 function switchMainTab(tab){
-  document.getElementById('mainTabHistory').classList.toggle('active',tab==='history');
-  document.getElementById('mainTabCalls').classList.toggle('active',tab==='calls');
-  document.getElementById('paneHistory').style.display=tab==='history'?'':'none';
-  document.getElementById('paneCalls').style.display=tab==='calls'?'':'none';
+  ['history','calls','checklist'].forEach(t=>{
+    const btn=document.getElementById('mainTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    const pane=document.getElementById('pane'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(btn) btn.classList.toggle('active',t===tab);
+    if(pane) pane.style.display=t===tab?'':'none';
+  });
+  if(tab==='checklist'){ loadClManagersSelect(); loadClHistory(); }
 }
 
 // ── Calls period ──
@@ -500,6 +543,99 @@ function exportCallsExcel(){
   XLSX.utils.book_append_sheet(wb,ws,'חריגות');
   XLSX.writeFile(wb,'חריגות_שיחות_מנהל.xlsx');
   toast('הקובץ הורד ✓');
+}
+
+// ── Checklist History ──
+let clHistPeriod='month';
+
+function setClHistPeriod(p){
+  clHistPeriod=p;
+  ['month','prev','range'].forEach(x=>{
+    const el=document.getElementById('clHistTab'+x.charAt(0).toUpperCase()+x.slice(1));
+    if(el) el.classList.toggle('active',x===p);
+  });
+  document.getElementById('clHistRangeGroup').style.display=p==='range'?'':'none';
+  document.getElementById('clHistRangeGroup2').style.display=p==='range'?'':'none';
+}
+
+async function loadClManagersSelect(){
+  const data=await sb('/managers?select=name&order=name.asc');
+  if(!Array.isArray(data)) return;
+  const sel=document.getElementById('clHistManager');
+  if(sel) sel.innerHTML='<option value="">כל המנהלים</option>'+data.map(m=>`<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}</option>`).join('');
+}
+
+async function loadClHistory(){
+  const body=document.getElementById('clHistBody');
+  body.innerHTML='<tr class="loading-row"><td colspan="6">טוען...</td></tr>';
+  const n=new Date(); const y=n.getFullYear(), mo=n.getMonth();
+  let from,to;
+  if(clHistPeriod==='month'){from=new Date(y,mo,1).toISOString().slice(0,10);to=new Date(y,mo+1,0).toISOString().slice(0,10);}
+  else if(clHistPeriod==='prev'){from=new Date(y,mo-1,1).toISOString().slice(0,10);to=new Date(y,mo,0).toISOString().slice(0,10);}
+  else{from=document.getElementById('clHistFrom').value;to=document.getElementById('clHistTo').value;}
+  if(!from||!to){toast('בחר טווח');return;}
+  const mgrFilter=document.getElementById('clHistManager')?.value||'';
+  let query=`/checklist_completions?select=manager_name,work_date,item_id&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,manager_name.asc`;
+  if(mgrFilter) query+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
+  const comps=await sb(query);
+  if(!Array.isArray(comps)||!comps.length){
+    body.innerHTML='<tr class="empty-row"><td colspan="6">אין נתונים</td></tr>';
+    document.getElementById('clHistCount').textContent='0 רשומות';
+    return;
+  }
+  // שלוף כל הפריטים
+  const items=await sb('/checklist_items?select=id,manager_name,task_time,task_text&active=eq.true');
+  const itemsByMgr={};
+  if(Array.isArray(items)) items.forEach(i=>{
+    if(!itemsByMgr[i.manager_name]) itemsByMgr[i.manager_name]=[];
+    itemsByMgr[i.manager_name].push(i);
+  });
+  // קבץ לפי מנהל + תאריך
+  const grouped={};
+  comps.forEach(c=>{
+    const key=c.work_date+'__'+c.manager_name;
+    if(!grouped[key]) grouped[key]={date:c.work_date,manager:c.manager_name,done:new Set()};
+    grouped[key].done.add(c.item_id);
+  });
+  let html=''; let count=0;
+  Object.values(grouped).sort((a,b)=>b.date.localeCompare(a.date)||a.manager.localeCompare(b.manager,'he')).forEach(g=>{
+    const allItems=itemsByMgr[g.manager]||[];
+    const total=allItems.length;
+    const done=g.done.size;
+    const pct=total?Math.round(done/total*100):0;
+    const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
+    const uid=(g.date+'_'+g.manager).replace(/[^a-zA-Z0-9]/g,'_');
+    count++;
+    html+=`<tr class="agent-row-summary" onclick="toggleClHistRow('${uid}')">
+      <td><i class="ti ti-chevron-left expand-icon" id="clhexp_${uid}"></i></td>
+      <td style="font-weight:600;white-space:nowrap">${fmtDate(g.date)}</td>
+      <td style="font-weight:700">${g.manager}</td>
+      <td><span style="font-size:18px;font-weight:900;color:${color}">${pct}%</span></td>
+      <td style="color:#16A34A;font-weight:700">${done}</td>
+      <td style="color:#DC2626;font-weight:700">${Math.max(0,total-done)}</td>
+    </tr>
+    <tr id="clhdet_${uid}" style="display:none;background:#FAFAF8">
+      <td colspan="6" style="padding:.75rem 1.2rem">
+        ${allItems.map(item=>{
+          const isDone=g.done.has(item.id);
+          return`<span style="display:inline-flex;align-items:center;gap:4px;margin:.2rem .4rem;font-size:12px;font-weight:600;padding:3px 9px;border-radius:6px;background:${isDone?'#DCFCE7':'#FEE2E2'};color:${isDone?'#166534':'#991B1B'}">
+            ${isDone?'✓':'✗'} ${item.task_time?item.task_time+' — ':''} ${item.task_text}
+          </span>`;
+        }).join('')}
+      </td>
+    </tr>`;
+  });
+  document.getElementById('clHistCount').textContent=count+' רשומות';
+  body.innerHTML=html||'<tr class="empty-row"><td colspan="6">אין נתונים</td></tr>';
+}
+
+function toggleClHistRow(uid){
+  const el=document.getElementById('clhdet_'+uid);
+  const icon=document.getElementById('clhexp_'+uid);
+  if(!el) return;
+  const isOpen=el.style.display!=='none';
+  el.style.display=isOpen?'none':'';
+  icon?.classList.toggle('open',!isOpen);
 }
 
 loadManagers();
