@@ -539,7 +539,19 @@
           </select>
           <span style="font-size:12px;color:#AAA" id="clOverviewDate"></span>
         </div>
-        <div id="clOverviewList"></div>
+      <!-- טבלת חריגות -->
+      <div class="summary-wrap" style="margin-bottom:1.2rem" id="clOverdueSummaryWrap">
+        <div class="summary-header">
+          <i class="ti ti-alert-triangle" style="font-size:16px;color:#DC2626"></i>
+          <span class="summary-header-title">משימות בחריגה — לא בוצעו</span>
+          <span style="font-size:11px;color:#AAA;margin-right:auto" id="clOverdueTime"></span>
+        </div>
+        <table class="summary-tbl">
+          <thead><tr><th>שם מנהל</th><th>לא בוצעו</th><th>המשימה הישנה ביותר</th><th>זמן שעבר</th></tr></thead>
+          <tbody id="clOverdueSummaryBody"><tr><td colspan="4" class="loading-msg">טוען...</td></tr></tbody>
+        </table>
+      </div>
+      <div id="clOverviewList"></div>
       </div>
 
       <!-- עריכה -->
@@ -1325,11 +1337,16 @@ async function toggleClItem(itemId,today,isDone){
 async function loadClOverview(){
   const today=getToday();
   const dow=getTodayDow();
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
   const el=document.getElementById('clOverviewDate');
   if(el) el.textContent=formatDateHe(today);
+  document.getElementById('clOverdueTime').textContent=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
   const filterMgr=document.getElementById('clFilterManager')?.value||'';
   const managers=filterMgr?allManagers.filter(m=>m.name===filterMgr):allManagers;
-  let html='';
+
+  let overdueRows='', overviewHtml='';
+
   for(const mgr of managers){
     const items=await sb('/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&active=eq.true&order=task_time.asc.nullslast');
     const filtered=Array.isArray(items)?items.filter(i=>i.day_of_week===null||i.day_of_week===dow):[];
@@ -1342,11 +1359,42 @@ async function loadClOverview(){
     const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
     const bg=pct>=80?'#DCFCE7':pct>=50?'#FEF9C3':'#FEE2E2';
     const uid=mgr.name.replace(/[^a-zA-Z0-9]/g,'_');
-    html+=`<div class="cl-manager-card">
+
+    // חישוב חריגות — משימות שעברה שעתן ולא בוצעו
+    const overdue=filtered.filter(i=>{
+      if(doneIds[i.id]) return false;
+      if(!i.task_time) return false;
+      const[h,m]=(i.task_time+':00').split(':');
+      const taskMin=parseInt(h)*60+parseInt(m);
+      return taskMin<=nowMin;
+    });
+
+    if(overdue.length>0){
+      // מצא הישן ביותר
+      const oldest=overdue.reduce((a,b)=>{
+        const ta=a.task_time||'00:00', tb=b.task_time||'00:00';
+        return ta<tb?a:b;
+      });
+      const[oh,om]=(oldest.task_time+':00').split(':');
+      const oldestMin=parseInt(oh)*60+parseInt(om);
+      const diffMin=nowMin-oldestMin;
+      const diffH=Math.floor(diffMin/60), diffM=diffMin%60;
+      const diffStr=diffH>0?`${diffH}ש׳ ${diffM}ד׳`:`${diffM} דקות`;
+      overdueRows+=`<tr style="background:#FEF2F2">
+        <td style="font-weight:700">${mgr.name}</td>
+        <td><span style="font-size:18px;font-weight:900;color:#DC2626">${overdue.length}</span></td>
+        <td style="font-size:13px;color:#555">${oldest.task_time} — ${oldest.task_text}</td>
+        <td><span style="font-size:12px;font-weight:700;color:#DC2626;background:#FEE2E2;padding:2px 8px;border-radius:6px">${diffStr} בחריגה</span></td>
+      </tr>`;
+    }
+
+    // overview card
+    overviewHtml+=`<div class="cl-manager-card">
       <div class="cl-manager-header" onclick="toggleClExpand('${uid}')">
         <div style="display:flex;align-items:center;gap:.75rem">
           <i class="ti ti-chevron-left expand-icon" id="expic_${uid}"></i>
           <span style="font-weight:700;font-size:14px">${mgr.name}</span>
+          ${overdue.length>0?`<span style="font-size:11px;font-weight:700;color:#DC2626;background:#FEE2E2;padding:2px 7px;border-radius:6px">⚠ ${overdue.length} בחריגה</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
           <div style="width:120px;height:6px;background:#F0EDE6;border-radius:999px;overflow:hidden">
@@ -1375,7 +1423,9 @@ async function loadClOverview(){
       </div>
     </div>`;
   }
-  document.getElementById('clOverviewList').innerHTML=html||'<div class="empty-msg">אין מנהלים עם צ׳ק ליסט</div>';
+
+  document.getElementById('clOverdueSummaryBody').innerHTML=overdueRows||'<tr><td colspan="4" style="text-align:center;color:#16A34A;padding:1rem;font-weight:700">✓ אין חריגות כרגע</td></tr>';
+  document.getElementById('clOverviewList').innerHTML=overviewHtml||'<div class="empty-msg">אין מנהלים עם צ׳ק ליסט</div>';
 }
 
 function toggleClExpand(uid){
@@ -1757,6 +1807,18 @@ window.addEventListener('load',()=>{
   const m=document.getElementById('editModal');
   if(m) m.addEventListener('click',function(e){if(e.target===this)closeEditModal();});
 });
+
+// רענון אוטומטי לצ'ק ליסט כל 60 שניות (רק כשהטאב פתוח)
+setInterval(()=>{
+  if(!currentManager) return;
+  const tab=document.getElementById('content-checklist');
+  if(!tab||!tab.classList.contains('active')) return;
+  if(FULL_ADMIN.includes(currentManager.name)){
+    loadClOverview();
+  } else {
+    loadClManager();
+  }
+},60000);
 
 // רענון אוטומטי כל 30 שניות — שומר על מה שהמשתמש הזין
 setInterval(async ()=>{
