@@ -156,7 +156,32 @@
     .expand-icon{transition:transform .2s}
     .expand-icon.open{transform:rotate(90deg)}
 
-    .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
+    /* CHECKLIST */
+    .cl-task{display:flex;align-items:center;gap:.75rem;padding:.65rem 1.2rem;border-bottom:1px solid #F8F6F2;transition:background .15s}
+    .cl-task:last-child{border-bottom:none}
+    .cl-task:hover{background:#FAFAF8}
+    .cl-task.future{opacity:.45}
+    .cl-task.done{background:#F0FDF4}
+    .cl-task.overdue{background:#FEF2F2}
+    .cl-check{width:22px;height:22px;border-radius:6px;border:2px solid #E8E4DC;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s}
+    .cl-check:hover{border-color:#1A1A1A}
+    .cl-check.done{background:#16A34A;border-color:#16A34A;color:#fff}
+    .cl-check.future{cursor:not-allowed;opacity:.4}
+    .cl-time{font-size:11px;font-weight:700;color:#2563EB;min-width:38px;flex-shrink:0}
+    .cl-text{font-size:13.5px;font-weight:600;color:#1A1A1A;flex:1}
+    .cl-task.done .cl-text{text-decoration:line-through;color:#AAA}
+    .cl-done-at{font-size:10.5px;color:#16A34A;font-weight:600;white-space:nowrap}
+    .cl-overdue-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:#FEE2E2;color:#991B1B}
+    .cl-progress{height:6px;background:#F0EDE6;border-radius:999px;overflow:hidden;margin:.5rem 1.4rem}
+    .cl-progress-bar{height:100%;border-radius:999px;background:#16A34A;transition:width .3s}
+    .cl-score{font-size:22px;font-weight:900;letter-spacing:-1px}
+    .cl-manager-card{background:#fff;border:1px solid #E8E4DC;border-radius:14px;overflow:hidden;margin-bottom:.75rem;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+    .cl-manager-header{padding:.75rem 1.2rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid #F0EDE6;background:#FAFAF8}
+    .cl-manager-header:hover{background:#F0EDE6}
+    .cl-day-tabs{display:flex;gap:.3rem;flex-wrap:wrap}
+    .cl-day-tab{background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:7px;padding:4px 10px;font-size:11.5px;font-weight:600;color:#888;cursor:pointer;font-family:'Heebo',sans-serif;transition:all .18s}
+    .cl-day-tab:hover{border-color:#C8C4BC}
+    .cl-day-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A};background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .loading-msg{text-align:center;color:#AAA;padding:2rem;font-size:13px}
     .empty-msg{text-align:center;color:#C0BDB6;padding:1.5rem;font-size:13px}
@@ -215,6 +240,7 @@
     <div class="nav-tab active" onclick="switchTab('hours')" id="tab-hours">⏱️ שעות עבודה</div>
     <div class="nav-tab" onclick="switchTab('agents')" id="tab-agents">👥 נציגים</div>
     <div class="nav-tab" onclick="switchTab('tasks')" id="tab-tasks">⭐ משימות מיוחדות</div>
+    <div class="nav-tab" onclick="switchTab('checklist')" id="tab-checklist" style="display:none">✅ צ'ק ליסט</div>
     <div class="nav-tab" onclick="window.open('history.html','_blank')" id="tab-history">📊 היסטוריה</div>
     <div class="nav-tab admin-tab" onclick="switchTab('admin')" id="tab-admin" style="display:none">⚙️ מנהלים</div>
   </div>
@@ -460,6 +486,80 @@
     </div>
   </div>
 
+  <!-- CHECKLIST TAB -->
+  <div class="tab-content main" id="content-checklist">
+    <!-- מנהל רגיל: צ'ק ליסט שלו -->
+    <div id="clManagerView">
+      <div class="group" id="clManagerCard">
+        <div class="group-header">
+          <div class="group-title">✅ צ'ק ליסט יומי — <span id="clManagerName">—</span></div>
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <span id="clManagerScore" class="cl-score" style="color:#16A34A">—%</span>
+            <span style="font-size:11px;color:#AAA" id="clManagerDate"></span>
+          </div>
+        </div>
+        <div class="cl-progress"><div class="cl-progress-bar" id="clProgressBar" style="width:0%"></div></div>
+        <div id="clTasksList"></div>
+      </div>
+    </div>
+
+    <!-- אדיר: סקירה + עריכה -->
+    <div id="clAdminView" style="display:none">
+      <!-- סאב-טאבים -->
+      <div style="display:flex;gap:.4rem;margin-bottom:1.2rem">
+        <button class="tasks-month-tab active" id="clSubOverview" onclick="setClSubTab('overview')">📊 סקירה</button>
+        <button class="tasks-month-tab" id="clSubEdit" onclick="setClSubTab('edit')">✏️ עריכת צ'ק ליסט</button>
+      </div>
+
+      <!-- סקירה -->
+      <div id="clOverviewPane">
+        <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap">
+          <select class="tasks-agent-select" id="clFilterManager" onchange="loadClOverview()" style="min-width:180px">
+            <option value="">כל המנהלים</option>
+          </select>
+          <span style="font-size:12px;color:#AAA" id="clOverviewDate"></span>
+        </div>
+        <div id="clOverviewList"></div>
+      </div>
+
+      <!-- עריכה -->
+      <div id="clEditPane" style="display:none">
+        <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.2rem">
+          <div class="form-group">
+            <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">מנהל</label>
+            <select class="tasks-agent-select" id="clEditManager" onchange="loadClEdit()" style="min-width:180px">
+              <option value="">— בחר מנהל —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">יום</label>
+            <div class="cl-day-tabs" id="clDayTabs">
+              <button class="cl-day-tab active" onclick="setClDay(null)" id="cld_null">כל הימים</button>
+              <button class="cl-day-tab" onclick="setClDay(0)" id="cld_0">א׳</button>
+              <button class="cl-day-tab" onclick="setClDay(1)" id="cld_1">ב׳</button>
+              <button class="cl-day-tab" onclick="setClDay(2)" id="cld_2">ג׳</button>
+              <button class="cl-day-tab" onclick="setClDay(3)" id="cld_3">ד׳</button>
+              <button class="cl-day-tab" onclick="setClDay(4)" id="cld_4">ה׳</button>
+            </div>
+          </div>
+        </div>
+        <!-- הוסף משימה -->
+        <div class="admin-form" style="margin-bottom:1rem">
+          <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group"><label>שעה (אופציונלי)</label><input class="form-input" id="clNewTime" placeholder="08:30" style="width:90px"/></div>
+            <div class="form-group" style="flex:1"><label>תיאור משימה</label><input class="form-input" id="clNewText" placeholder="תיאור המשימה..."/></div>
+            <button class="add-btn green" onclick="addClItem()"><i class="ti ti-plus"></i> הוסף</button>
+          </div>
+        </div>
+        <!-- רשימת משימות -->
+        <div class="group">
+          <div class="group-header"><div class="group-title">משימות</div></div>
+          <div id="clEditList"><div class="empty-msg">בחר מנהל</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ADMIN -->
   <div class="tab-content main" id="content-admin">
     <div class="admin-section">
@@ -623,6 +723,9 @@ async function doLogin(){
   // הצג לשונית מנהלים רק לsuper admin
   if(FULL_ADMIN.includes(currentManager.name)){
     document.getElementById('tab-admin').style.display='';
+    document.getElementById('tab-checklist').style.display='';
+  } else {
+    document.getElementById('tab-checklist').style.display='';
   }
   // הצג סיכום למנהלים מורשים
   if(SUMMARY_MANAGERS.includes(currentManager.name)){
@@ -651,7 +754,17 @@ function switchTab(tab){
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='agents') loadAgentsTable();
   if(tab==='admin') loadManagersTable();
-  if(tab==='tasks'){
+  if(tab==='checklist'){
+    if(FULL_ADMIN.includes(currentManager.name)){
+      document.getElementById('clManagerView').style.display='none';
+      document.getElementById('clAdminView').style.display='';
+      loadAllManagers().then(()=>{populateClSelects();loadClOverview();});
+    } else {
+      document.getElementById('clManagerView').style.display='';
+      document.getElementById('clAdminView').style.display='none';
+      loadClManager();
+    }
+  }
     populateTasksAgentSelects();
     if(FULL_ADMIN.includes(currentManager.name)){
       document.getElementById('tasksManagerView').style.display='none';
@@ -1055,6 +1168,194 @@ async function saveEdit(){
     toast('עודכן ✓'); closeEditModal();
     await loadAllAgents(); await loadTodayHours(getToday()); renderAll(getToday()); loadAgentsTable();
   }
+}
+
+// ── Checklist ──
+let clEditDay=null, clEditManagerName='';
+const DAYS_HE=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
+function getTodayDow(){ return new Date().getDay(); }
+
+function setClSubTab(tab){
+  document.getElementById('clSubOverview').classList.toggle('active',tab==='overview');
+  document.getElementById('clSubEdit').classList.toggle('active',tab==='edit');
+  document.getElementById('clOverviewPane').style.display=tab==='overview'?'':'none';
+  document.getElementById('clEditPane').style.display=tab==='edit'?'':'none';
+  if(tab==='overview') loadClOverview();
+}
+
+function setClDay(day){
+  clEditDay=day;
+  document.querySelectorAll('.cl-day-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('cld_'+day).classList.add('active');
+  loadClEdit();
+}
+
+function populateClSelects(){
+  const data=allManagers||[];
+  const opts=data.map(m=>`<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}</option>`).join('');
+  const el1=document.getElementById('clFilterManager');
+  const el2=document.getElementById('clEditManager');
+  if(el1) el1.innerHTML='<option value="">כל המנהלים</option>'+opts;
+  if(el2) el2.innerHTML='<option value="">— בחר מנהל —</option>'+opts;
+}
+
+let allManagers=[];
+async function loadAllManagers(){
+  const data=await sb('/managers?select=*&order=name.asc');
+  allManagers=Array.isArray(data)?data:[];
+}
+
+async function loadClManager(){
+  const today=getToday();
+  const dow=getTodayDow();
+  document.getElementById('clManagerName').textContent=currentManager.name;
+  document.getElementById('clManagerDate').textContent=formatDateHe(today);
+  const items=await sb('/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(currentManager.name)+'&active=eq.true&order=task_time.asc.nullslast,sort_order.asc');
+  const filtered=Array.isArray(items)?items.filter(i=>i.day_of_week===null||i.day_of_week===dow):[];
+  const comps=await sb('/checklist_completions?select=*&manager_name=eq.'+encodeURIComponent(currentManager.name)+'&work_date=eq.'+today);
+  const doneIds={};
+  if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]=c.completed_at;});
+  renderClManagerTasks(filtered,doneIds,today);
+}
+
+function renderClManagerTasks(items,doneIds,today){
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  let done=0;
+  let html='';
+  items.forEach(item=>{
+    const isDone=!!doneIds[item.id];
+    let taskMin=null;
+    if(item.task_time){const[h,m]=(item.task_time+':00').split(':');taskMin=parseInt(h)*60+parseInt(m);}
+    const isFuture=taskMin!==null&&taskMin>nowMin;
+    const isOverdue=taskMin!==null&&!isDone&&taskMin<=nowMin;
+    if(isDone) done++;
+    let cls='cl-task'+(isDone?' done':isFuture?' future':isOverdue?' overdue':'');
+    const checkCls='cl-check'+(isDone?' done':isFuture?' future':'');
+    html+=`<div class="${cls}">
+      <div class="${checkCls}" onclick="${isFuture?'':(`toggleClItem('${item.id}','${today}',${isDone})`)}">
+        ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}
+      </div>
+      <span class="cl-time">${item.task_time||''}</span>
+      <span class="cl-text">${item.task_text}</span>
+      ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id])}</span>`:''}
+      ${isOverdue?`<span class="cl-overdue-badge">⚠ לא בוצע</span>`:''}
+    </div>`;
+  });
+  document.getElementById('clTasksList').innerHTML=html||'<div class="empty-msg">אין משימות להיום</div>';
+  const pct=items.length?Math.round(done/items.length*100):0;
+  document.getElementById('clManagerScore').textContent=pct+'%';
+  document.getElementById('clManagerScore').style.color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
+  document.getElementById('clProgressBar').style.width=pct+'%';
+  document.getElementById('clProgressBar').style.background=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
+}
+
+async function toggleClItem(itemId,today,isDone){
+  if(isDone){
+    await fetch(SB_URL+'/checklist_completions?item_id=eq.'+itemId+'&work_date=eq.'+today,{method:'DELETE',headers:H});
+  } else {
+    await fetch(SB_URL+'/checklist_completions',{method:'POST',headers:H,body:JSON.stringify({item_id:itemId,manager_name:currentManager.name,work_date:today,completed_at:new Date().toISOString()})});
+  }
+  loadClManager();
+}
+
+async function loadClOverview(){
+  const today=getToday();
+  const dow=getTodayDow();
+  const el=document.getElementById('clOverviewDate');
+  if(el) el.textContent=formatDateHe(today);
+  const filterMgr=document.getElementById('clFilterManager')?.value||'';
+  const managers=filterMgr?allManagers.filter(m=>m.name===filterMgr):allManagers;
+  let html='';
+  for(const mgr of managers){
+    const items=await sb('/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&active=eq.true&order=task_time.asc.nullslast');
+    const filtered=Array.isArray(items)?items.filter(i=>i.day_of_week===null||i.day_of_week===dow):[];
+    if(!filtered.length) continue;
+    const comps=await sb('/checklist_completions?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&work_date=eq.'+today);
+    const doneIds={};
+    if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]=c.completed_at;});
+    const done=filtered.filter(i=>doneIds[i.id]).length;
+    const pct=filtered.length?Math.round(done/filtered.length*100):0;
+    const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
+    const bg=pct>=80?'#DCFCE7':pct>=50?'#FEF9C3':'#FEE2E2';
+    const uid=mgr.name.replace(/[^a-zA-Z0-9]/g,'_');
+    html+=`<div class="cl-manager-card">
+      <div class="cl-manager-header" onclick="toggleClExpand('${uid}')">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <i class="ti ti-chevron-left expand-icon" id="expic_${uid}"></i>
+          <span style="font-weight:700;font-size:14px">${mgr.name}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <div style="width:120px;height:6px;background:#F0EDE6;border-radius:999px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${color};border-radius:999px"></div>
+          </div>
+          <span style="font-size:18px;font-weight:900;color:${color};background:${bg};padding:2px 10px;border-radius:8px">${pct}%</span>
+          <span style="font-size:12px;color:#AAA">${done}/${filtered.length}</span>
+        </div>
+      </div>
+      <div id="cle_${uid}" style="display:none">
+        ${filtered.map(item=>{
+          const isDone=!!doneIds[item.id];
+          return`<div class="cl-task${isDone?' done':''}">
+            <div class="cl-check${isDone?' done':''}">
+              ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}
+            </div>
+            <span class="cl-time">${item.task_time||''}</span>
+            <span class="cl-text">${item.task_text}</span>
+            ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id])}</span>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  document.getElementById('clOverviewList').innerHTML=html||'<div class="empty-msg">אין מנהלים עם צ׳ק ליסט</div>';
+}
+
+function toggleClExpand(uid){
+  const el=document.getElementById('cle_'+uid);
+  const icon=document.getElementById('expic_'+uid);
+  const isOpen=el.style.display!=='none';
+  el.style.display=isOpen?'none':'';
+  icon?.classList.toggle('open',!isOpen);
+}
+
+async function loadClEdit(){
+  const mgr=document.getElementById('clEditManager')?.value;
+  if(!mgr){document.getElementById('clEditList').innerHTML='<div class="empty-msg">בחר מנהל</div>';return;}
+  let query=`/checklist_items?select=*&manager_name=eq.${encodeURIComponent(mgr)}&active=eq.true&order=task_time.asc.nullslast,sort_order.asc`;
+  if(clEditDay!==null) query+=`&day_of_week=eq.${clEditDay}`;
+  else query+=`&day_of_week=is.null`;
+  const items=await sb(query);
+  if(!Array.isArray(items)||!items.length){
+    document.getElementById('clEditList').innerHTML='<div class="empty-msg">אין משימות — הוסף למטה</div>';
+    return;
+  }
+  document.getElementById('clEditList').innerHTML=items.map(item=>`
+    <div class="cl-task">
+      <span class="cl-time">${item.task_time||'—'}</span>
+      <span class="cl-text" style="flex:1">${item.task_text}</span>
+      <button class="del-btn" data-id="${item.id}" onclick="delClItem(this)">מחק</button>
+    </div>`).join('');
+}
+
+async function addClItem(){
+  const mgr=document.getElementById('clEditManager')?.value;
+  if(!mgr){toast('בחר מנהל');return;}
+  const time=document.getElementById('clNewTime').value.trim()||null;
+  const text=document.getElementById('clNewText').value.trim();
+  if(!text){toast('הזן תיאור משימה');return;}
+  await fetch(SB_URL+'/checklist_items',{method:'POST',headers:H,body:JSON.stringify({manager_name:mgr,task_text:text,task_time:time,day_of_week:clEditDay,sort_order:0,active:true})});
+  document.getElementById('clNewTime').value='';
+  document.getElementById('clNewText').value='';
+  toast('נוסף ✓'); loadClEdit();
+}
+
+async function delClItem(btn){
+  const id=btn.dataset.id;
+  if(!confirm('למחוק משימה?')) return;
+  await fetch(SB_URL+'/checklist_items?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({active:false})});
+  toast('נמחק ✓'); loadClEdit();
 }
 
 // ── Manager Calls ──
