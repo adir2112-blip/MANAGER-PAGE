@@ -9,7 +9,8 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Heebo',sans-serif;direction:rtl;background:#F0EDE6;min-height:100vh}
+    body{font-family:'Heebo',sans-serif;direction:rtl;background:#F0EDE6;min-height:100vh;-webkit-text-size-adjust:100%}
+    button,input,select{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
     .login-overlay{position:fixed;inset:0;background:#F0EDE6;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem}
     .login-overlay.hidden{display:none}
@@ -163,7 +164,7 @@
     .cl-task.future{opacity:.45}
     .cl-task.done{background:#F0FDF4}
     .cl-task.overdue{background:#FEF2F2}
-    .cl-check{width:22px;height:22px;border-radius:6px;border:2px solid #E8E4DC;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s}
+    .cl-check{width:26px;height:26px;border-radius:7px;border:2px solid #E8E4DC;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     .cl-check:hover{border-color:#1A1A1A}
     .cl-check.done{background:#16A34A;border-color:#16A34A;color:#fff}
     .cl-check.future{cursor:not-allowed;opacity:.4}
@@ -181,10 +182,97 @@
     .cl-day-tabs{display:flex;gap:.3rem;flex-wrap:wrap}
     .cl-day-tab{background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:7px;padding:4px 10px;font-size:11.5px;font-weight:600;color:#888;cursor:pointer;font-family:'Heebo',sans-serif;transition:all .18s}
     .cl-day-tab:hover{border-color:#C8C4BC}
-    .cl-day-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A};background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
+    .cl-day-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+
+    .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .loading-msg{text-align:center;color:#AAA;padding:2rem;font-size:13px}
     .empty-msg{text-align:center;color:#C0BDB6;padding:1.5rem;font-size:13px}
+
+    /* ══ MOBILE ══ */
+    @media(max-width:640px){
+      /* Header */
+      .header{padding:.7rem 1rem;gap:.5rem}
+      .header-title{font-size:14px}
+      .header-sub{display:none}
+      .header-clock{font-size:16px}
+      .header-logo{width:32px;height:32px}
+
+      /* Nav */
+      .nav{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 .5rem;gap:0;white-space:nowrap}
+      .nav-tab{padding:10px 12px;font-size:12px}
+
+      /* Main */
+      .main{padding:1rem .75rem}
+
+      /* Date bar */
+      .date-bar{flex-direction:column;align-items:flex-start;gap:.4rem}
+
+      /* Groups */
+      .group-header{flex-direction:column;align-items:flex-start;gap:.5rem}
+      .group-stats{gap:.75rem}
+      .group-stat-val{font-size:15px}
+
+      /* Table */
+      .tbl th,.tbl td{padding:.5rem .75rem;font-size:12px}
+      .hours-input{width:60px;font-size:13px;padding:4px 6px}
+
+      /* Save bar */
+      .save-bar{flex-direction:column;align-items:flex-start;gap:.5rem}
+      .save-bar-stats{gap:1rem}
+      .totals-num{font-size:16px}
+      .save-all-btn{width:100%;justify-content:center;padding:10px}
+
+      /* Forms */
+      .form-row{grid-template-columns:1fr 1fr!important}
+      .form-row > .form-group:last-of-type{grid-column:1/-1}
+      .form-row > button{grid-column:1/-1;width:100%}
+      .form-row-3{grid-template-columns:1fr 1fr!important}
+      .form-row-3 > button{grid-column:1/-1;width:100%}
+      .form-input,.form-select{font-size:16px!important} /* מניעת zoom ב-iOS */
+
+      /* Login */
+      .login-box{width:calc(100vw - 2rem);padding:1.5rem 1.2rem}
+
+      /* Summary */
+      .summary-tbl th,.summary-tbl td{padding:.5rem .75rem;font-size:12px}
+      .filled-chip{font-size:10px;padding:2px 6px}
+
+      /* Admin table */
+      .admin-table th,.admin-table td{padding:.5rem .6rem;font-size:12px}
+
+      /* Tasks */
+      .tasks-tbl th,.tasks-tbl td{padding:.5rem .6rem;font-size:12px}
+      .tasks-input{width:55px;font-size:13px}
+
+      /* Checklist */
+      .cl-task{padding:.5rem .75rem;gap:.5rem}
+      .cl-text{font-size:12.5px}
+      .cl-manager-header{flex-direction:column;align-items:flex-start;gap:.5rem}
+      .cl-check{width:26px;height:26px} /* גדול יותר לטאץ׳ */
+
+      /* Manager calls */
+      .manager-calls-section{padding:.75rem}
+
+      /* Download filter */
+      #downloadFilter,#agentSearch{width:100%!important}
+
+      /* Scrollable tables */
+      .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+      /* Summary section header */
+      .summary-header{flex-wrap:wrap;gap:.4rem}
+
+      /* Hide less important columns on mobile */
+      .tbl .hide-mobile{display:none}
+      .admin-table .hide-mobile{display:none}
+    }
+
+    @media(max-width:400px){
+      .nav-tab{padding:9px 9px;font-size:11px}
+      .main{padding:.75rem .5rem}
+      .group-stats{gap:.5rem}
+    }
   </style>
 </head>
 <body>
