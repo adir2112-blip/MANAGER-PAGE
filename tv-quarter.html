@@ -9,7 +9,7 @@
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{width:100%;height:100%;background:#F0EDE6;font-family:'Heebo',sans-serif;direction:rtl;overflow:hidden}
 
-    .root{display:grid;grid-template-rows:28px 1fr 1fr 1fr 1fr 1fr;height:100vh;width:100vw}
+    .root{display:grid;grid-template-rows:28px 1fr 1fr 1fr 1fr 1fr 1fr;height:100vh;width:100vw}
     .panel{user-select:none}
     .panel-btns{display:flex;gap:3px;align-items:center}
     .pbtn{width:18px;height:18px;border-radius:4px;border:none;background:#F0EDE6;color:#888;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0}
@@ -189,7 +189,7 @@
   </div>
 
   <!-- MANAGER CALLS -->
-  <div class="panel">
+  <div class="panel" id="mcPanel">
     <div class="panel-header">
       <div class="panel-label">📞 שיחות מנהל — מובמנט</div>
       <div style="display:flex;align-items:center;gap:6px">
@@ -203,6 +203,25 @@
     <div class="tbl-wrap">
       <table class="tbl">
         <tbody id="mcBody"><tr><td colspan="3" class="loading">טוען...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CHECKLIST OVERDUE -->
+  <div class="panel" id="clPanel">
+    <div class="panel-header">
+      <div class="panel-label">⚠️ צ'ק ליסט — חריגות מנהלים</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="panel-total" id="tvClTime"></div>
+        <div class="panel-btns">
+          <button class="pbtn" onclick="resizePanel('clPanel',1)" title="הגדל">+</button>
+          <button class="pbtn" onclick="resizePanel('clPanel',-1)" title="הקטן">−</button>
+        </div>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <tbody id="clOverdueBody"><tr><td colspan="3" class="loading">טוען...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -447,8 +466,50 @@
     }
   }
 
-  function loadAll(){loadFF();loadYR();loadTaqan();loadManagerCalls();}
-  function loadAllWithEmails(){loadFF();loadYR();loadEmails();loadTaqan();loadManagerCalls();}
+  async function loadClOverdue(){
+    try{
+      const now=new Date();
+      const today=new Date(now.getTime()+3*60*60*1000).toISOString().slice(0,10);
+      const nowMin=now.getHours()*60+now.getMinutes();
+      const dow=now.getDay();
+      document.getElementById('tvClTime').textContent=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+      // שלוף כל המנהלים
+      const mgrs=await fetch(Y_URL+'/managers?select=name&order=name.asc',{headers:H(Y_KEY)}).then(r=>r.json());
+      if(!Array.isArray(mgrs)||!mgrs.length){
+        document.getElementById('clOverdueBody').innerHTML='<tr><td colspan="3" class="loading">אין מנהלים</td></tr>';
+        return;
+      }
+      let html='';
+      for(const mgr of mgrs){
+        const items=await fetch(Y_URL+'/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&active=eq.true',{headers:H(Y_KEY)}).then(r=>r.json());
+        const filtered=Array.isArray(items)?items.filter(i=>(i.day_of_week===null||i.day_of_week===dow)&&i.task_time):[];
+        if(!filtered.length) continue;
+        const comps=await fetch(Y_URL+'/checklist_completions?select=item_id&manager_name=eq.'+encodeURIComponent(mgr.name)+'&work_date=eq.'+today,{headers:H(Y_KEY)}).then(r=>r.json());
+        const doneSet=new Set(Array.isArray(comps)?comps.map(c=>c.item_id):[]);
+        const overdue=filtered.filter(i=>{
+          if(doneSet.has(i.id)) return false;
+          const[h,m]=(i.task_time+':00').split(':');
+          return parseInt(h)*60+parseInt(m)<=nowMin;
+        });
+        if(!overdue.length) continue;
+        const oldest=overdue.reduce((a,b)=>a.task_time<b.task_time?a:b);
+        const[oh,om]=(oldest.task_time+':00').split(':');
+        const diffMin=nowMin-(parseInt(oh)*60+parseInt(om));
+        const diffStr=diffMin>=60?`${Math.floor(diffMin/60)}ש׳${diffMin%60?` ${diffMin%60}ד׳`:''}`:diffMin+'ד׳';
+        html+=`<tr class="ff-row">
+          <td class="ff-name" style="color:#DC2626;font-weight:700">${mgr.name}</td>
+          <td><span style="font-size:16px;font-weight:900;color:#DC2626;background:#FEE2E2;padding:2px 8px;border-radius:6px">${overdue.length}</span></td>
+          <td style="font-size:9px;color:#888;direction:rtl">${oldest.task_time}<br/><span style="color:#DC2626;font-weight:700">${diffStr} בחריגה</span></td>
+        </tr>`;
+      }
+      document.getElementById('clOverdueBody').innerHTML=html||'<tr><td colspan="3" class="loading" style="color:#16A34A">✓ אין חריגות</td></tr>';
+    }catch(e){
+      document.getElementById('clOverdueBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה</td></tr>';
+    }
+  }
+
+  function loadAll(){loadFF();loadYR();loadTaqan();loadManagerCalls();loadClOverdue();}
+  function loadAllWithEmails(){loadFF();loadYR();loadEmails();loadTaqan();loadManagerCalls();loadClOverdue();}
 
   let cd=60;
   setInterval(()=>{
