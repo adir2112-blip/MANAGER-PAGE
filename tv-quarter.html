@@ -482,7 +482,7 @@
       let html='';
       for(const mgr of mgrs){
         const items=await fetch(Y_URL+'/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&active=eq.true',{headers:H(Y_KEY)}).then(r=>r.json());
-        const filtered=Array.isArray(items)?items.filter(i=>(i.day_of_week===null||i.day_of_week===dow)&&i.task_time):[];
+        const filtered=Array.isArray(items)?items.filter(i=>(i.day_of_week===null||i.day_of_week===dow)&&i.task_time&&dow!==5&&dow!==6):[];
         if(!filtered.length) continue;
         const comps=await fetch(Y_URL+'/checklist_completions?select=item_id&manager_name=eq.'+encodeURIComponent(mgr.name)+'&work_date=eq.'+today,{headers:H(Y_KEY)}).then(r=>r.json());
         const doneSet=new Set(Array.isArray(comps)?comps.map(c=>c.item_id):[]);
