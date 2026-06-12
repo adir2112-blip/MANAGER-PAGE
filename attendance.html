@@ -1296,6 +1296,7 @@ let clEditDay=null, clEditManagerName='';
 const DAYS_HE=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
 
 function getTodayDow(){ return new Date().getDay(); }
+function isWeekend(){ const d=new Date().getDay(); return d===5||d===6; }
 
 function setClSubTab(tab){
   document.getElementById('clSubOverview').classList.toggle('active',tab==='overview');
@@ -1332,6 +1333,14 @@ async function loadClManager(){
   const dow=getTodayDow();
   document.getElementById('clManagerName').textContent=currentManager.name;
   document.getElementById('clManagerDate').textContent=formatDateHe(today);
+
+  // שישי/שבת — אין צ'ק ליסט
+  if(isWeekend()){
+    document.getElementById('clTasksList').innerHTML='<div class="empty-msg" style="padding:2rem">🎉 סוף שבוע — אין משימות היום</div>';
+    document.getElementById('clManagerScore').textContent='—';
+    document.getElementById('clProgressBar').style.width='0%';
+    return;
+  }
   const items=await sb('/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(currentManager.name)+'&active=eq.true&order=task_time.asc.nullslast,sort_order.asc');
   const filtered=Array.isArray(items)?items.filter(i=>i.day_of_week===null||i.day_of_week===dow):[];
   const comps=await sb('/checklist_completions?select=*&manager_name=eq.'+encodeURIComponent(currentManager.name)+'&work_date=eq.'+today);
@@ -1438,7 +1447,7 @@ async function loadClOverview(){
   for(const mgr of managers){
     const items=await sb('/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&active=eq.true&order=task_time.asc.nullslast');
     const filtered=Array.isArray(items)?items.filter(i=>i.day_of_week===null||i.day_of_week===dow):[];
-    if(!filtered.length) continue;
+    if(!filtered.length||dow===5||dow===6) continue;
     const comps=await sb('/checklist_completions?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&work_date=eq.'+today);
     const doneIds={};
     if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]={completed_at:c.completed_at,notes:c.notes||''};});
@@ -1907,6 +1916,64 @@ setInterval(()=>{
     loadClManager();
   }
 },60000);
+
+// ── Task Alerts ──
+let alertedTasks=new Set();
+let blinkInterval=null;
+const origTitle=document.title;
+
+function playBeep(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.value=880;osc.type='sine';
+    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+    osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.4);
+  }catch(e){}
+}
+
+function startTabBlink(taskText){
+  if(blinkInterval) return;
+  let show=true;
+  blinkInterval=setInterval(()=>{
+    document.title=show?('⚠️ '+taskText):origTitle;
+    show=!show;
+  },1000);
+  // עצור אחרי 30 שניות
+  setTimeout(()=>{
+    clearInterval(blinkInterval);
+    blinkInterval=null;
+    document.title=origTitle;
+  },30000);
+}
+
+function checkTaskAlerts(){
+  if(!currentManager||FULL_ADMIN.includes(currentManager.name)) return;
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  document.querySelectorAll('.cl-task').forEach(el=>{
+    const timeEl=el.querySelector('.cl-time');
+    const textEl=el.querySelector('.cl-text');
+    if(!timeEl||!textEl) return;
+    const timeStr=timeEl.textContent.trim();
+    if(!timeStr||timeStr==='—') return;
+    const[h,m]=(timeStr+':00').split(':');
+    const taskMin=parseInt(h)*60+parseInt(m);
+    const key=timeStr+'_'+textEl.textContent;
+    // בדיוק כשהשעה מגיעה (תוך דקה) ועוד לא התרענו
+    if(taskMin<=nowMin&&taskMin>nowMin-1&&!alertedTasks.has(key)&&!el.classList.contains('done')){
+      alertedTasks.add(key);
+      playBeep();
+      startTabBlink(textEl.textContent.slice(0,30));
+    }
+  });
+}
+
+// בדוק התראות כל 30 שניות
+setInterval(checkTaskAlerts,30000);
 
 // רענון אוטומטי כל 30 שניות — שומר על מה שהמשתמש הזין
 setInterval(async ()=>{
