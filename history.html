@@ -284,6 +284,7 @@
           <div class="filter-label">עד תאריך</div><input class="filter-input" type="date" id="clHistTo"/>
         </div>
         <button class="filter-btn" onclick="loadClHistory()"><i class="ti ti-search"></i> הצג</button>
+        <button class="filter-btn green" onclick="exportClPDF()"><i class="ti ti-file-type-pdf"></i> הורד PDF</button>
       </div>
       <div class="results-wrap">
         <div class="results-header">
@@ -615,6 +616,9 @@ async function loadClHistory(){
   });
   let html=''; let count=0;
   Object.values(grouped).sort((a,b)=>b.date.localeCompare(a.date)||a.manager.localeCompare(b.manager,'he')).forEach(g=>{
+    // דלג על שישי/שבת
+    const dow=new Date(g.date+'T12:00:00').getDay();
+    if(dow===5||dow===6) return;
     const allItems=itemsByMgr[g.manager]||[];
     const total=allItems.length;
     const done=g.done.size;
@@ -652,6 +656,158 @@ function toggleClHistRow(uid){
   const isOpen=el.style.display!=='none';
   el.style.display=isOpen?'none':'';
   icon?.classList.toggle('open',!isOpen);
+}
+
+async function exportClPDF(){
+  const mgrFilter=FULL_ADMIN.includes(currentManager.name)
+    ?(document.getElementById('clHistManager')?.value||'')
+    :currentManager.name;
+  if(!mgrFilter&&FULL_ADMIN.includes(currentManager.name)){toast('בחר מנהל לייצוא');return;}
+
+  const n=new Date(); const y=n.getFullYear(), mo=n.getMonth();
+  let from,to,periodLabel;
+  if(clHistPeriod==='month'){
+    const r=getMonthRange(0);from=r.from;to=r.to;
+    periodLabel=(mo+1<10?'0'+(mo+1):(mo+1))+'/'+y;
+  } else if(clHistPeriod==='prev'){
+    const r=getMonthRange(-1);from=r.from;to=r.to;
+    const pm=mo-1<0?11:mo-1, py=mo-1<0?y-1:y;
+    periodLabel=(pm+1<10?'0'+(pm+1):(pm+1))+'/'+py;
+  } else {
+    from=document.getElementById('clHistFrom').value;
+    to=document.getElementById('clHistTo').value;
+    periodLabel=from+' — '+to;
+  }
+  if(!from||!to){toast('בחר תקופה');return;}
+
+  toast('מכין PDF...');
+
+  // שלוף נתונים
+  const managers=mgrFilter?[mgrFilter]:allManagers?.map(m=>m.name)||[mgrFilter];
+  const items=await sb('/checklist_items?select=id,manager_name,task_time,task_text&active=eq.true');
+  const itemsByMgr={};
+  if(Array.isArray(items)) items.forEach(i=>{
+    if(!itemsByMgr[i.manager_name]) itemsByMgr[i.manager_name]=[];
+    itemsByMgr[i.manager_name].push(i);
+  });
+
+  let query=`/checklist_completions?select=manager_name,work_date,item_id&work_date=gte.${from}&work_date=lte.${to}&order=work_date.asc,manager_name.asc`;
+  if(mgrFilter) query+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
+  const comps=await sb(query);
+  if(!Array.isArray(comps)||!comps.length){toast('אין נתונים לייצוא');return;}
+
+  // קבץ לפי מנהל + תאריך
+  const grouped={};
+  comps.forEach(c=>{
+    if(!grouped[c.manager_name]) grouped[c.manager_name]={};
+    if(!grouped[c.manager_name][c.work_date]) grouped[c.manager_name][c.work_date]=new Set();
+    grouped[c.manager_name][c.work_date].add(c.item_id);
+  });
+
+  // בנה HTML להדפסה
+  const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  const MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+  let mgrSections='';
+  for(const mgrName of Object.keys(grouped)){
+    const mgrItems=itemsByMgr[mgrName]||[];
+    const dates=Object.keys(grouped[mgrName]).sort();
+    let totalDone=0,totalPossible=0;
+    let daysHtml='';
+    dates.forEach(date=>{
+      const doneSet=grouped[mgrName][date];
+      const dt=new Date(date+'T12:00:00');
+      const dow=dt.getDay();
+      // דלג על שישי/שבת
+      if(dow===5||dow===6) return;
+      const dayItems=mgrItems.filter(i=>i.day_of_week===null||i.day_of_week===dow);
+      const done=dayItems.filter(i=>doneSet.has(i.id)).length;
+      const total=dayItems.length;
+      totalDone+=done; totalPossible+=total;
+      const pct=total?Math.round(done/total*100):0;
+      const pctColor=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
+      const dayLabel='יום '+DAYS[dow]+', '+dt.getDate()+' ב'+MONTHS[dt.getMonth()]+' '+dt.getFullYear();
+      const tasksHtml=dayItems.map(item=>{
+        const isDone=doneSet.has(item.id);
+        return`<tr>
+          <td style="width:30px;text-align:center;font-size:14px">${isDone?'✅':'❌'}</td>
+          <td style="width:55px;color:#2563EB;font-weight:600;font-size:12px">${item.task_time||'—'}</td>
+          <td style="font-size:12px;color:${isDone?'#1A1A1A':'#888'}">${item.task_text}</td>
+        </tr>`;
+      }).join('');
+      daysHtml+=`
+        <div style="margin-bottom:16px;break-inside:avoid">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#F8F6F2;padding:8px 12px;border-radius:8px;margin-bottom:6px">
+            <span style="font-weight:700;font-size:13px">${dayLabel}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:80px;height:6px;background:#E8E4DC;border-radius:999px;overflow:hidden">
+                <div style="width:${pct}%;height:100%;background:${pctColor};border-radius:999px"></div>
+              </div>
+              <span style="font-size:14px;font-weight:900;color:${pctColor}">${pct}%</span>
+              <span style="font-size:11px;color:#888">(${done}/${total})</span>
+            </div>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            ${tasksHtml}
+          </table>
+        </div>`;
+    });
+    const overallPct=totalPossible?Math.round(totalDone/totalPossible*100):0;
+    const overallColor=overallPct>=80?'#16A34A':overallPct>=50?'#D97706':'#DC2626';
+    mgrSections+=`
+      <div style="page-break-before:always;padding:0">
+        <!-- כותרת מנהל -->
+        <div style="background:#1A1A1A;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:20px;font-weight:900">${mgrName}</div>
+            <div style="font-size:13px;color:#aaa;margin-top:2px">דוח ביצועי צ׳ק ליסט — ${periodLabel}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:36px;font-weight:900;color:${overallColor}">${overallPct}%</div>
+            <div style="font-size:11px;color:#aaa">ביצוע כולל</div>
+          </div>
+        </div>
+        <!-- סיכום -->
+        <div style="background:#F8F6F2;padding:12px 24px;border:1px solid #E8E4DC;display:flex;gap:24px">
+          <div style="text-align:center"><div style="font-size:22px;font-weight:900;color:#1A1A1A">${dates.length}</div><div style="font-size:11px;color:#888">ימי עבודה</div></div>
+          <div style="text-align:center"><div style="font-size:22px;font-weight:900;color:#16A34A">${totalDone}</div><div style="font-size:11px;color:#888">בוצעו</div></div>
+          <div style="text-align:center"><div style="font-size:22px;font-weight:900;color:#DC2626">${totalPossible-totalDone}</div><div style="font-size:11px;color:#888">לא בוצעו</div></div>
+          <div style="text-align:center"><div style="font-size:22px;font-weight:900;color:#1A1A1A">${totalPossible}</div><div style="font-size:11px;color:#888">סה"כ</div></div>
+        </div>
+        <!-- פירוט -->
+        <div style="padding:16px 24px;border:1px solid #E8E4DC;border-top:none;border-radius:0 0 12px 12px">
+          ${daysHtml}
+        </div>
+      </div>`;
+  }
+
+  const html=`<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<title>דוח צ'ק ליסט — ${periodLabel}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:Arial,'Heebo',sans-serif;direction:rtl;color:#1A1A1A;background:#fff;padding:24px}
+  @media print{
+    body{padding:0}
+    .no-print{display:none}
+    div[style*="page-break-before:always"]:first-child{page-break-before:auto!important}
+  }
+  table tr td{padding:4px 6px;border-bottom:1px solid #F0EDE6}
+</style>
+</head>
+<body>
+<div class="no-print" style="background:#1A1A1A;color:#fff;padding:12px 20px;border-radius:10px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+  <span style="font-weight:700">דוח צ׳ק ליסט — ${periodLabel}</span>
+  <button onclick="window.print()" style="background:#16A34A;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer">🖨️ הדפסה / שמור PDF</button>
+</div>
+${mgrSections}
+</body></html>`;
+
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 loadManagers();
