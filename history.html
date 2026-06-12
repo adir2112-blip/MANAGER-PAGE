@@ -284,7 +284,8 @@
           <div class="filter-label">עד תאריך</div><input class="filter-input" type="date" id="clHistTo"/>
         </div>
         <button class="filter-btn" onclick="loadClHistory()"><i class="ti ti-search"></i> הצג</button>
-        <button class="filter-btn green" onclick="exportClPDF()"><i class="ti ti-file-type-pdf"></i> הורד PDF</button>
+        <button class="filter-btn" style="background:#6B7FDD" onclick="exportClPDF('simple')"><i class="ti ti-file-type-pdf"></i> PDF פשוט</button>
+        <button class="filter-btn green" onclick="exportClPDF('detailed')"><i class="ti ti-file-type-pdf"></i> PDF מורחב</button>
       </div>
       <div class="results-wrap">
         <div class="results-header">
@@ -658,7 +659,7 @@ function toggleClHistRow(uid){
   icon?.classList.toggle('open',!isOpen);
 }
 
-async function exportClPDF(){
+async function exportClPDF(mode='detailed'){
   const mgrFilter=FULL_ADMIN.includes(currentManager.name)
     ?(document.getElementById('clHistManager')?.value||'')
     :currentManager.name;
@@ -684,7 +685,10 @@ async function exportClPDF(){
 
   // שלוף נתונים
   const managers=mgrFilter?[mgrFilter]:allManagers?.map(m=>m.name)||[mgrFilter];
-  const items=await sb('/checklist_items?select=id,manager_name,task_time,task_text&active=eq.true');
+  const itemsQ=mgrFilter
+    ?`/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true&manager_name=eq.${encodeURIComponent(mgrFilter)}`
+    :`/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true`;
+  const items=await sb(itemsQ);
   const itemsByMgr={};
   if(Array.isArray(items)) items.forEach(i=>{
     if(!itemsByMgr[i.manager_name]) itemsByMgr[i.manager_name]=[];
@@ -720,7 +724,8 @@ async function exportClPDF(){
       const dow=dt.getDay();
       // דלג על שישי/שבת
       if(dow===5||dow===6) return;
-      const dayItems=mgrItems.filter(i=>i.day_of_week===null||i.day_of_week===dow);
+      // הצג את כל הפריטים שבוצעו + כל פריטי היום (null או התואם)
+      const dayItems=mgrItems.filter(i=>i.day_of_week===null||i.day_of_week===dow||doneSet.has(i.id));
       const done=dayItems.filter(i=>doneSet.has(i.id)).length;
       const total=dayItems.length;
       totalDone+=done; totalPossible+=total;
@@ -774,10 +779,41 @@ async function exportClPDF(){
           <div style="text-align:center"><div style="font-size:22px;font-weight:900;color:#DC2626">${totalPossible-totalDone}</div><div style="font-size:11px;color:#888">לא בוצעו</div></div>
           <div style="text-align:center"><div style="font-size:22px;font-weight:900;color:#1A1A1A">${totalPossible}</div><div style="font-size:11px;color:#888">סה"כ</div></div>
         </div>
-        <!-- פירוט -->
-        <div style="padding:16px 24px;border:1px solid #E8E4DC;border-top:none;border-radius:0 0 12px 12px">
-          ${daysHtml}
-        </div>
+        ${mode==='simple'
+          // פשוט — טבלת ימים בלבד
+          ? `<div style="padding:16px 24px;border:1px solid #E8E4DC;border-top:none;border-radius:0 0 12px 12px">
+              <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="background:#F8F6F2">
+                  <th style="padding:8px 12px;text-align:right;font-size:12px;color:#888;border-bottom:2px solid #E8E4DC">תאריך</th>
+                  <th style="padding:8px 12px;text-align:center;font-size:12px;color:#888;border-bottom:2px solid #E8E4DC">ביצוע</th>
+                  <th style="padding:8px 12px;text-align:center;font-size:12px;color:#888;border-bottom:2px solid #E8E4DC">בוצעו</th>
+                  <th style="padding:8px 12px;text-align:center;font-size:12px;color:#888;border-bottom:2px solid #E8E4DC">לא בוצעו</th>
+                </tr></thead>
+                <tbody>
+                ${dates.filter(date=>{const dow=new Date(date+'T12:00:00').getDay();return dow!==5&&dow!==6;}).map(date=>{
+                  const dt=new Date(date+'T12:00:00');
+                  const dow=dt.getDay();
+                  const doneSet=grouped[mgrName][date];
+                  const dayItems=mgrItems.filter(i=>i.day_of_week===null||i.day_of_week===dow||doneSet.has(i.id));
+                  const done=dayItems.filter(i=>doneSet.has(i.id)).length;
+                  const total=dayItems.length;
+                  const pct=total?Math.round(done/total*100):0;
+                  const pctColor=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
+                  const DAYS2=['ראשון','שני','שלישי','רביעי','חמישי'];
+                  const MONTHS2=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+                  return`<tr style="border-bottom:1px solid #F0EDE6">
+                    <td style="padding:8px 12px;font-size:13px;font-weight:600">יום ${DAYS2[dow]}, ${dt.getDate()} ב${MONTHS2[dt.getMonth()]}</td>
+                    <td style="padding:8px 12px;text-align:center"><span style="font-size:15px;font-weight:900;color:${pctColor}">${pct}%</span></td>
+                    <td style="padding:8px 12px;text-align:center;color:#16A34A;font-weight:700">${done}</td>
+                    <td style="padding:8px 12px;text-align:center;color:#DC2626;font-weight:700">${total-done}</td>
+                  </tr>`;
+                }).join('')}
+                </tbody>
+              </table>
+            </div>`
+          // מורחב — פירוט מלא
+          : `<div style="padding:16px 24px;border:1px solid #E8E4DC;border-top:none;border-radius:0 0 12px 12px">${daysHtml}</div>`
+        }
       </div>`;
   }
 
