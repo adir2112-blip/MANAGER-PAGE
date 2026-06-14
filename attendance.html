@@ -786,29 +786,32 @@ function tickClock(){
 tickClock(); setInterval(tickClock,1000);
 
 // ── Login ──
+let managersCache=null;
 async function loadManagers(){
   const list=document.getElementById('managerList');
   try{
-    const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),10000);
-    const res=await fetch(SB_URL+'/managers?select=*&order=name.asc',{
-      headers:H,
-      signal:controller.signal
-    });
-    clearTimeout(timeout);
+    // אם יש cache — הצג מיד
+    if(managersCache){
+      renderManagerList(managersCache);
+    }
+    const res=await fetch(SB_URL+'/managers?select=*&order=name.asc',{headers:H});
     const data=await res.json();
     if(!Array.isArray(data)||!data.length){list.innerHTML='<div style="text-align:center;color:#C0BDB6;padding:1rem">אין מנהלים</div>';return;}
-    list.innerHTML=data.map(m=>`
-      <button class="manager-btn" onclick="selectMgr(this,'${m.id}','${m.name.replace(/'/g,"\\'")}','${m.activity}')">
-        <span>${m.name}</span><span class="act-tag">${m.activity}</span>
-      </button>`).join('');
+    managersCache=data;
+    renderManagerList(data);
   }catch(e){
-    if(e.name==='AbortError'){
-      list.innerHTML='<div style="text-align:center;color:#EF4444;padding:1rem;font-size:12px">פסק זמן — בדוק חיבור אינטרנט</div>';
-    } else {
-      list.innerHTML=`<div style="text-align:center;color:#EF4444;padding:1rem;font-size:12px">שגיאה: ${e.message}<br/><button onclick="loadManagers()" style="margin-top:8px;background:#1A1A1A;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:Heebo,sans-serif">נסה שוב</button></div>`;
+    if(!managersCache){
+      list.innerHTML=`<div style="text-align:center;color:#EF4444;padding:1rem;font-size:12px">שגיאה<br/><button onclick="loadManagers()" style="margin-top:8px;background:#1A1A1A;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:Heebo,sans-serif">נסה שוב</button></div>`;
     }
   }
+}
+function renderManagerList(data){
+  const list=document.getElementById('managerList');
+  if(!list) return;
+  list.innerHTML=data.map(m=>`
+    <button class="manager-btn" onclick="selectMgr(this,'${m.id}','${m.name.replace(/'/g,"\\'")}','${m.activity}')">
+      <span>${m.name}</span><span class="act-tag">${m.activity}</span>
+    </button>`).join('');
 }
 function selectMgr(el,id,name,activity){
   document.querySelectorAll('.manager-btn').forEach(b=>b.classList.remove('selected'));
@@ -833,22 +836,25 @@ async function doLogin(){
   document.getElementById('loginOverlay').classList.add('hidden');
   document.getElementById('app').style.display='block';
   document.getElementById('currentManagerName').textContent=currentManager.name;
-  // הצג לשונית מנהלים רק לsuper admin
-  if(FULL_ADMIN.includes(currentManager.name)){
-    document.getElementById('tab-admin').style.display='';
-    document.getElementById('tab-checklist').style.display='';
-  } else {
-    document.getElementById('tab-checklist').style.display='';
-  }
-  // הצג סיכום למנהלים מורשים
-  if(SUMMARY_MANAGERS.includes(currentManager.name)){
-    document.getElementById('summarySection').style.display='';
-  }
+  if(FULL_ADMIN.includes(currentManager.name)) document.getElementById('tab-admin').style.display='';
+  document.getElementById('tab-checklist').style.display='';
+  if(SUMMARY_MANAGERS.includes(currentManager.name)) document.getElementById('summarySection').style.display='';
   if(CALLS_MANAGERS.includes(currentManager.name)){
     document.getElementById('managerCallsSection').style.display='';
-    loadManagerCalls();
   }
   initApp();
+}
+
+async function initApp(){
+  const today=getToday();
+  document.getElementById('todayText').textContent=formatDateHe(today);
+  // טען הכל במקביל
+  await Promise.all([
+    loadAllAgents(),
+    loadTodayHours(today),
+    CALLS_MANAGERS.includes(currentManager.name)?loadManagerCalls():Promise.resolve()
+  ]);
+  renderAll(today);
 }
 function doLogout(){
   currentManager=null;
@@ -898,13 +904,6 @@ function switchTab(tab){
   }
 }
 
-async function initApp(){
-  const today=getToday();
-  document.getElementById('todayText').textContent=formatDateHe(today);
-  await loadAllAgents();
-  await loadTodayHours(today);
-  renderAll(today);
-}
 async function loadAllAgents(){
   const data=await sb('/agents_roster?select=*&active=eq.true&order=activity.asc,name.asc');
   allAgents=Array.isArray(data)?data:[];
