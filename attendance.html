@@ -184,7 +184,10 @@
     .cl-day-tab:hover{border-color:#C8C4BC}
     .cl-day-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
 
-    .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
+    @keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+    .cl-task[draggable=true]{cursor:grab}
+    .cl-task[draggable=true]:active{cursor:grabbing}
+    .cl-task.drag-over{border-top:2px solid #2563EB;background:#EFF6FF};transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .loading-msg{text-align:center;color:#AAA;padding:2rem;font-size:13px}
     .empty-msg{text-align:center;color:#C0BDB6;padding:1.5rem;font-size:13px}
@@ -1603,15 +1606,45 @@ async function loadClEdit(){
 
 function renderClEditList(items){
   const isAdmin=FULL_ADMIN.includes(currentManager.name);
-  document.getElementById('clEditList').innerHTML=items.length?items.map(item=>`
-    <div class="cl-task">
+  const container=document.getElementById('clEditList');
+  container.innerHTML=items.length?items.map((item,idx)=>`
+    <div class="cl-task" draggable="${isAdmin?'true':'false'}" data-id="${item.id}" data-idx="${idx}">
+      ${isAdmin?'<span style="color:#C8C4BC;cursor:grab;margin-left:4px;font-size:14px">⠿</span>':''}
       <span class="cl-time">${item.task_time||'—'}</span>
       <span class="cl-text" style="flex:1">${item.task_text}</span>
       ${item.requires_note?`<span style="font-size:10px;font-weight:700;color:#D97706;background:#FEF9C3;padding:2px 7px;border-radius:6px;margin-left:4px">דורש הערה</span>`:''}
       <span style="font-size:10px;color:#AAA;padding:2px 6px;background:#F0EDE6;border-radius:4px;margin-left:4px">${item.day_of_week===null?'כל הימים':['א׳','ב׳','ג׳','ד׳','ה׳'][item.day_of_week]||''}</span>
-      ${isAdmin?`<button class="edit-btn" data-id="${item.id}" data-text="${item.task_text.replace(/"/g,'&quot;')}" data-time="${item.task_time||''}" data-requires="${item.requires_note?'1':''}" onclick="editClItem(this)" style="margin-left:4px">✏️</button>
+      ${isAdmin?`<button class="edit-btn" data-id="${item.id}" data-text="${item.task_text.replace(/"/g,'&quot;')}" data-time="${item.task_time||''}" onclick="editClItem(this)" style="margin-left:4px">✏️</button>
       <button class="del-btn" data-id="${item.id}" onclick="delClItem(this)">מחק</button>`:''}
     </div>`).join(''):'<div class="empty-msg">אין משימות</div>';
+
+  // הפעל drag & drop רק לאדיר
+  if(!isAdmin) return;
+  let dragSrc=null;
+  container.querySelectorAll('.cl-task[draggable=true]').forEach(row=>{
+    row.addEventListener('dragstart',e=>{dragSrc=row;row.style.opacity='.4';});
+    row.addEventListener('dragend',e=>{row.style.opacity='1';container.querySelectorAll('.cl-task').forEach(r=>r.classList.remove('drag-over'));});
+    row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('drag-over');});
+    row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+    row.addEventListener('drop',async e=>{
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if(!dragSrc||dragSrc===row) return;
+      // שמור סדר חדש
+      const rows=[...container.querySelectorAll('.cl-task[draggable=true]')];
+      const srcIdx=rows.indexOf(dragSrc);
+      const tgtIdx=rows.indexOf(row);
+      // הזז בDOM
+      if(srcIdx<tgtIdx) row.after(dragSrc);
+      else row.before(dragSrc);
+      // עדכן sort_order ב-Supabase
+      const newRows=[...container.querySelectorAll('.cl-task[draggable=true]')];
+      await Promise.all(newRows.map((r,i)=>
+        fetch(SB_URL+'/checklist_items?id=eq.'+r.dataset.id,{method:'PATCH',headers:H,body:JSON.stringify({sort_order:i})})
+      ));
+      toast('סדר עודכן ✓');
+    });
+  });
 }
 
 async function editClItem(btn){
@@ -1982,22 +2015,71 @@ function playBeep(){
     gain.gain.setValueAtTime(0.3,ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
     osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.4);
+    // צליל שני אחרי 0.3 שניות
+    const osc2=ctx.createOscillator();
+    const gain2=ctx.createGain();
+    osc2.connect(gain2);gain2.connect(ctx.destination);
+    osc2.frequency.value=1100;osc2.type='sine';
+    gain2.gain.setValueAtTime(0,ctx.currentTime+0.3);
+    gain2.gain.setValueAtTime(0.3,ctx.currentTime+0.3);
+    gain2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.7);
+    osc2.start(ctx.currentTime+0.3);osc2.stop(ctx.currentTime+0.7);
   }catch(e){}
 }
 
 function startTabBlink(taskText){
-  if(blinkInterval) return;
+  if(blinkInterval) clearInterval(blinkInterval);
   let show=true;
   blinkInterval=setInterval(()=>{
     document.title=show?('⚠️ '+taskText):origTitle;
     show=!show;
   },1000);
-  // עצור אחרי 30 שניות
   setTimeout(()=>{
     clearInterval(blinkInterval);
     blinkInterval=null;
     document.title=origTitle;
   },30000);
+}
+
+function showReminderBanner(taskText, taskTime){
+  // הסר קיים
+  document.getElementById('clReminderBanner')?.remove();
+  const banner=document.createElement('div');
+  banner.id='clReminderBanner';
+  banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#DC2626;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;font-family:Heebo,sans-serif;direction:rtl;box-shadow:0 4px 20px rgba(0,0,0,.3);animation:slideDown .3s ease';
+  banner.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:22px">⚠️</span>
+      <div>
+        <div style="font-size:15px;font-weight:900">תזכורת — ${taskTime}</div>
+        <div style="font-size:13px;opacity:.9">${taskText}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button onclick="scrollToTask('${taskTime}')" style="background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:Heebo,sans-serif">עבור למשימה ↓</button>
+      <button onclick="document.getElementById('clReminderBanner').remove()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:Heebo,sans-serif">✕</button>
+    </div>`;
+  document.body.appendChild(banner);
+  // סגור אוטומטית אחרי 60 שניות
+  setTimeout(()=>banner.remove(),60000);
+}
+
+function scrollToTask(taskTime){
+  const tasks=document.querySelectorAll('.cl-task');
+  for(const task of tasks){
+    const timeEl=task.querySelector('.cl-time');
+    if(timeEl&&timeEl.textContent.trim()===taskTime&&!task.classList.contains('done')){
+      task.scrollIntoView({behavior:'smooth',block:'center'});
+      task.style.outline='3px solid #DC2626';
+      setTimeout(()=>task.style.outline='',3000);
+      // עבור לטאב הצ'ק ליסט
+      if(!document.getElementById('content-checklist')?.classList.contains('active')){
+        switchTab('checklist');
+      }
+      break;
+    }
+  }
+  document.getElementById('clReminderBanner')?.remove();
 }
 
 function checkTaskAlerts(){
@@ -2013,11 +2095,20 @@ function checkTaskAlerts(){
     const[h,m]=(timeStr+':00').split(':');
     const taskMin=parseInt(h)*60+parseInt(m);
     const key=timeStr+'_'+textEl.textContent;
-    // בדיוק כשהשעה מגיעה (תוך דקה) ועוד לא התרענו
+    // בדיוק כשהשעה מגיעה (תוך דקה)
     if(taskMin<=nowMin&&taskMin>nowMin-1&&!alertedTasks.has(key)&&!el.classList.contains('done')){
       alertedTasks.add(key);
       playBeep();
       startTabBlink(textEl.textContent.slice(0,30));
+      showReminderBanner(textEl.textContent.slice(0,50),timeStr);
+    }
+    // תזכורת חוזרת — אם עברה שעה ועדיין לא בוצע
+    const overdueKey='overdue_'+key;
+    if(taskMin<=nowMin&&nowMin-taskMin>=60&&!alertedTasks.has(overdueKey)&&!el.classList.contains('done')){
+      alertedTasks.add(overdueKey);
+      playBeep();
+      showReminderBanner('⏰ עדיין לא בוצע! '+textEl.textContent.slice(0,40),timeStr);
+      startTabBlink('⏰ '+textEl.textContent.slice(0,25));
     }
   });
 }
