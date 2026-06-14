@@ -612,28 +612,24 @@ async function loadClHistory(){
   else if(clHistPeriod==='prev'){from=new Date(y,mo-1,1).toISOString().slice(0,10);to=new Date(y,mo,0).toISOString().slice(0,10);}
   else{from=document.getElementById('clHistFrom').value;to=document.getElementById('clHistTo').value;}
   if(!from||!to){toast('בחר טווח');return;}
-
-  // אדיר — לפי בחירה, אחרים — רק שלהם
   const mgrFilter=FULL_ADMIN.includes(currentManager.name)
     ?(document.getElementById('clHistManager')?.value||'')
     :currentManager.name;
-
-  let query=`/checklist_completions?select=manager_name,work_date,item_id&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,manager_name.asc`;
-  if(mgrFilter) query+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
-  const comps=await sb(query);
+  let compsQ=`/checklist_completions?select=manager_name,work_date,item_id&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,manager_name.asc`;
+  if(mgrFilter) compsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
+  let itemsQ='/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true';
+  if(mgrFilter) itemsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
+  const [comps,items]=await Promise.all([sb(compsQ),sb(itemsQ)]);
   if(!Array.isArray(comps)||!comps.length){
     body.innerHTML='<tr class="empty-row"><td colspan="6">אין נתונים</td></tr>';
     document.getElementById('clHistCount').textContent='0 רשומות';
     return;
   }
-  // שלוף כל הפריטים
-  const items=await sb('/checklist_items?select=id,manager_name,task_time,task_text&active=eq.true');
   const itemsByMgr={};
   if(Array.isArray(items)) items.forEach(i=>{
     if(!itemsByMgr[i.manager_name]) itemsByMgr[i.manager_name]=[];
     itemsByMgr[i.manager_name].push(i);
   });
-  // קבץ לפי מנהל + תאריך
   const grouped={};
   comps.forEach(c=>{
     const key=c.work_date+'__'+c.manager_name;
@@ -642,11 +638,10 @@ async function loadClHistory(){
   });
   let html=''; let count=0;
   Object.values(grouped).sort((a,b)=>b.date.localeCompare(a.date)||a.manager.localeCompare(b.manager,'he')).forEach(g=>{
-    // דלג על שישי/שבת
-    const dow=new Date(g.date+'T12:00:00').getDay();
-    if(dow===5||dow===6) return;
     const allItems=itemsByMgr[g.manager]||[];
-    const total=allItems.length;
+    const dow=new Date(g.date+'T12:00:00').getDay();
+    const dayItems=allItems.filter(i=>(i.day_of_week===null||i.day_of_week===dow)&&dow!==5&&dow!==6);
+    const total=dayItems.length;
     const done=g.done.size;
     const pct=total?Math.round(done/total*100):0;
     const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
@@ -662,10 +657,10 @@ async function loadClHistory(){
     </tr>
     <tr id="clhdet_${uid}" style="display:none;background:#FAFAF8">
       <td colspan="6" style="padding:.75rem 1.2rem">
-        ${allItems.map(item=>{
+        ${dayItems.map(item=>{
           const isDone=g.done.has(item.id);
           return`<span style="display:inline-flex;align-items:center;gap:4px;margin:.2rem .4rem;font-size:12px;font-weight:600;padding:3px 9px;border-radius:6px;background:${isDone?'#DCFCE7':'#FEE2E2'};color:${isDone?'#166534':'#991B1B'}">
-            ${isDone?'✓':'✗'} ${item.task_time?item.task_time+' — ':''} ${item.task_text}
+            ${isDone?'✓':'✗'} ${item.task_time?item.task_time+' — ':''}${item.task_text}
           </span>`;
         }).join('')}
       </td>
@@ -674,6 +669,7 @@ async function loadClHistory(){
   document.getElementById('clHistCount').textContent=count+' רשומות';
   body.innerHTML=html||'<tr class="empty-row"><td colspan="6">אין נתונים</td></tr>';
 }
+
 
 function toggleClHistRow(uid){
   const el=document.getElementById('clhdet_'+uid);
