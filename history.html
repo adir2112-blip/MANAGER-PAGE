@@ -896,45 +896,41 @@ async function loadChart(){
 
   const mgrFilter=document.getElementById('chartManager')?.value||'';
 
-  // שלוף completions
   let query=`/checklist_completions?select=manager_name,work_date&work_date=gte.${from}&work_date=lte.${to}&order=work_date.asc`;
   if(mgrFilter) query+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
   const comps=await sb(query);
 
-  // שלוף items
   let itemsQ='/checklist_items?select=id,manager_name,day_of_week&active=eq.true';
   if(mgrFilter) itemsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
   const items=await sb(itemsQ);
 
   if(!Array.isArray(comps)||!comps.length){toast('אין נתונים לגרף');return;}
 
-  // קבץ לפי מנהל + תאריך
-  const byMgrDate:{[key:string]:{[date:string]:number}}={};
-  const byMgrItems:{[key:string]:any[]}={};
-  if(Array.isArray(items)) items.forEach((i:any)=>{
+  const byMgrDate={};
+  const byMgrItems={};
+  if(Array.isArray(items)) items.forEach(i=>{
     if(!byMgrItems[i.manager_name]) byMgrItems[i.manager_name]=[];
     byMgrItems[i.manager_name].push(i);
   });
-  comps.forEach((c:any)=>{
+  comps.forEach(c=>{
     if(!byMgrDate[c.manager_name]) byMgrDate[c.manager_name]={};
     if(!byMgrDate[c.manager_name][c.work_date]) byMgrDate[c.manager_name][c.work_date]=0;
     byMgrDate[c.manager_name][c.work_date]++;
   });
 
-  // בנה תאריכים ייחודיים (ימי עסקים בלבד)
-  const allDates=[...new Set(comps.map((c:any)=>c.work_date))].sort();
+  const allDates=[...new Set(comps.map(c=>c.work_date))].sort();
   const managers=Object.keys(byMgrDate);
 
   const datasets=managers.map((mgr,idx)=>{
     const color=CHART_COLORS[idx%CHART_COLORS.length];
     const data=allDates.map(date=>{
       const dow=new Date(date+'T12:00:00').getDay();
-      const mgrItems=(byMgrItems[mgr]||[]).filter((i:any)=>i.day_of_week===null||i.day_of_week===dow);
+      const mgrItems=(byMgrItems[mgr]||[]).filter(i=>i.day_of_week===null||i.day_of_week===dow);
       const total=mgrItems.length;
       const done=byMgrDate[mgr][date]||0;
       return total?Math.round(done/total*100):null;
     });
-    return{label:mgr,data,borderColor:color,backgroundColor:color+'22',tension:.3,pointRadius:4,pointHoverRadius:6,fill:false,spanGaps:true};
+    return{label:mgr,data,borderColor:color,backgroundColor:color+'22',tension:0.3,pointRadius:4,pointHoverRadius:6,fill:false,spanGaps:true};
   });
 
   const labels=allDates.map(d=>new Date(d+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}));
@@ -948,16 +944,15 @@ async function loadChart(){
       responsive:true,
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}%`}}
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+'%';}}}
       },
       scales:{
-        y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#F0EDE6'}},
+        y:{min:0,max:100,ticks:{callback:function(v){return v+'%';}},grid:{color:'#F0EDE6'}},
         x:{grid:{color:'#F0EDE6'}}
       }
     }
   });
 
-  // Legend
   document.getElementById('chartLegend').innerHTML=managers.map((mgr,idx)=>`
     <div style="display:flex;align-items:center;gap:6px">
       <div style="width:12px;height:12px;border-radius:3px;background:${CHART_COLORS[idx%CHART_COLORS.length]}"></div>
