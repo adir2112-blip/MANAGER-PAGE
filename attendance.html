@@ -1756,11 +1756,13 @@ async function saveAlertSettings(){
     {setting_key:'manager_alert_end',setting_value:document.getElementById('alertMgrEnd').value},
   ];
   for(const s of settings){
-    await fetch(SB_URL+'/alert_settings',{
-      method:'POST',
-      headers:{...H,'Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({...s,updated_at:new Date().toISOString()})
+    // נסה PATCH קודם, אם לא קיים — POST
+    const res=await fetch(SB_URL+'/alert_settings?setting_key=eq.'+encodeURIComponent(s.setting_key),{
+      method:'PATCH',headers:H,body:JSON.stringify({setting_value:s.setting_value,updated_at:new Date().toISOString()})
     });
+    if(res.status===404||res.status===200&&(await res.clone().json()).length===0){
+      await fetch(SB_URL+'/alert_settings',{method:'POST',headers:H,body:JSON.stringify({...s,updated_at:new Date().toISOString()})});
+    }
   }
   toast('הגדרות נשמרו ✓');
   document.getElementById('alertCronNote').style.display='';
