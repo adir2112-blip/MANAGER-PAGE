@@ -150,6 +150,7 @@
       <button class="period-tab active" id="mainTabHistory" onclick="switchMainTab('history')">📊 היסטוריה תקינה</button>
       <button class="period-tab" id="mainTabCalls" onclick="switchMainTab('calls')">📞 חריגות שיחות מנהל</button>
       <button class="period-tab" id="mainTabChecklist" onclick="switchMainTab('checklist')">✅ היסטוריית צ'ק ליסט</button>
+      <button class="period-tab" id="mainTabChart" onclick="switchMainTab('chart')">📈 גרף ביצועים</button>
     </div>
 
     <!-- TAB: HISTORY -->
@@ -301,11 +302,34 @@
       </div>
     </div>
 
+    <!-- TAB: CHART -->
+    <div id="paneChart" style="display:none">
+      <div class="filters-bar">
+        <div class="filter-group">
+          <div class="filter-label">מנהל</div>
+          <select class="filter-select" id="chartManager" style="min-width:180px">
+            <option value="">כל המנהלים</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">תקופה</div>
+          <div class="period-tabs">
+            <button class="period-tab active" id="chartTabMonth" onclick="setChartPeriod('month')">חודש נוכחי</button>
+            <button class="period-tab" id="chartTabPrev" onclick="setChartPeriod('prev')">חודש קודם</button>
+          </div>
+        </div>
+        <button class="filter-btn" onclick="loadChart()"><i class="ti ti-chart-line"></i> הצג גרף</button>
+      </div>
+      <div class="results-wrap" style="padding:1.2rem">
+        <canvas id="performanceChart" style="width:100%;max-height:420px"></canvas>
+        <div id="chartLegend" style="display:flex;gap:1rem;flex-wrap:wrap;padding:.75rem 0;justify-content:center"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const SB_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
@@ -471,13 +495,14 @@ function exportExcel(){
 
 // ── Main tab switch ──
 function switchMainTab(tab){
-  ['history','calls','checklist'].forEach(t=>{
+  ['history','calls','checklist','chart'].forEach(t=>{
     const btn=document.getElementById('mainTab'+t.charAt(0).toUpperCase()+t.slice(1));
     const pane=document.getElementById('pane'+t.charAt(0).toUpperCase()+t.slice(1));
     if(btn) btn.classList.toggle('active',t===tab);
     if(pane) pane.style.display=t===tab?'':'none';
   });
   if(tab==='checklist'){ loadClManagersSelect(); loadClHistory(); }
+  if(tab==='chart'){ loadChartManagers(); }
 }
 
 // ── Calls period ──
@@ -844,6 +869,100 @@ ${mgrSections}
   const w=window.open('','_blank');
   w.document.write(html);
   w.document.close();
+}
+
+// ── Performance Chart ──
+let chartPeriod='month', perfChart=null;
+const CHART_COLORS=['#2563EB','#16A34A','#D97706','#DC2626','#7C3AED','#0891B2','#EA580C'];
+
+function setChartPeriod(p){
+  chartPeriod=p;
+  document.getElementById('chartTabMonth').classList.toggle('active',p==='month');
+  document.getElementById('chartTabPrev').classList.toggle('active',p==='prev');
+}
+
+async function loadChartManagers(){
+  const data=await sb('/managers?select=name&order=name.asc');
+  if(!Array.isArray(data)) return;
+  const sel=document.getElementById('chartManager');
+  if(sel) sel.innerHTML='<option value="">כל המנהלים</option>'+data.map(m=>`<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}</option>`).join('');
+}
+
+async function loadChart(){
+  const n=new Date(); const y=n.getFullYear(), mo=n.getMonth();
+  let from,to;
+  if(chartPeriod==='month'){from=new Date(y,mo,1).toISOString().slice(0,10);to=new Date(y,mo+1,0).toISOString().slice(0,10);}
+  else{from=new Date(y,mo-1,1).toISOString().slice(0,10);to=new Date(y,mo,0).toISOString().slice(0,10);}
+
+  const mgrFilter=document.getElementById('chartManager')?.value||'';
+
+  // שלוף completions
+  let query=`/checklist_completions?select=manager_name,work_date&work_date=gte.${from}&work_date=lte.${to}&order=work_date.asc`;
+  if(mgrFilter) query+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
+  const comps=await sb(query);
+
+  // שלוף items
+  let itemsQ='/checklist_items?select=id,manager_name,day_of_week&active=eq.true';
+  if(mgrFilter) itemsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
+  const items=await sb(itemsQ);
+
+  if(!Array.isArray(comps)||!comps.length){toast('אין נתונים לגרף');return;}
+
+  // קבץ לפי מנהל + תאריך
+  const byMgrDate:{[key:string]:{[date:string]:number}}={};
+  const byMgrItems:{[key:string]:any[]}={};
+  if(Array.isArray(items)) items.forEach((i:any)=>{
+    if(!byMgrItems[i.manager_name]) byMgrItems[i.manager_name]=[];
+    byMgrItems[i.manager_name].push(i);
+  });
+  comps.forEach((c:any)=>{
+    if(!byMgrDate[c.manager_name]) byMgrDate[c.manager_name]={};
+    if(!byMgrDate[c.manager_name][c.work_date]) byMgrDate[c.manager_name][c.work_date]=0;
+    byMgrDate[c.manager_name][c.work_date]++;
+  });
+
+  // בנה תאריכים ייחודיים (ימי עסקים בלבד)
+  const allDates=[...new Set(comps.map((c:any)=>c.work_date))].sort();
+  const managers=Object.keys(byMgrDate);
+
+  const datasets=managers.map((mgr,idx)=>{
+    const color=CHART_COLORS[idx%CHART_COLORS.length];
+    const data=allDates.map(date=>{
+      const dow=new Date(date+'T12:00:00').getDay();
+      const mgrItems=(byMgrItems[mgr]||[]).filter((i:any)=>i.day_of_week===null||i.day_of_week===dow);
+      const total=mgrItems.length;
+      const done=byMgrDate[mgr][date]||0;
+      return total?Math.round(done/total*100):null;
+    });
+    return{label:mgr,data,borderColor:color,backgroundColor:color+'22',tension:.3,pointRadius:4,pointHoverRadius:6,fill:false,spanGaps:true};
+  });
+
+  const labels=allDates.map(d=>new Date(d+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}));
+
+  if(perfChart) perfChart.destroy();
+  const ctx=document.getElementById('performanceChart').getContext('2d');
+  perfChart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}%`}}
+      },
+      scales:{
+        y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#F0EDE6'}},
+        x:{grid:{color:'#F0EDE6'}}
+      }
+    }
+  });
+
+  // Legend
+  document.getElementById('chartLegend').innerHTML=managers.map((mgr,idx)=>`
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="width:12px;height:12px;border-radius:3px;background:${CHART_COLORS[idx%CHART_COLORS.length]}"></div>
+      <span style="font-size:12px;font-weight:600">${mgr}</span>
+    </div>`).join('');
 }
 
 loadManagers();
