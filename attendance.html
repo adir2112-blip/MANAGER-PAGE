@@ -703,6 +703,63 @@
         <tbody id="managersBody"><tr><td colspan="4" class="loading-msg">טוען...</td></tr></tbody>
       </table>
     </div>
+
+    <!-- ══ הגדרות התראות ══ -->
+    <div class="admin-section" style="margin-top:1.5rem">
+      <div class="admin-section-title"><i class="ti ti-bell-cog"></i> הגדרות התראות WhatsApp</div>
+
+      <!-- סיכום אדיר -->
+      <div class="admin-form" style="margin-bottom:1rem">
+        <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:.75rem">📊 סיכום אישי לאדיר</div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group">
+            <label>שעות שליחה (פסיק בין שעות)</label>
+            <input class="form-input" id="alertSummaryTimes" placeholder="11:00,14:00" style="width:180px"/>
+          </div>
+          <div class="form-group">
+            <label>אופן הסיכום</label>
+            <select class="form-select" id="alertSummaryMode" style="width:220px">
+              <option value="full">📊 סיכום כולל — כל המנהלים</option>
+              <option value="per_manager">👤 הודעה נפרדת לכל מנהל</option>
+              <option value="critical">🚨 רק חריגות קריטיות (מעל 2ש׳)</option>
+              <option value="ranking">📈 דירוג ביצוע (מנמוך לגבוה)</option>
+              <option value="tasks_only">✅ רק משימות שלא בוצעו</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- התראות למנהלים -->
+      <div class="admin-form" style="margin-bottom:1rem">
+        <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:.75rem">🔔 התראות חריגה למנהלים</div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group">
+            <label>מופעל</label>
+            <select class="form-select" id="alertMgrEnabled" style="width:120px">
+              <option value="true">✅ פעיל</option>
+              <option value="false">❌ כבוי</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>בדיקה כל (דקות)</label>
+            <input class="form-input" id="alertMgrInterval" type="number" min="15" max="120" step="15" style="width:100px"/>
+          </div>
+          <div class="form-group">
+            <label>שעת התחלה</label>
+            <input class="form-input" id="alertMgrStart" type="time" style="width:110px"/>
+          </div>
+          <div class="form-group">
+            <label>שעת סיום</label>
+            <input class="form-input" id="alertMgrEnd" type="time" style="width:110px"/>
+          </div>
+        </div>
+      </div>
+
+      <button class="save-all-btn" onclick="saveAlertSettings()"><i class="ti ti-device-floppy"></i>&nbsp;שמור הגדרות</button>
+      <div id="alertCronNote" style="margin-top:.75rem;font-size:11px;color:#AAA;display:none">
+        ⚠️ שינוי שעות דורש עדכון Cron ידני ב-Supabase
+      </div>
+    </div>
   </div>
 </div>
 
@@ -875,7 +932,7 @@ function switchTab(tab){
   document.getElementById('content-'+tab).classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='agents') loadAgentsTable();
-  if(tab==='admin') loadManagersTable();
+  if(tab==='admin'){ loadManagersTable(); loadAlertSettings(); }
   if(tab==='checklist'){
     loadAllManagers().then(()=>{
       populateClSelects();
@@ -1673,6 +1730,40 @@ async function delClItem(btn){
   if(!confirm('למחוק משימה?')) return;
   await fetch(SB_URL+'/checklist_items?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({active:false})});
   toast('נמחק ✓'); loadClEdit();
+}
+
+// ── Alert Settings ──
+async function loadAlertSettings(){
+  const data=await sb('/alert_settings?select=*');
+  if(!Array.isArray(data)) return;
+  const s={};
+  data.forEach(r=>{s[r.setting_key]=r.setting_value;});
+  if(document.getElementById('alertSummaryTimes')) document.getElementById('alertSummaryTimes').value=s.admin_summary_times||'11:00,14:00';
+  if(document.getElementById('alertSummaryMode')) document.getElementById('alertSummaryMode').value=s.admin_summary_mode||'full';
+  if(document.getElementById('alertMgrEnabled')) document.getElementById('alertMgrEnabled').value=s.manager_alerts_enabled||'true';
+  if(document.getElementById('alertMgrInterval')) document.getElementById('alertMgrInterval').value=s.manager_alert_interval||'30';
+  if(document.getElementById('alertMgrStart')) document.getElementById('alertMgrStart').value=s.manager_alert_start||'09:00';
+  if(document.getElementById('alertMgrEnd')) document.getElementById('alertMgrEnd').value=s.manager_alert_end||'18:30';
+}
+
+async function saveAlertSettings(){
+  const settings=[
+    {setting_key:'admin_summary_times',setting_value:document.getElementById('alertSummaryTimes').value.trim()},
+    {setting_key:'admin_summary_mode',setting_value:document.getElementById('alertSummaryMode').value},
+    {setting_key:'manager_alerts_enabled',setting_value:document.getElementById('alertMgrEnabled').value},
+    {setting_key:'manager_alert_interval',setting_value:document.getElementById('alertMgrInterval').value},
+    {setting_key:'manager_alert_start',setting_value:document.getElementById('alertMgrStart').value},
+    {setting_key:'manager_alert_end',setting_value:document.getElementById('alertMgrEnd').value},
+  ];
+  for(const s of settings){
+    await fetch(SB_URL+'/alert_settings',{
+      method:'POST',
+      headers:{...H,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({...s,updated_at:new Date().toISOString()})
+    });
+  }
+  toast('הגדרות נשמרו ✓');
+  document.getElementById('alertCronNote').style.display='';
 }
 
 // ── Manager Calls ──
