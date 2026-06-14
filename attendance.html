@@ -760,6 +760,35 @@
         ⚠️ שינוי שעות דורש עדכון Cron ידני ב-Supabase
       </div>
     </div>
+
+    <!-- ══ סף חריגה למנהלים ══ -->
+    <div class="admin-section" style="margin-top:1.5rem">
+      <div class="admin-section-title"><i class="ti ti-alarm"></i> סף חריגה לכל מנהל</div>
+      <div class="admin-form">
+        <div style="font-size:12px;color:#888;margin-bottom:.75rem">כמה זמן לחכות לפני שליחת התראה למנהל שלא ביצע משימה</div>
+        <table class="admin-table">
+          <thead><tr><th>שם מנהל</th><th>סף (דקות)</th><th></th></tr></thead>
+          <tbody id="thresholdBody"><tr><td colspan="3" class="loading-msg">טוען...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ היסטוריית WhatsApp ══ -->
+    <div class="admin-section" style="margin-top:1.5rem">
+      <div class="admin-section-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span><i class="ti ti-brand-whatsapp"></i> היסטוריית הודעות WhatsApp</span>
+        <button class="tasks-month-tab" onclick="loadWALog()" style="font-size:11px;padding:4px 12px"><i class="ti ti-refresh"></i> טען</button>
+      </div>
+      <div class="admin-form" style="padding:.75rem">
+        <div class="tbl-wrap">
+          <table class="admin-table">
+            <thead><tr><th>זמן</th><th>נמען</th><th>סוג</th><th>סטטוס</th><th>הודעה</th></tr></thead>
+            <tbody id="waLogBody"><tr><td colspan="5" class="loading-msg">לחץ "טען" לצפייה</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -932,7 +961,7 @@ function switchTab(tab){
   document.getElementById('content-'+tab).classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='agents') loadAgentsTable();
-  if(tab==='admin'){ loadManagersTable(); loadAlertSettings(); }
+  if(tab==='admin'){ loadManagersTable(); loadAlertSettings(); loadThresholds(); }
   if(tab==='checklist'){
     loadAllManagers().then(()=>{
       populateClSelects();
@@ -1730,6 +1759,48 @@ async function delClItem(btn){
   if(!confirm('למחוק משימה?')) return;
   await fetch(SB_URL+'/checklist_items?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({active:false})});
   toast('נמחק ✓'); loadClEdit();
+}
+
+// ── WhatsApp Log ──
+async function loadWALog(){
+  const tbody=document.getElementById('waLogBody');
+  tbody.innerHTML='<tr><td colspan="5" class="loading-msg">טוען...</td></tr>';
+  const data=await sb('/whatsapp_log?select=*&order=sent_at.desc&limit=50');
+  if(!Array.isArray(data)||!data.length){
+    tbody.innerHTML='<tr><td colspan="5" class="empty-msg">אין הודעות עדיין</td></tr>';
+    return;
+  }
+  const typeLabels={'manager_alert':'התראת מנהל','admin_summary_full':'סיכום כולל','admin_summary_per_mgr':'לפי מנהל','admin_summary_critical':'קריטי','admin_summary_ranking':'דירוג','admin_summary_tasks':'משימות'};
+  tbody.innerHTML=data.map(r=>{
+    const t=new Date(r.sent_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const ok=r.status===200||r.status===201;
+    return`<tr>
+      <td style="font-size:11px;white-space:nowrap">${t}</td>
+      <td style="font-weight:600;font-size:12px">${r.recipient_name||'—'}</td>
+      <td style="font-size:11px;color:#555">${typeLabels[r.message_type]||r.message_type||'—'}</td>
+      <td><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:${ok?'#DCFCE7':'#FEE2E2'};color:${ok?'#166534':'#991B1B'}">${ok?'✓ נשלח':'✗ שגיאה'}</span></td>
+      <td style="font-size:11px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.message||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Alert Threshold ──
+async function loadThresholds(){
+  const tbody=document.getElementById('thresholdBody');
+  if(!tbody) return;
+  const data=await sb('/managers?select=id,name,alert_threshold&order=name.asc');
+  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="3" class="empty-msg">אין</td></tr>';return;}
+  tbody.innerHTML=data.map(m=>`<tr>
+    <td style="font-weight:700">${m.name}</td>
+    <td><input class="hours-input" id="thr_${m.id}" type="number" min="15" max="480" step="15" value="${m.alert_threshold??120}" style="width:80px"/></td>
+    <td><button class="edit-btn" onclick="saveThreshold('${m.id}')">שמור</button></td>
+  </tr>`).join('');
+}
+
+async function saveThreshold(id){
+  const val=parseInt(document.getElementById('thr_'+id).value)||120;
+  await fetch(SB_URL+'/managers?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({alert_threshold:val})});
+  toast('נשמר ✓');
 }
 
 // ── Alert Settings ──
