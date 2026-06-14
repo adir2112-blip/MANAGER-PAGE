@@ -699,8 +699,8 @@
     </div>
     <div class="admin-form">
       <table class="admin-table">
-        <thead><tr><th>שם</th><th>הרשאה</th><th>פעולות</th></tr></thead>
-        <tbody id="managersBody"><tr><td colspan="3" class="loading-msg">טוען...</td></tr></tbody>
+        <thead><tr><th>שם</th><th>הרשאה</th><th>טלפון</th><th>פעולות</th></tr></thead>
+        <tbody id="managersBody"><tr><td colspan="4" class="loading-msg">טוען...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -1211,12 +1211,13 @@ function cancelImport(){document.getElementById('importPreview').style.display='
 async function loadManagersTable(){
   const data=await sb('/managers?select=*&order=name.asc');
   const tbody=document.getElementById('managersBody');
-  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="3" class="empty-msg">אין</td></tr>';return;}
+  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="4" class="empty-msg">אין</td></tr>';return;}
   tbody.innerHTML=data.map(m=>`<tr>
     <td style="font-weight:700">${m.name}</td>
     <td><span class="activity-tag">${m.activity}</span></td>
+    <td style="font-size:12px;color:#888;direction:ltr">${m.phone||'—'}</td>
     <td>
-      <button class="edit-btn" data-id="${m.id}" data-name="${m.name.replace(/"/g,'&quot;')}" data-activity="${m.activity}" onclick="editManager(this)">עריכה</button>
+      <button class="edit-btn" data-id="${m.id}" data-name="${m.name.replace(/"/g,'&quot;')}" data-activity="${m.activity}" data-phone="${m.phone||''}" onclick="editManager(this)">עריכה</button>
       <button class="del-btn" data-id="${m.id}" data-name="${m.name.replace(/"/g,'&quot;')}" onclick="deleteManager(this)"${FULL_ADMIN.includes(m.name)?' disabled style="opacity:.4;cursor:not-allowed"':''}>מחק</button>
     </td>
   </tr>`).join('');
@@ -1246,7 +1247,7 @@ function openEditModal(){document.getElementById('editModal').style.display='fle
 function closeEditModal(){document.getElementById('editModal').style.display='none';editState={};}
 
 function editManager(btn){
-  const id=btn.dataset.id,name=btn.dataset.name,activity=btn.dataset.activity;
+  const id=btn.dataset.id,name=btn.dataset.name,activity=btn.dataset.activity,phone=btn.dataset.phone||'';
   editState={type:'manager',id};
   document.getElementById('editModalTitle').textContent='עריכת מנהל — '+name;
   document.getElementById('editModalBody').innerHTML=`
@@ -1255,6 +1256,10 @@ function editManager(btn){
       <select class="form-select" id="editMgrActivity">
         ${['הכל','מובמנט','מאוחדת','פריפיט שירות','פריפיט מכירות'].map(a=>`<option value="${a}"${a===activity?' selected':''}>${a}</option>`).join('')}
       </select>
+    </div>
+    <div class="form-group">
+      <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">טלפון WhatsApp (972XXXXXXXXX)</label>
+      <input class="form-input" id="editMgrPhone" type="tel" value="${phone}" placeholder="972501234567" style="direction:ltr"/>
     </div>`;
   openEditModal();
 }
@@ -1280,7 +1285,8 @@ function editAgent(btn){
 async function saveEdit(){
   if(editState.type==='manager'){
     const activity=document.getElementById('editMgrActivity').value;
-    await fetch(SB_URL+'/managers?id=eq.'+editState.id,{method:'PATCH',headers:H,body:JSON.stringify({activity})});
+    const phone=document.getElementById('editMgrPhone')?.value.trim()||null;
+    await fetch(SB_URL+'/managers?id=eq.'+editState.id,{method:'PATCH',headers:H,body:JSON.stringify({activity,phone})});
     toast('עודכן ✓'); closeEditModal(); loadManagersTable(); loadManagers();
   } else if(editState.type==='agent'){
     const email=document.getElementById('editAgentEmail').value.trim();
