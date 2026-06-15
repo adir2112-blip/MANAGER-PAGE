@@ -591,7 +591,7 @@
       <!-- אדיר בלבד: סינון מנהל + חריגות -->
       <div id="clAdminTodayHeader" style="display:none">
         <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
-          <select class="tasks-agent-select" id="clFilterManager" onchange="loadClOverview()" style="min-width:180px">
+          <select class="tasks-agent-select" id="clFilterManagerAdmin" onchange="loadClOverview()" style="min-width:180px">
             <option value="">כל המנהלים</option>
           </select>
           <span style="font-size:12px;color:#AAA" id="clOverviewDate"></span>
@@ -1410,7 +1410,7 @@ function setClDay(day){
 function populateClSelects(){
   const data=allManagers||[];
   const opts=data.map(m=>`<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}</option>`).join('');
-  const el1=document.getElementById('clFilterManager');
+  const el1=document.getElementById('clFilterManagerAdmin');
   const el2=document.getElementById('clEditManager');
   if(el1) el1.innerHTML='<option value="">כל המנהלים</option>'+opts;
   if(el2) el2.innerHTML='<option value="">— בחר מנהל —</option>'+opts;
@@ -1563,7 +1563,7 @@ async function loadClOverview(){
   if(el) el.textContent=formatDateHe(today);
   const ot=document.getElementById('clOverdueTime');
   if(ot) ot.textContent=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-  const filterMgr=document.getElementById('clFilterManager')?.value||'';
+  const filterMgr=document.getElementById('clFilterManagerAdmin')?.value||'';
   const managers=filterMgr?allManagers.filter(m=>m.name===filterMgr):allManagers;
   if(!managers.length){
     document.getElementById('clOverdueSummaryBody').innerHTML='<tr><td colspan="4" class="empty-msg">אין מנהלים</td></tr>';
@@ -1586,7 +1586,9 @@ async function loadClOverview(){
     compsByMgr[c.manager_name][c.item_id]={completed_at:c.completed_at,notes:c.notes||''};
   });
   let overdueRows='', overviewHtml='';
-  for(const mgr of managers){
+  for(let mi=0;mi<managers.length;mi++){
+    const mgr=managers[mi];
+    const uid='mgr_'+mi;
     const mgrItems=itemsByMgr[mgr.name]||[];
     const filtered=mgrItems.filter(i=>(i.day_of_week===null||i.day_of_week===dow)&&dow!==5&&dow!==6);
     if(!filtered.length) continue;
@@ -1595,7 +1597,6 @@ async function loadClOverview(){
     const pct=filtered.length?Math.round(done/filtered.length*100):0;
     const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
     const bg=pct>=80?'#DCFCE7':pct>=50?'#FEF9C3':'#FEE2E2';
-    const uid=mgr.name.replace(/[^a-zA-Z0-9]/g,'_');
     const overdue=filtered.filter(i=>{
       if(doneIds[i.id]||!i.task_time) return false;
       const[h,m]=(i.task_time+':00').split(':');
