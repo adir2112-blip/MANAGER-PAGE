@@ -253,10 +253,12 @@
   async function loadFF(){
     try{
       const _now=new Date(); const today=new Date(_now.getTime()+3*60*60*1000).toISOString().slice(0,10);
-      const r=await fetch(F_URL+'/daily_stats?select=agent_name,total_sales,calls&date=eq.'+today+'&order=total_sales.desc',{headers:H(F_KEY)});
-      const d=await r.json();
-      if(!Array.isArray(d)||!d.length){
-        document.getElementById('ffBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים להיום</td></tr>';
+      const r=await fetch(F_URL+'/daily_stats?select=agent_name,total_sales,calls,date&order=total_sales.desc',{headers:H(F_KEY)});
+      const allD=await r.json();
+      // סנן בצד הלקוח לתאריך היום בלבד — הגנה כפולה
+      const d=Array.isArray(allD)?allD.filter(x=>x.date===today):[];
+      if(!d.length){
+        document.getElementById('ffBody').innerHTML=`<tr><td colspan="3" class="loading" style="color:#D97706;font-weight:700">⏳ אין נתוני מכירות להיום עדיין<br/><span style="font-size:10px;color:#AAA;font-weight:400">(${today})</span></td></tr>`;
         document.getElementById('tSales').textContent='0';
         document.getElementById('tCalls').textContent='0';
         return;
