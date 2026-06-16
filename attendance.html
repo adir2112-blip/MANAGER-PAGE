@@ -843,9 +843,15 @@ function sb(path){return fetch(SB_URL+path,{headers:H}).then(r=>r.json());}
 function toast(msg,ms=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms);}
 
 function getToday(){
+  // חישוב עקבי לפי שעון ישראל (UTC+3) — לא תלוי בהגדרות אזור זמן של המחשב
   const n=new Date();
-  if(n.getHours()<6){const y=new Date(n.getTime()-864e5);return y.toISOString().slice(0,10);}
-  return n.toISOString().slice(0,10);
+  const israelTime=new Date(n.getTime()+3*60*60*1000);
+  const israelHour=israelTime.getUTCHours();
+  if(israelHour<6){
+    const y=new Date(israelTime.getTime()-864e5);
+    return y.toISOString().slice(0,10);
+  }
+  return israelTime.toISOString().slice(0,10);
 }
 function formatDateHe(d){
   const dt=new Date(d+'T12:00:00');
