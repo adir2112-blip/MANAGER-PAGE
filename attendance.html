@@ -1038,6 +1038,19 @@ function refreshTotals(today){
 
 function renderAll(today){renderSummary();renderGroups(today);}
 
+// בדיקה תקופתית — אם השתנה התאריך (חצות עברה) בזמן שהדף פתוח, רענן הכל
+let lastKnownDate=getToday();
+setInterval(()=>{
+  const nowDate=getToday();
+  if(nowDate!==lastKnownDate){
+    lastKnownDate=nowDate;
+    if(currentManager){
+      document.getElementById('todayText').textContent=formatDateHe(nowDate);
+      loadTodayHours(nowDate).then(()=>renderAll(nowDate));
+    }
+  }
+},60000);
+
 // ── Summary ──
 function renderSummary(){
   if(!SUMMARY_MANAGERS.includes(currentManager.name)) return;
@@ -1142,7 +1155,7 @@ function renderGroups(today){
 // ── Save ──
 async function saveSubGroup(btn){
   const agentIds=JSON.parse(btn.dataset.agents);
-  const today=btn.dataset.today;
+  const today=getToday(); // חישוב מחדש בזמן שמירה — לא להסתמך על dataset ישן (תקלת חצות)
   const btnKey=btn.dataset.key;
   const saveBtn=document.getElementById('sbtn_'+btnKey);
   if(saveBtn){saveBtn.innerHTML='<i class="ti ti-loader-2" style="animation:spin .6s linear infinite;display:inline-block"></i>&nbsp;שומר...';saveBtn.disabled=true;}
