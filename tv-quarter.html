@@ -513,10 +513,10 @@
   function loadAll(){loadFF();loadYR();loadTaqan();loadManagerCalls();loadClOverdue();}
   function loadAllWithEmails(){loadFF();loadYR();loadEmails();loadTaqan();loadManagerCalls();loadClOverdue();}
 
-  let cd=60;
+  let cd=600; // 10 דקות
   setInterval(()=>{
     cd--;document.getElementById('cd').textContent=cd;
-    if(cd<=0){cd=60;loadAll();}
+    if(cd<=0){cd=600;loadAll();}
   },1000);
   // אימיילים כל 5 דקות
   setInterval(()=>{ loadEmails(); }, 5*60*1000);
