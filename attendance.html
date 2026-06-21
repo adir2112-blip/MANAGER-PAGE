@@ -2182,7 +2182,7 @@ window.addEventListener('load',()=>{
   if(m) m.addEventListener('click',function(e){if(e.target===this)closeEditModal();});
 });
 
-// רענון אוטומטי לצ'ק ליסט כל 60 שניות (רק כשהטאב פתוח)
+// רענון אוטומטי לצ'ק ליסט כל 10 דקות (רק כשהטאב פתוח) — צומצם למניעת חריגת egress
 setInterval(()=>{
   if(!currentManager) return;
   const tab=document.getElementById('content-checklist');
@@ -2192,7 +2192,7 @@ setInterval(()=>{
   } else {
     loadClManager();
   }
-},60000);
+},600000);
 
 // ── Task Alerts ──
 let alertedTasks=new Set();
