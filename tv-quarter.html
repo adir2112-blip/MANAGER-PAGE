@@ -230,6 +230,9 @@
 <script>
   const Y_URL='https://owvnhfahyfxabzwcncbw.supabase.co/rest/v1';
   const Y_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93dm5oZmFoeWZ4YWJ6d2NuY2J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMDI1MTMsImV4cCI6MjA5NzU3ODUxM30.ZSmxu6KTLEE_E_3As7t7_nA8VXO6pQ_QGeDwyLFfCOc';
+  // T_URL = פרויקט "תקינה" (שיחות מנהל + צ'ק ליסט) — נפרד מ-Y_URL (יירוטים)
+  const T_URL='https://mxgqhzjhiepjchhofclc.supabase.co/rest/v1';
+  const T_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Z3FoempoaWVwamNoaG9mY2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMDQwNzYsImV4cCI6MjA5NzU4MDA3Nn0._1PRPhD6H0F7Cgm4VBp1Q0dn0DLpgnPre1KSusoZWhg';
   const F_URL='https://fmejfxejsrmjvexfizgj.supabase.co/rest/v1';
   const F_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtZWpmeGVqc3JtanZleGZpemdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjA1MjQsImV4cCI6MjA5MTkzNjUyNH0.A8Eu-3Uj-i06U0DsDt-pbGu1tQJXdjZaTyz797PsOEU';
   const H=k=>({'apikey':k,'Authorization':'Bearer '+k});
@@ -363,7 +366,7 @@
   async function loadTaqan(){
     try{
       const _n=new Date(); const today=new Date(_n.getTime()+3*60*60*1000).toISOString().slice(0,10);
-      const r=await fetch(Y_URL+'/work_hours?select=activity,hours,updated_by,updated_at&work_date=eq.'+today,{headers:H(Y_KEY)});
+      const r=await fetch(T_URL+'/work_hours?select=activity,hours,updated_by,updated_at&work_date=eq.'+today,{headers:H(T_KEY)});
       const d=await r.json();
       const g={};
       if(Array.isArray(d)) d.forEach(x=>{
@@ -424,7 +427,7 @@
     try{
       const n=new Date();
       const today=(n.getHours()<6?new Date(n.getTime()-864e5):n).toISOString().slice(0,10);
-      const r=await fetch(Y_URL+'/manager_calls?select=*&work_date=eq.'+today,{headers:H(Y_KEY)});
+      const r=await fetch(T_URL+'/manager_calls?select=*&work_date=eq.'+today,{headers:H(T_KEY)});
       const d=await r.json();
       if(!Array.isArray(d)||!d.length){
         document.getElementById('mcBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים להיום</td></tr>';
@@ -476,17 +479,17 @@
       const dow=now.getDay();
       document.getElementById('tvClTime').textContent=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
       // שלוף כל המנהלים
-      const mgrs=await fetch(Y_URL+'/managers?select=name&order=name.asc',{headers:H(Y_KEY)}).then(r=>r.json());
+      const mgrs=await fetch(T_URL+'/managers?select=name&order=name.asc',{headers:H(T_KEY)}).then(r=>r.json());
       if(!Array.isArray(mgrs)||!mgrs.length){
         document.getElementById('clOverdueBody').innerHTML='<tr><td colspan="3" class="loading">אין מנהלים</td></tr>';
         return;
       }
       let html='';
       for(const mgr of mgrs){
-        const items=await fetch(Y_URL+'/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&active=eq.true',{headers:H(Y_KEY)}).then(r=>r.json());
+        const items=await fetch(T_URL+'/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&active=eq.true',{headers:H(T_KEY)}).then(r=>r.json());
         const filtered=Array.isArray(items)?items.filter(i=>(i.day_of_week===null||i.day_of_week===dow)&&i.task_time&&dow!==5&&dow!==6):[];
         if(!filtered.length) continue;
-        const comps=await fetch(Y_URL+'/checklist_completions?select=item_id&manager_name=eq.'+encodeURIComponent(mgr.name)+'&work_date=eq.'+today,{headers:H(Y_KEY)}).then(r=>r.json());
+        const comps=await fetch(T_URL+'/checklist_completions?select=item_id&manager_name=eq.'+encodeURIComponent(mgr.name)+'&work_date=eq.'+today,{headers:H(T_KEY)}).then(r=>r.json());
         const doneSet=new Set(Array.isArray(comps)?comps.map(c=>c.item_id):[]);
         const overdue=filtered.filter(i=>{
           if(doneSet.has(i.id)) return false;
