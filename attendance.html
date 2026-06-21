@@ -763,12 +763,12 @@
 
     <!-- ══ סף חריגה למנהלים ══ -->
     <div class="admin-section" style="margin-top:1.5rem">
-      <div class="admin-section-title"><i class="ti ti-alarm"></i> סף חריגה לכל מנהל</div>
+      <div class="admin-section-title"><i class="ti ti-alarm"></i> סף חריגה והתראות לכל מנהל</div>
       <div class="admin-form">
-        <div style="font-size:12px;color:#888;margin-bottom:.75rem">כמה זמן לחכות לפני שליחת התראה למנהל שלא ביצע משימה</div>
+        <div style="font-size:12px;color:#888;margin-bottom:.75rem">כמה זמן לחכות לפני שליחת התראה, ואפשרות לכבות התראות זמנית/קבוע למנהל ספציפי</div>
         <table class="admin-table">
-          <thead><tr><th>שם מנהל</th><th>סף (דקות)</th><th></th></tr></thead>
-          <tbody id="thresholdBody"><tr><td colspan="3" class="loading-msg">טוען...</td></tr></tbody>
+          <thead><tr><th>שם מנהל</th><th>סף (דקות)</th><th>סטטוס התראות</th><th>כבוי עד תאריך</th><th></th></tr></thead>
+          <tbody id="thresholdBody"><tr><td colspan="5" class="loading-msg">טוען...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1812,19 +1812,45 @@ async function loadWALog(){
 async function loadThresholds(){
   const tbody=document.getElementById('thresholdBody');
   if(!tbody) return;
-  const data=await sb('/managers?select=id,name,alert_threshold&order=name.asc');
-  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="3" class="empty-msg">אין</td></tr>';return;}
-  tbody.innerHTML=data.map(m=>`<tr>
+  const data=await sb('/managers?select=id,name,alert_threshold,alerts_disabled,alerts_disabled_until&order=name.asc');
+  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="5" class="empty-msg">אין</td></tr>';return;}
+  const today=getToday();
+  tbody.innerHTML=data.map(m=>{
+    // אם יש תאריך כיבוי ועבר — נחשב כפעיל שוב (תצוגה בלבד, השרת בודק בפועל)
+    const autoExpired=m.alerts_disabled_until&&m.alerts_disabled_until<today;
+    const isDisabled=m.alerts_disabled&&!autoExpired;
+    return`<tr>
     <td style="font-weight:700">${m.name}</td>
     <td><input class="hours-input" id="thr_${m.id}" type="number" min="15" max="480" step="15" value="${m.alert_threshold??120}" style="width:80px"/></td>
-    <td><button class="edit-btn" onclick="saveThreshold('${m.id}')">שמור</button></td>
-  </tr>`).join('');
+    <td>
+      <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:${isDisabled?'#FEE2E2':'#DCFCE7'};color:${isDisabled?'#991B1B':'#166534'}">${isDisabled?'🔇 כבוי':'🔔 פעיל'}</span>
+    </td>
+    <td><input class="form-input" id="thruntil_${m.id}" type="date" value="${m.alerts_disabled_until||''}" style="width:140px;font-size:12px"/></td>
+    <td style="display:flex;gap:.4rem">
+      <button class="edit-btn" onclick="saveThreshold('${m.id}')">שמור סף</button>
+      <button class="edit-btn" style="background:${isDisabled?'#16A34A':'#DC2626'};color:#fff" onclick="toggleManagerAlerts('${m.id}',${isDisabled})">${isDisabled?'הפעל':'כבה'}</button>
+    </td>
+  </tr>`;
+  }).join('');
 }
 
 async function saveThreshold(id){
   const val=parseInt(document.getElementById('thr_'+id).value)||120;
   await fetch(SB_URL+'/managers?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({alert_threshold:val})});
   toast('נשמר ✓');
+}
+
+async function toggleManagerAlerts(id,currentlyDisabled){
+  if(currentlyDisabled){
+    // הפעלה מחדש — מאפס גם תאריך
+    await fetch(SB_URL+'/managers?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({alerts_disabled:false,alerts_disabled_until:null})});
+    toast('התראות הופעלו ✓');
+  } else {
+    const untilVal=document.getElementById('thruntil_'+id)?.value||null;
+    await fetch(SB_URL+'/managers?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({alerts_disabled:true,alerts_disabled_until:untilVal})});
+    toast(untilVal?'התראות כבויות עד '+untilVal+' ✓':'התראות כבויות ✓');
+  }
+  loadThresholds();
 }
 
 // ── Alert Settings ──
@@ -1981,11 +2007,14 @@ async function saveAdminEntryTasks(){
     const hrs=parseFloat(hrsEl.value)||0;
     const notes=notesEl?.value||'';
     if(hrs===0&&!notes) continue;
-    await fetch(SB_URL+'/special_tasks',{
-      method:'POST',
-      headers:{...H,'Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({agent_id:agentId,agent_name:agentName,agent_id_number:agentIdNum,activity,task_date:d,hours:hrs,notes,created_by:currentManager.name})
-    });
+    const payload={agent_id:agentId,agent_name:agentName,agent_id_number:agentIdNum,activity,task_date:d,hours:hrs,notes,created_by:currentManager.name};
+    // בדוק אם כבר קיימת רשומה לנציג+תאריך הזה
+    const existing=await sb('/special_tasks?select=id&agent_id=eq.'+agentId+'&task_date=eq.'+d);
+    if(Array.isArray(existing)&&existing.length){
+      await fetch(SB_URL+'/special_tasks?id=eq.'+existing[0].id,{method:'PATCH',headers:H,body:JSON.stringify(payload)});
+    } else {
+      await fetch(SB_URL+'/special_tasks',{method:'POST',headers:H,body:JSON.stringify(payload)});
+    }
     saved++;
   }
   toast('נשמרו '+saved+' רשומות ✓');
@@ -2094,11 +2123,13 @@ async function saveAllTasks(){
     const hrs=parseFloat(hrsEl.value)||0;
     const notes=notesEl?.value||'';
     if(hrs===0&&!notes) continue;
-    await fetch(SB_URL+'/special_tasks',{
-      method:'POST',
-      headers:{...H,'Prefer':'resolution=merge-duplicates'},
-      body:JSON.stringify({agent_id:agentId,agent_name:agentName,agent_id_number:agentIdNum,activity,task_date:d,hours:hrs,notes,created_by:currentManager.name})
-    });
+    const payload={agent_id:agentId,agent_name:agentName,agent_id_number:agentIdNum,activity,task_date:d,hours:hrs,notes,created_by:currentManager.name};
+    const existing=await sb('/special_tasks?select=id&agent_id=eq.'+agentId+'&task_date=eq.'+d);
+    if(Array.isArray(existing)&&existing.length){
+      await fetch(SB_URL+'/special_tasks?id=eq.'+existing[0].id,{method:'PATCH',headers:H,body:JSON.stringify(payload)});
+    } else {
+      await fetch(SB_URL+'/special_tasks',{method:'POST',headers:H,body:JSON.stringify(payload)});
+    }
     saved++;
   }
   toast('נשמרו '+saved+' רשומות ✓');
