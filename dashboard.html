@@ -265,8 +265,8 @@
     }
 
     // ── Supabase ──
-    const Y_URL='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
-    const Y_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
+    const Y_URL='https://mxgqhzjhiepjchhofclc.supabase.co/rest/v1';
+    const Y_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Z3FoempoaWVwamNoaG9mY2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMDQwNzYsImV4cCI6MjA5NzU4MDA3Nn0._1PRPhD6H0F7Cgm4VBp1Q0dn0DLpgnPre1KSusoZWhg';
     const F_URL='https://fmejfxejsrmjvexfizgj.supabase.co/rest/v1';
     const F_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtZWpmeGVqc3JtanZleGZpemdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjA1MjQsImV4cCI6MjA5MTkzNjUyNH0.A8Eu-3Uj-i06U0DsDt-pbGu1tQJXdjZaTyz797PsOEU';
     const hdr=k=>({'apikey':k,'Authorization':'Bearer '+k,'Content-Type':'application/json'});
@@ -398,8 +398,8 @@
     }
 
     // ── Taqan ──
-    const SB_URL_Y='https://qyqkimpaffhizouuwdko.supabase.co/rest/v1';
-    const SB_KEY_Y='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5cWtpbXBhZmZoaXpvdXV3ZGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODUxMzUsImV4cCI6MjA5NDg2MTEzNX0.zlIo9vTfWKhpSHeTHqRExTnWtAuJLsZjK_Hlii1Oa_c';
+    const SB_URL_Y='https://mxgqhzjhiepjchhofclc.supabase.co/rest/v1';
+    const SB_KEY_Y='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Z3FoempoaWVwamNoaG9mY2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMDQwNzYsImV4cCI6MjA5NzU4MDA3Nn0._1PRPhD6H0F7Cgm4VBp1Q0dn0DLpgnPre1KSusoZWhg';
 
     const DIVISORS={מובמנט:9,מאוחדת:7,'פריפיט שירות':9,'פריפיט מכירות':9};
 
@@ -407,7 +407,8 @@
       spinning('tRefBtn',true);
       const body=document.getElementById('taqanBody');
       try{
-        const _n=new Date(); const today=new Date(_n.getTime()+3*60*60*1000).toISOString().slice(0,10);
+        const now=new Date();
+        const today=new Date(now.getTime()+3*60*60*1000).toISOString().slice(0,10);
         const res=await fetch(SB_URL_Y+'/work_hours?select=activity,hours,updated_by,updated_at&work_date=eq.'+today,{
           headers:{'apikey':SB_KEY_Y,'Authorization':'Bearer '+SB_KEY_Y}
         });
