@@ -474,17 +474,17 @@
   async function loadClOverdue(){
     try{
       const now=new Date();
-      const today=new Date(now.getTime()+3*60*60*1000).toISOString().slice(0,10);
-      const nowMin=now.getHours()*60+now.getMinutes();
-      const dow=now.getDay();
-      document.getElementById('tvClTime').textContent=now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-      // שלוף כל המנהלים
+      const israelTime=new Date(now.getTime()+3*60*60*1000);
+      const today=israelTime.toISOString().slice(0,10);
+      const nowMin=israelTime.getUTCHours()*60+israelTime.getUTCMinutes();
+      const dow=israelTime.getUTCDay();
+      document.getElementById('tvClTime').textContent=String(israelTime.getUTCHours()).padStart(2,'0')+':'+String(israelTime.getUTCMinutes()).padStart(2,'0');
       const mgrs=await fetch(T_URL+'/managers?select=name&order=name.asc',{headers:H(T_KEY)}).then(r=>r.json());
       if(!Array.isArray(mgrs)||!mgrs.length){
         document.getElementById('clOverdueBody').innerHTML='<tr><td colspan="3" class="loading">אין מנהלים</td></tr>';
         return;
       }
-      let html='';
+      let rows=[];
       for(const mgr of mgrs){
         const items=await fetch(T_URL+'/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(mgr.name)+'&active=eq.true',{headers:H(T_KEY)}).then(r=>r.json());
         const filtered=Array.isArray(items)?items.filter(i=>(i.day_of_week===null||i.day_of_week===dow)&&i.task_time&&dow!==5&&dow!==6):[];
@@ -500,13 +500,18 @@
         const oldest=overdue.reduce((a,b)=>a.task_time<b.task_time?a:b);
         const[oh,om]=(oldest.task_time+':00').split(':');
         const diffMin=nowMin-(parseInt(oh)*60+parseInt(om));
-        const diffStr=diffMin>=60?`${Math.floor(diffMin/60)}ש׳${diffMin%60?` ${diffMin%60}ד׳`:''}`:diffMin+'ד׳';
-        html+=`<tr class="ff-row">
-          <td class="ff-name" style="color:#DC2626;font-weight:700">${mgr.name}</td>
-          <td><span style="font-size:16px;font-weight:900;color:#DC2626;background:#FEE2E2;padding:2px 8px;border-radius:6px">${overdue.length}</span></td>
-          <td style="font-size:9px;color:#888;direction:rtl">${oldest.task_time}<br/><span style="color:#DC2626;font-weight:700">${diffStr} בחריגה</span></td>
-        </tr>`;
+        rows.push({name:mgr.name,count:overdue.length,oldest,diffMin});
       }
+      // מיון מהגדול לקטן לפי זמן חריגה
+      rows.sort((a,b)=>b.diffMin-a.diffMin);
+      const html=rows.map(r=>{
+        const diffStr=r.diffMin>=60?`${Math.floor(r.diffMin/60)}ש׳${r.diffMin%60?` ${r.diffMin%60}ד׳`:''}`:r.diffMin+'ד׳';
+        return`<tr class="ff-row">
+          <td class="ff-name" style="color:#DC2626;font-weight:700">${r.name}</td>
+          <td><span style="font-size:16px;font-weight:900;color:#DC2626;background:#FEE2E2;padding:2px 8px;border-radius:6px">${r.count}</span></td>
+          <td style="font-size:9px;color:#888;direction:rtl">${r.oldest.task_time}<br/><span style="color:#DC2626;font-weight:700">${diffStr} בחריגה</span></td>
+        </tr>`;
+      }).join('');
       document.getElementById('clOverdueBody').innerHTML=html||'<tr><td colspan="3" class="loading" style="color:#16A34A">✓ אין חריגות</td></tr>';
     }catch(e){
       document.getElementById('clOverdueBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה</td></tr>';
