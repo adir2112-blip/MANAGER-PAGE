@@ -919,6 +919,9 @@ function selectMgr(el,id,name,activity){
   document.querySelectorAll('.manager-btn').forEach(b=>b.classList.remove('selected'));
   el.classList.add('selected');
   el._mgr={id,name,activity};
+  // אפס PIN בכל בחירת מנהל
+  document.getElementById('pinInput').value='';
+  document.getElementById('loginError').textContent='';
   document.getElementById('pinInput').focus();
 }
 async function doLogin(){
@@ -967,6 +970,21 @@ function doLogout(){
   document.querySelectorAll('.manager-btn').forEach(b=>b.classList.remove('selected'));
 }
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// מעבר אוטומטי בין שדות שעות עם Enter
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  const el=document.activeElement;
+  if(!el||!el.classList.contains('hours-input')) return;
+  e.preventDefault();
+  // מצא את השדה הבא
+  const allInputs=[...document.querySelectorAll('.hours-input:not([disabled])')];
+  const idx=allInputs.indexOf(el);
+  if(idx>=0&&idx<allInputs.length-1){
+    allInputs[idx+1].focus();
+    allInputs[idx+1].select();
+  }
+});
 
 function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
