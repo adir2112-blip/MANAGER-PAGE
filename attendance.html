@@ -610,7 +610,7 @@
         <div id="clOverviewList"></div>
       </div>
 
-      <!-- מנהל רגיל: צ'ק ליסט היום שלו -->
+      <!-- מנהל רגיל: צ'ק ליסט היום שלו + תחתים -->
       <div id="clManagerTodayView">
         <div class="group" id="clManagerCard">
           <div class="group-header">
@@ -623,6 +623,8 @@
           <div class="cl-progress"><div class="cl-progress-bar" id="clProgressBar" style="width:0%"></div></div>
           <div id="clTasksList"></div>
         </div>
+        <!-- צ'ק ליסט תחתים — צפייה בלבד -->
+        <div id="clSubordinatesList"></div>
       </div>
     </div>
 
@@ -770,6 +772,33 @@
         <table class="admin-table">
           <thead><tr><th>שם מנהל</th><th>סף (דקות)</th><th>סטטוס התראות</th><th>כבוי עד תאריך</th><th></th></tr></thead>
           <tbody id="thresholdBody"><tr><td colspan="5" class="loading-msg">טוען...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ הגדרת תחתים ══ -->
+    <div class="admin-section" style="margin-top:1.5rem">
+      <div class="admin-section-title"><i class="ti ti-hierarchy"></i> הגדרת מנהלים תחתים</div>
+      <div class="admin-form">
+        <div style="font-size:12px;color:#888;margin-bottom:.75rem">הגדר אילו מנהלים כפופים למנהל מסוים — המנהל יוכל לצפות בצ'ק ליסט שלהם</div>
+        <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem">
+          <div class="form-group">
+            <label>מנהל ראשי</label>
+            <select class="form-select" id="reportsMgrMain" style="min-width:180px">
+              <option value="">— בחר מנהל —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>תחתיו (מנהל כפוף)</label>
+            <select class="form-select" id="reportsMgrSub" style="min-width:180px">
+              <option value="">— בחר מנהל —</option>
+            </select>
+          </div>
+          <button class="add-btn green" onclick="addManagerReport()"><i class="ti ti-plus"></i> הוסף</button>
+        </div>
+        <table class="admin-table">
+          <thead><tr><th>מנהל ראשי</th><th>תחתיו</th><th></th></tr></thead>
+          <tbody id="reportsBody"><tr><td colspan="3" class="loading-msg">טוען...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -992,7 +1021,7 @@ function switchTab(tab){
   document.getElementById('content-'+tab).classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='agents') loadAgentsTable();
-  if(tab==='admin'){ loadManagersTable(); loadAlertSettings(); loadThresholds(); }
+  if(tab==='admin'){ loadManagersTable(); loadAlertSettings(); loadThresholds(); loadManagerReports(); loadAllManagers().then(populateReportsSelects); }
   if(tab==='checklist'){
     loadAllManagers().then(()=>{
       populateClSelects();
@@ -1006,6 +1035,7 @@ function switchTab(tab){
         document.getElementById('clManagerTodayView').style.display='';
         document.getElementById('clEditManagerSelect').style.display='none';
         loadClManager();
+        loadSubordinates();
       }
     });
   }
@@ -1466,6 +1496,54 @@ async function loadAllManagers(){
   allManagers=Array.isArray(data)?data:[];
 }
 
+async function loadSubordinates(){
+  const subEl=document.getElementById('clSubordinatesList');
+  if(!subEl) return;
+  // מצא את התחתים של המנהל הנוכחי
+  const reports=await sb('/manager_reports?select=manager_name&reports_to=eq.'+encodeURIComponent(currentManager.name));
+  if(!Array.isArray(reports)||!reports.length){subEl.innerHTML='';return;}
+  const today=getToday();
+  const dow=getTodayDow();
+  if(dow===5||dow===6){subEl.innerHTML='';return;}
+  let html='';
+  for(const r of reports){
+    const subName=r.manager_name;
+    const items=await sb('/checklist_items?select=*&manager_name=eq.'+encodeURIComponent(subName)+'&active=eq.true&order=task_time.asc.nullslast');
+    const filtered=Array.isArray(items)?items.filter(i=>(i.day_of_week===null||i.day_of_week===dow)):[];
+    if(!filtered.length) continue;
+    const comps=await sb('/checklist_completions?select=*&manager_name=eq.'+encodeURIComponent(subName)+'&work_date=eq.'+today);
+    const doneIds={};
+    if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]={completed_at:c.completed_at,notes:c.notes||''};});
+    const done=filtered.filter(i=>doneIds[i.id]).length;
+    const pct=filtered.length?Math.round(done/filtered.length*100):0;
+    const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
+    html+=`<div class="group" style="margin-top:1rem;opacity:.95">
+      <div class="group-header">
+        <div class="group-title">👁️ ${subName} <span style="font-size:11px;color:#888;font-weight:400">(צפייה בלבד)</span></div>
+        <span style="font-size:16px;font-weight:900;color:${color}">${pct}%</span>
+      </div>
+      <div class="cl-progress"><div class="cl-progress-bar" style="width:${pct}%;background:${color}"></div></div>
+      ${filtered.map(item=>{
+        const isDone=!!doneIds[item.id];
+        const notes=doneIds[item.id]?.notes||'';
+        return`<div class="cl-task${isDone?' done':''}">
+          <div class="cl-check${isDone?' done':''}" style="cursor:default">
+            ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}
+          </div>
+          <span class="cl-time">${item.task_time||''}</span>
+          <div class="cl-text" style="flex:1">
+            ${item.task_text}
+            ${item.link?`<a href="${item.link}" target="_blank" rel="noopener" style="font-size:11px;color:#1D4ED8;font-weight:600;text-decoration:none;margin-right:6px">🔗</a>`:''}
+          </div>
+          ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id]?.completed_at)}</span>`:''}
+          ${notes?`<span style="font-size:11px;color:#2563EB;margin-right:6px">💬 ${notes}</span>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+  subEl.innerHTML=html;
+}
+
 async function loadClManager(){
   const today=getToday();
   const dow=getTodayDow();
@@ -1899,6 +1977,44 @@ async function toggleManagerAlerts(id,currentlyDisabled){
     toast(untilVal?'התראות כבויות עד '+untilVal+' ✓':'התראות כבויות ✓');
   }
   loadThresholds();
+}
+
+// ── Manager Reports (תחתים) ──
+async function loadManagerReports(){
+  const tbody=document.getElementById('reportsBody');
+  if(!tbody) return;
+  const data=await sb('/manager_reports?select=*&order=reports_to.asc,manager_name.asc');
+  if(!Array.isArray(data)||!data.length){tbody.innerHTML='<tr><td colspan="3" class="empty-msg">אין הגדרות</td></tr>';return;}
+  tbody.innerHTML=data.map(r=>`<tr>
+    <td style="font-weight:700">${r.reports_to}</td>
+    <td>${r.manager_name}</td>
+    <td><button class="del-btn" onclick="delManagerReport('${r.id}')">הסר</button></td>
+  </tr>`).join('');
+}
+
+function populateReportsSelects(){
+  const data=allManagers||[];
+  const opts=data.map(m=>`<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}</option>`).join('');
+  const el1=document.getElementById('reportsMgrMain');
+  const el2=document.getElementById('reportsMgrSub');
+  if(el1) el1.innerHTML='<option value="">— בחר מנהל —</option>'+opts;
+  if(el2) el2.innerHTML='<option value="">— בחר מנהל —</option>'+opts;
+}
+
+async function addManagerReport(){
+  const main=document.getElementById('reportsMgrMain')?.value;
+  const sub=document.getElementById('reportsMgrSub')?.value;
+  if(!main||!sub){toast('בחר שני מנהלים');return;}
+  if(main===sub){toast('לא ניתן להוסיף מנהל לעצמו');return;}
+  await fetch(SB_URL+'/manager_reports',{method:'POST',headers:H,body:JSON.stringify({manager_name:sub,reports_to:main})});
+  toast('נוסף ✓');
+  loadManagerReports();
+}
+
+async function delManagerReport(id){
+  await fetch(SB_URL+'/manager_reports?id=eq.'+id,{method:'DELETE',headers:H});
+  toast('הוסר ✓');
+  loadManagerReports();
 }
 
 // ── Alert Settings ──
