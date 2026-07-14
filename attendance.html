@@ -842,7 +842,7 @@ const GROUPS=[
   },
   {
     id:'g2',title:'מאוחדת',icon:'🏢',
-    subs:[{label:'מאוחדת',acts:['מאוחדת'],divisor:7}]
+    subs:[{label:'מאוחדת',acts:['מאוחדת'],divisor:8}]
   },
   {
     id:'g3',title:'פריפיט',icon:'💪',
@@ -856,14 +856,14 @@ const GROUPS=[
 // טבלת סיכום לפי מנהל
 const SUMMARY_ROWS_FULL=[
   {label:'מובמנט',acts:['מובמנט'],divisor:9},
-  {label:'מאוחדת',acts:['מאוחדת'],divisor:7},
+  {label:'מאוחדת',acts:['מאוחדת'],divisor:8},
   {label:'סה״כ מובמנט + מאוחדת',acts:['מובמנט','מאוחדת'],divisor:null,isTotal:true},
   {label:'פריפיט שירות',acts:['פריפיט שירות'],divisor:9},
   {label:'פריפיט מכירות',acts:['פריפיט מכירות'],divisor:9},
 ];
 const SUMMARY_ROWS_LIMITED=[
   {label:'מובמנט',acts:['מובמנט'],divisor:9},
-  {label:'מאוחדת',acts:['מאוחדת'],divisor:7},
+  {label:'מאוחדת',acts:['מאוחדת'],divisor:8},
   {label:'סה״כ מובמנט + מאוחדת',acts:['מובמנט','מאוחדת'],divisor:null,isTotal:true},
 ];
 
@@ -1119,7 +1119,7 @@ function renderSummary(){
     if(row.isTotal){
       const movH=allAgents.filter(a=>a.activity==='מובמנט').reduce((s,a)=>s+(parseFloat(allHours[a.id]?.hours)||0),0);
       const meuH=allAgents.filter(a=>a.activity==='מאוחדת').reduce((s,a)=>s+(parseFloat(allHours[a.id]?.hours)||0),0);
-      taqan=+((movH/9)+(meuH/7)).toFixed(2);
+      taqan=+((movH/9)+(meuH/8)).toFixed(2);
     } else {
       taqan=row.divisor?+(totalHrs/row.divisor).toFixed(2):'—';
     }
