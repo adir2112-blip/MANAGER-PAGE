@@ -830,7 +830,7 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
 const SUPER_ADMIN='אדיר לוי';
 // מנהלים שרואים טבלת סיכום
-const SUMMARY_MANAGERS=['אדיר לוי','הודיה מזרחי','בקי ביטון'];
+const SUMMARY_MANAGERS=['אדיר לוי','הודיה מזרחי','בקי ביטון','אליה ביטון'];
 const FULL_ADMIN=['אדיר לוי'];
 const CALLS_MANAGERS=['הודיה מזרחי','בקי ביטון'];
 
@@ -865,6 +865,9 @@ const SUMMARY_ROWS_LIMITED=[
   {label:'מובמנט',acts:['מובמנט'],divisor:9},
   {label:'מאוחדת',acts:['מאוחדת'],divisor:8},
   {label:'סה״כ מובמנט + מאוחדת',acts:['מובמנט','מאוחדת'],divisor:null,isTotal:true},
+];
+const SUMMARY_ROWS_MEUCHAD=[
+  {label:'מאוחדת',acts:['מאוחדת'],divisor:8},
 ];
 
 let currentManager=null, allAgents=[], allHours={};
@@ -1109,7 +1112,9 @@ setInterval(()=>{
 // ── Summary ──
 function renderSummary(){
   if(!SUMMARY_MANAGERS.includes(currentManager.name)) return;
-  const rows=FULL_ADMIN.includes(currentManager.name)?SUMMARY_ROWS_FULL:SUMMARY_ROWS_LIMITED;
+  const rows=FULL_ADMIN.includes(currentManager.name)?SUMMARY_ROWS_FULL
+    :currentManager.activity==='מאוחדת'?SUMMARY_ROWS_MEUCHAD
+    :SUMMARY_ROWS_LIMITED;
   let html='';
   rows.forEach(row=>{
     const agents=allAgents.filter(a=>row.acts.includes(a.activity));
