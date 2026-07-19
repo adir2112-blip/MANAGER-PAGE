@@ -1842,8 +1842,10 @@ async function loadClEdit(){
   const target=mgr||currentManager.name;
   let items;
   if(clEditDay===null){
-    items=await sb(`/checklist_items?select=*&manager_name=eq.${encodeURIComponent(target)}&active=eq.true&day_of_week=is.null&order=task_time.asc.nullslast,sort_order.asc`);
+    // "כל הימים" — הצג את כולם (null + ספציפיים)
+    items=await sb(`/checklist_items?select=*&manager_name=eq.${encodeURIComponent(target)}&active=eq.true&order=task_time.asc.nullslast,sort_order.asc`);
   } else {
+    // יום ספציפי — הצג null + אותו יום
     const[allDays,specific]=await Promise.all([
       sb(`/checklist_items?select=*&manager_name=eq.${encodeURIComponent(target)}&active=eq.true&day_of_week=is.null&order=task_time.asc.nullslast`),
       sb(`/checklist_items?select=*&manager_name=eq.${encodeURIComponent(target)}&active=eq.true&day_of_week=eq.${clEditDay}&order=task_time.asc.nullslast`)
