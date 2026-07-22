@@ -328,8 +328,8 @@
 
   async function loadEmails(){
     try{
-      const res=await fetch('https://crm.azriasolutions.com/api/external/emails-summary',{
-        headers:{'Authorization':'Bearer g9yGy7zxtAXsQrJznnowAMIdMDDL4AqGpYdoZOYS2lQ'}
+      const res=await fetch('https://mxgqhzjhiepjchhofclc.supabase.co/functions/v1/emails-proxy',{
+        headers:{'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Z3FoempoaWVwamNoaG9mY2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMDQwNzYsImV4cCI6MjA5NzU4MDA3Nn0._1PRPhD6H0F7Cgm4VBp1Q0dn0DLpgnPre1KSusoZWhg'}
       });
       if(!res.ok) throw new Error('HTTP '+res.status);
       const data=await res.json();
