@@ -375,7 +375,7 @@
         g[a].hours+=parseFloat(x.hours)||0;
         if(x.updated_at&&(!g[a].updated_at||x.updated_at>g[a].updated_at)){g[a].updated_at=x.updated_at;g[a].updated_by=x.updated_by;}
       });
-      const DIVS={מובמנט:9,מאוחדת:7,'פריפיט שירות':9,'פריפיט מכירות':9};
+      const DIVS={מובמנט:9,מאוחדת:8,'פריפיט שירות':9,'פריפיט מכירות':9};
       const order=['מובמנט','מאוחדת','פריפיט שירות','פריפיט מכירות'];
       let html='';
       order.forEach((act)=>{
@@ -405,7 +405,7 @@
         </tr>`;
         if(act==='מאוחדת'){
           const mH=g['מובמנט']?.hours||0, meH=g['מאוחדת']?.hours||0;
-          const tot=((mH/9)+(meH/7)).toFixed(2);
+          const tot=((mH/9)+(meH/8)).toFixed(2);
           const tn2=parseFloat(tot);
           const c2=tn2>=1.8?'#16A34A':tn2>=1.4?'#D97706':'#DC2626';
           const bg2=tn2>=1.8?'#DCFCE7':tn2>=1.4?'#FEF9C3':'#FEE2E2';
