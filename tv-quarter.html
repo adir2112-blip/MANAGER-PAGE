@@ -328,34 +328,43 @@
 
   async function loadEmails(){
     try{
-      const res=await fetch('https://crm-movement.vercel.app/api/glassix-refresh',{});
+      const res=await fetch('https://crm.azriasolutions.com/api/external/emails-summary',{
+        headers:{'Authorization':'Bearer g9yGy7zxtAXsQrJznnowAMIdMDDL4AqGpYdoZOYS2lQ'}
+      });
       if(!res.ok) throw new Error('HTTP '+res.status);
       const data=await res.json();
-      const depts=(data.departments||[]).filter(d=>d.name!=='לא ידוע');
-      const summary=data.summary||{};
-      document.getElementById('tEmailOpen').textContent=summary.total_open??'0';
-      document.getElementById('tEmailCrit').textContent=summary.critical??'0';
-      if(!depts.length){
+      const rows=Array.isArray(data)?data:[];
+      const totalOpen=rows.reduce((s,r)=>s+(r.open_count||0),0);
+      document.getElementById('tEmailOpen').textContent=totalOpen;
+      document.getElementById('tEmailCrit').textContent='';
+      if(!rows.length){
         document.getElementById('emBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים</td></tr>';
         return;
       }
-      const slaOrder={red:0,orange:1,yellow:2,green:3};
-      depts.sort((a,b)=>(slaOrder[a.sla_status]??9)-(slaOrder[b.sla_status]??9));
-      document.getElementById('emBody').innerHTML=depts.map(d=>{
-        const sla=d.sla_status||'green';
-        const wc=d.open_tickets>0?(sla==='red'?'red':sla==='orange'?'orange':'green'):'gray';
-        const days=d.oldest_business_days??0;
+      // מיין לפי ישן ביותר קודם
+      rows.sort((a,b)=>{
+        if(!a.oldest_date&&!b.oldest_date) return 0;
+        if(!a.oldest_date) return 1;
+        if(!b.oldest_date) return -1;
+        return a.oldest_date.localeCompare(b.oldest_date);
+      });
+      const today=new Date();
+      document.getElementById('emBody').innerHTML=rows.map(r=>{
+        const count=r.open_count||0;
+        const wc=count===0?'gray':count>10?'red':count>5?'orange':'green';
         let ageLabel='';
-        if(d.open_tickets>0){
-          if(days===0) ageLabel='היום';
-          else if(days===1) ageLabel='אתמול';
-          else if(days===2) ageLabel='שלשום';
-          else ageLabel=days+' ימים';
+        if(r.oldest_date&&count>0){
+          const diff=Math.floor((today-new Date(r.oldest_date))/(1000*60*60*24));
+          if(diff===0) ageLabel='היום';
+          else if(diff===1) ageLabel='אתמול';
+          else if(diff===2) ageLabel='שלשום';
+          else if(diff<7) ageLabel=diff+' ימים';
+          else ageLabel=Math.floor(diff/7)+' שבועות';
         }
         return`<tr class="em-row">
-          <td class="em-name">${d.name}</td>
-          <td class="em-count ${wc}">${d.open_tickets}</td>
-          <td class="em-sla">${ageLabel?`<span class="sla-chip sla-${sla}" style="font-size:8px">${ageLabel}</span>`:''}</td>
+          <td class="em-name">${r.org_name}</td>
+          <td class="em-count ${wc}">${count}</td>
+          <td class="em-sla">${ageLabel?`<span class="sla-chip" style="font-size:9px;background:#F0EDE6;padding:2px 6px;border-radius:4px;color:#555">${ageLabel}</span>`:''}</td>
         </tr>`;
       }).join('');
     }catch(e){
