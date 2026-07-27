@@ -352,19 +352,17 @@
       document.getElementById('emBody').innerHTML=rows.map(r=>{
         const count=r.open_count||0;
         const wc=count===0?'gray':count>10?'red':count>5?'orange':'green';
-        let ageLabel='';
+        let ageLabel='',ageColor='#555',ageBg='#F0EDE6';
         if(r.oldest_date&&count>0){
           const diff=Math.floor((today-new Date(r.oldest_date))/(1000*60*60*24));
-          if(diff===0) ageLabel='היום';
-          else if(diff===1) ageLabel='אתמול';
-          else if(diff===2) ageLabel='שלשום';
-          else if(diff<7) ageLabel=diff+' ימים';
-          else ageLabel=Math.floor(diff/7)+' שבועות';
+          ageLabel=new Date(r.oldest_date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
+          if(diff<=2){ageColor='#166534';ageBg='#DCFCE7';}
+          else{ageColor='#991B1B';ageBg='#FEE2E2';}
         }
         return`<tr class="em-row">
           <td class="em-name">${r.org_name}</td>
           <td class="em-count ${wc}">${count}</td>
-          <td class="em-sla">${ageLabel?`<span class="sla-chip" style="font-size:9px;background:#F0EDE6;padding:2px 6px;border-radius:4px;color:#555">${ageLabel}</span>`:''}</td>
+          <td class="em-sla">${ageLabel?`<span class="sla-chip" style="font-size:9px;background:${ageBg};padding:2px 6px;border-radius:4px;color:${ageColor};font-weight:700">${ageLabel}</span>`:''}</td>
         </tr>`;
       }).join('');
     }catch(e){
