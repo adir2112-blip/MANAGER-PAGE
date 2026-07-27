@@ -342,12 +342,9 @@
         document.getElementById('emBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים</td></tr>';
         return;
       }
-      // מיין לפי ישן ביותר קודם
+      // מיין לפי כמות פתוחים - מהגדול לקטן
       rows.sort((a,b)=>{
-        if(!a.oldest_date&&!b.oldest_date) return 0;
-        if(!a.oldest_date) return 1;
-        if(!b.oldest_date) return -1;
-        return a.oldest_date.localeCompare(b.oldest_date);
+        return (b.open_count||0)-(a.open_count||0);
       });
       const today=new Date();
       document.getElementById('emBody').innerHTML=rows.map(r=>{
