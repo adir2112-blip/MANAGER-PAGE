@@ -333,7 +333,8 @@
       });
       if(!res.ok) throw new Error('HTTP '+res.status);
       const data=await res.json();
-      const rows=Array.isArray(data)?data:[];
+      const ALLOWED_ORGS=['לאומית FIT','עובדים בריא','מעוף לעמית','כללית אקטיב'];
+      const rows=(Array.isArray(data)?data:[]).filter(r=>r.org_name&&ALLOWED_ORGS.some(name=>r.org_name.includes(name)));
       const totalOpen=rows.reduce((s,r)=>s+(r.open_count||0),0);
       document.getElementById('tEmailOpen').textContent=totalOpen;
       document.getElementById('tEmailCrit').textContent='';
@@ -434,30 +435,32 @@
     try{
       const n=new Date();
       const today=(n.getHours()<6?new Date(n.getTime()-864e5):n).toISOString().slice(0,10);
-      const r=await fetch(T_URL+'/manager_calls?select=*&work_date=eq.'+today,{headers:H(T_KEY)});
-      const d=await r.json();
-      if(!Array.isArray(d)||!d.length){
-        document.getElementById('mcBody').innerHTML='<tr><td colspan="3" class="loading">אין נתונים להיום</td></tr>';
-        return;
-      }
-      const rec=d[0];
-      const t=rec.updated_at?new Date(rec.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
-      document.getElementById('mcBody').innerHTML=`
+      const [sla,d]=await Promise.all([
+        fetch('https://vlhqkwwgmkriwojffced.supabase.co/functions/v1/sla-status').then(r=>r.json()).catch(()=>null),
+        fetch(T_URL+'/manager_calls?select=*&work_date=eq.'+today,{headers:H(T_KEY)}).then(r=>r.json()).catch(()=>null)
+      ]);
+
+      const breached=sla&&sla.ok?(sla.open_breached_count??0):null;
+      const breachDate=sla&&sla.ok?sla.oldest_breach_date:null;
+      const row1=`
         <tr class="ff-row">
           <td class="ff-name">שיחות מנהל בחריגה</td>
           <td style="direction:ltr;text-align:left">
             <div style="display:inline-flex;align-items:flex-start;gap:8px">
               <div>
-                <div style="font-size:20px;font-weight:900;color:#DC2626;background:#FEE2E2;padding:2px 10px;border-radius:8px;display:inline-block">${rec.calls_overdue??0}</div>
-                <div style="font-size:9px;color:#888;margin-top:2px">${rec.calls_oldest_date?new Date(rec.calls_oldest_date+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}):'—'}</div>
+                <div style="font-size:20px;font-weight:900;color:#DC2626;background:#FEE2E2;padding:2px 10px;border-radius:8px;display:inline-block">${breached??'—'}</div>
+                <div style="font-size:9px;color:#888;margin-top:2px">${breachDate?new Date(breachDate+'T12:00:00').toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}):'—'}</div>
               </div>
               <div style="font-size:9px;color:#888;line-height:1.4;direction:rtl;text-align:right">
-                <div style="font-weight:700;color:#555">${rec.updated_by||'—'}</div>
-                <div>${t}</div>
+                <div style="font-weight:700;color:#555">SLA אוטומטי</div>
               </div>
             </div>
           </td>
-        </tr>
+        </tr>`;
+
+      const rec=Array.isArray(d)&&d.length?d[0]:null;
+      const t=rec&&rec.updated_at?new Date(rec.updated_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+      const row2=rec?`
         <tr class="ff-row">
           <td class="ff-name">בטיפול לאחר שיחה</td>
           <td style="direction:ltr;text-align:left">
@@ -472,7 +475,10 @@
               </div>
             </div>
           </td>
-        </tr>`;
+        </tr>`:`
+        <tr class="ff-row"><td class="ff-name">בטיפול לאחר שיחה</td><td class="loading">אין נתונים להיום</td></tr>`;
+
+      document.getElementById('mcBody').innerHTML=row1+row2;
     }catch(e){
       document.getElementById('mcBody').innerHTML='<tr><td colspan="3" class="loading">שגיאה</td></tr>';
     }
