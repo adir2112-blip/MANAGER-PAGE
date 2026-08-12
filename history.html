@@ -91,6 +91,20 @@
     .sla-warn{background:#FEF9C3;color:#854D0E}
     .sla-bad{background:#FEE2E2;color:#991B1B}
 
+    /* Checklist task list — matches the live checklist view in attendance.html */
+    .cl-task{display:flex;flex-direction:column;gap:.35rem;padding:.65rem 1.2rem;border-bottom:1px solid #F8F6F2}
+    .cl-task:last-child{border-bottom:none}
+    .cl-task.done{background:#F0FDF4}
+    .cl-task.overdue{background:#FEF2F2}
+    .cl-check{width:24px;height:24px;border-radius:7px;border:2px solid #E8E4DC;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .cl-check.done{background:#16A34A;border-color:#16A34A;color:#fff}
+    .cl-time{font-size:11px;font-weight:700;color:#2563EB;min-width:38px;flex-shrink:0}
+    .cl-text{font-size:13.5px;font-weight:600;color:#1A1A1A;flex:1}
+    .cl-task.done .cl-text{text-decoration:line-through;color:#AAA}
+    .cl-done-at{font-size:10.5px;color:#16A34A;font-weight:600;white-space:nowrap}
+    .cl-overdue-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:#FEE2E2;color:#991B1B;white-space:nowrap}
+    .cl-note{margin-right:2.5rem;font-size:12px;color:#555;background:#F8F6F2;border:1px solid #F0EDE6;border-radius:6px;padding:4px 10px;display:inline-block}
+
     .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   </style>
@@ -170,6 +184,8 @@
       <div class="filter-group">
         <div class="filter-label">תקופה</div>
         <div class="period-tabs">
+          <button class="period-tab" id="tabWeek" onclick="setPeriod('week')">שבוע אחרון</button>
+          <button class="period-tab" id="tabTwoweeks" onclick="setPeriod('twoweeks')">שבועיים אחרונים</button>
           <button class="period-tab active" id="tabMonth" onclick="setPeriod('month')">חודש נוכחי</button>
           <button class="period-tab" id="tabPrev" onclick="setPeriod('prev')">חודש קודם</button>
           <button class="period-tab" id="tabRange" onclick="setPeriod('range')">טווח</button>
@@ -359,6 +375,11 @@ function getMonthRange(offset=0){
   const to=new Date(y,m+1,0).toISOString().slice(0,10);
   return{from,to};
 }
+function getDaysRange(days){
+  const to=new Date();
+  const from=new Date(to.getTime()-(days-1)*864e5);
+  return{from:from.toISOString().slice(0,10),to:to.toISOString().slice(0,10)};
+}
 
 // LOGIN
 async function loadManagers(){
@@ -433,7 +454,9 @@ function setPeriod(p){
 async function loadHistory(){
   document.getElementById('historyBody').innerHTML='<tr class="loading-row"><td colspan="6">טוען...</td></tr>';
   let from,to;
-  if(currentPeriod==='month'){const r=getMonthRange(0);from=r.from;to=r.to;}
+  if(currentPeriod==='week'){const r=getDaysRange(7);from=r.from;to=r.to;}
+  else if(currentPeriod==='twoweeks'){const r=getDaysRange(14);from=r.from;to=r.to;}
+  else if(currentPeriod==='month'){const r=getMonthRange(0);from=r.from;to=r.to;}
   else if(currentPeriod==='prev'){const r=getMonthRange(-1);from=r.from;to=r.to;}
   else{from=document.getElementById('dateFrom').value;to=document.getElementById('dateTo').value;}
   if(!from||!to){toast('בחר טווח תאריכים');return;}
@@ -615,7 +638,7 @@ async function loadClHistory(){
   const mgrFilter=FULL_ADMIN.includes(currentManager.name)
     ?(document.getElementById('clHistManager')?.value||'')
     :currentManager.name;
-  let compsQ=`/checklist_completions?select=manager_name,work_date,item_id&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,manager_name.asc`;
+  let compsQ=`/checklist_completions?select=manager_name,work_date,item_id,notes,completed_at&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,manager_name.asc`;
   if(mgrFilter) compsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
   let itemsQ='/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true';
   if(mgrFilter) itemsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
@@ -633,8 +656,8 @@ async function loadClHistory(){
   const grouped={};
   comps.forEach(c=>{
     const key=c.work_date+'__'+c.manager_name;
-    if(!grouped[key]) grouped[key]={date:c.work_date,manager:c.manager_name,done:new Set()};
-    grouped[key].done.add(c.item_id);
+    if(!grouped[key]) grouped[key]={date:c.work_date,manager:c.manager_name,done:new Map()};
+    grouped[key].done.set(c.item_id,{completed_at:c.completed_at,notes:c.notes||''});
   });
   let html=''; let count=0;
   Object.values(grouped).sort((a,b)=>b.date.localeCompare(a.date)||a.manager.localeCompare(b.manager,'he')).forEach(g=>{
@@ -656,12 +679,21 @@ async function loadClHistory(){
       <td style="color:#DC2626;font-weight:700">${Math.max(0,total-done)}</td>
     </tr>
     <tr id="clhdet_${uid}" style="display:none;background:#FAFAF8">
-      <td colspan="6" style="padding:.75rem 1.2rem">
+      <td colspan="6" style="padding:0">
         ${dayItems.map(item=>{
-          const isDone=g.done.has(item.id);
-          return`<span style="display:inline-flex;align-items:center;gap:4px;margin:.2rem .4rem;font-size:12px;font-weight:600;padding:3px 9px;border-radius:6px;background:${isDone?'#DCFCE7':'#FEE2E2'};color:${isDone?'#166534':'#991B1B'}">
-            ${isDone?'✓':'✗'} ${item.task_time?item.task_time+' — ':''}${item.task_text}
-          </span>`;
+          const c=g.done.get(item.id);
+          const isDone=!!c;
+          const cls='cl-task'+(isDone?' done':' overdue');
+          const checkCls='cl-check'+(isDone?' done':'');
+          return`<div class="${cls}">
+            <div style="display:flex;align-items:center;gap:.75rem;width:100%">
+              <div class="${checkCls}">${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}</div>
+              <span class="cl-time">${item.task_time||''}</span>
+              <div class="cl-text">${item.task_text}</div>
+              ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(c.completed_at)}</span>`:`<span class="cl-overdue-badge">✗ לא בוצע</span>`}
+            </div>
+            ${c&&c.notes?`<div class="cl-note">📝 ${c.notes}</div>`:''}
+          </div>`;
         }).join('')}
       </td>
     </tr>`;
