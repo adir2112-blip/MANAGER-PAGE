@@ -640,7 +640,7 @@ async function loadClHistory(){
     :currentManager.name;
   let compsQ=`/checklist_completions?select=manager_name,work_date,item_id,notes,completed_at&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,manager_name.asc`;
   if(mgrFilter) compsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
-  let itemsQ='/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true';
+  let itemsQ='/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true&order=task_time.asc.nullslast';
   if(mgrFilter) itemsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
   const [comps,items]=await Promise.all([sb(compsQ),sb(itemsQ)]);
   if(!Array.isArray(comps)||!comps.length){
@@ -739,8 +739,8 @@ async function exportClPDF(mode='detailed'){
   // שלוף נתונים
   const managers=mgrFilter?[mgrFilter]:allManagers?.map(m=>m.name)||[mgrFilter];
   const itemsQ=mgrFilter
-    ?`/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true&manager_name=eq.${encodeURIComponent(mgrFilter)}`
-    :`/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true`;
+    ?`/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true&manager_name=eq.${encodeURIComponent(mgrFilter)}&order=task_time.asc.nullslast`
+    :`/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true&order=task_time.asc.nullslast`;
   const items=await sb(itemsQ);
   const itemsByMgr={};
   if(Array.isArray(items)) items.forEach(i=>{
