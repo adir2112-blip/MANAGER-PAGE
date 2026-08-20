@@ -173,6 +173,11 @@
     .cl-task.done .cl-text{text-decoration:line-through;color:#AAA}
     .cl-done-at{font-size:10.5px;color:#16A34A;font-weight:600;white-space:nowrap}
     .cl-overdue-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:#FEE2E2;color:#991B1B}
+    .temp-task-card{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.2rem;margin:.6rem 1.2rem;border-radius:12px;background:#FFF7ED;border:2px solid #F59E0B;box-shadow:0 2px 8px rgba(245,158,11,.15)}
+    .temp-task-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;background:#F59E0B;color:#fff;white-space:nowrap;flex-shrink:0}
+    .temp-task-text{font-size:14px;font-weight:700;color:#1A1A1A;flex:1}
+    .temp-task-done-btn{background:#16A34A;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif;white-space:nowrap;flex-shrink:0}
+    .temp-task-done-btn:hover{background:#15803D}
     .cl-progress{height:6px;background:#F0EDE6;border-radius:999px;overflow:hidden;margin:.5rem 1.4rem}
     .cl-progress-bar{height:100%;border-radius:999px;background:#16A34A;transition:width .3s}
     .cl-score{font-size:22px;font-weight:900;letter-spacing:-1px}
@@ -584,6 +589,7 @@
     <div style="display:flex;gap:.4rem;margin-bottom:1.2rem">
       <button class="tasks-month-tab active" id="clSubToday" onclick="setClMainTab('today')">📋 היום</button>
       <button class="tasks-month-tab" id="clSubEditCl" onclick="setClMainTab('edit')">✏️ עריכת צ'ק ליסט</button>
+      <button class="tasks-month-tab" id="clSubTemp" style="display:none" onclick="setClMainTab('temp')">⏰ משימה זמנית</button>
     </div>
 
     <!-- ══ TAB: היום ══ -->
@@ -620,6 +626,7 @@
               <span style="font-size:11px;color:#AAA" id="clManagerDate"></span>
             </div>
           </div>
+          <div id="tempTasksForManager"></div>
           <div class="cl-progress"><div class="cl-progress-bar" id="clProgressBar" style="width:0%"></div></div>
           <div id="clTasksList"></div>
         </div>
@@ -674,6 +681,42 @@
       <div class="group">
         <div class="group-header"><div class="group-title" id="clEditTitle">משימות</div></div>
         <div id="clEditList"><div class="empty-msg">בחר יום</div></div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: משימה זמנית (אדיר בלבד) ══ -->
+    <div id="clPaneTemp" style="display:none">
+      <div class="admin-form" style="margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:700;color:#888;margin-bottom:.6rem">➕ הוסף משימה זמנית</div>
+        <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+          <div class="form-group">
+            <label>מנהל</label>
+            <select class="tasks-agent-select" id="tempTaskManager" style="min-width:200px">
+              <option value="">— בחר מנהל —</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>תיאור המשימה</label>
+            <input class="form-input" id="tempTaskText" placeholder="לדוגמה: יש להכין תדריך בנושא שעון"/>
+          </div>
+          <button class="add-btn green" onclick="addTempTask()"><i class="ti ti-plus"></i> הוסף</button>
+        </div>
+      </div>
+
+      <div class="admin-form" style="margin-bottom:1rem">
+        <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:.6rem">⏰ ממתינות לביצוע</div>
+        <table class="admin-table">
+          <thead><tr><th>מנהל</th><th>משימה</th><th>נוצר</th><th></th></tr></thead>
+          <tbody id="tempTasksPending"><tr><td colspan="4" class="loading-msg">טוען...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="admin-form">
+        <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:.6rem">✅ בוצעו</div>
+        <table class="admin-table">
+          <thead><tr><th>מנהל</th><th>משימה</th><th>בוצע בתאריך</th><th>בוצע בשעה</th></tr></thead>
+          <tbody id="tempTasksDone"><tr><td colspan="4" class="loading-msg">טוען...</td></tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -1032,13 +1075,16 @@ function switchTab(tab){
         document.getElementById('clAdminTodayHeader').style.display='';
         document.getElementById('clManagerTodayView').style.display='none';
         document.getElementById('clEditManagerSelect').style.display='';
+        document.getElementById('clSubTemp').style.display='';
         loadClOverview();
       } else {
         document.getElementById('clAdminTodayHeader').style.display='none';
         document.getElementById('clManagerTodayView').style.display='';
         document.getElementById('clEditManagerSelect').style.display='none';
+        document.getElementById('clSubTemp').style.display='none';
         loadClManager();
         loadSubordinates();
+        loadManagerTempTasks();
       }
     });
   }
@@ -1485,9 +1531,12 @@ function isWeekend(){ const d=new Date().getDay(); return d===5||d===6; }
 function setClMainTab(tab){
   document.getElementById('clSubToday').classList.toggle('active',tab==='today');
   document.getElementById('clSubEditCl').classList.toggle('active',tab==='edit');
+  document.getElementById('clSubTemp').classList.toggle('active',tab==='temp');
   document.getElementById('clPaneToday').style.display=tab==='today'?'':'none';
   document.getElementById('clPaneEdit').style.display=tab==='edit'?'':'none';
+  document.getElementById('clPaneTemp').style.display=tab==='temp'?'':'none';
   if(tab==='edit') loadClEdit();
+  if(tab==='temp') loadTempTasksAdmin();
 }
 
 function setClDay(day){
@@ -1505,8 +1554,10 @@ function populateClSelects(){
   const opts=data.map(m=>`<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}</option>`).join('');
   const el1=document.getElementById('clFilterManagerAdmin');
   const el2=document.getElementById('clEditManager');
+  const el3=document.getElementById('tempTaskManager');
   if(el1) el1.innerHTML='<option value="">כל המנהלים</option>'+opts;
   if(el2) el2.innerHTML='<option value="">— בחר מנהל —</option>'+opts;
+  if(el3) el3.innerHTML='<option value="">— בחר מנהל —</option>'+opts;
 }
 
 let allManagers=[];
@@ -1639,6 +1690,70 @@ function renderClManagerTasks(items,doneIds,today){
   document.getElementById('clProgressBar').style.background=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
 }
 
+// ── Temporary tasks (Adir only — assign ad-hoc, non-recurring tasks to any manager) ──
+async function loadManagerTempTasks(){
+  const el=document.getElementById('tempTasksForManager');
+  if(!el) return;
+  const rows=await sb('/temp_tasks?select=*&manager_name=eq.'+encodeURIComponent(currentManager.name)+'&completed_at=is.null&order=created_at.asc');
+  if(!Array.isArray(rows)||!rows.length){el.innerHTML='';return;}
+  el.innerHTML=rows.map(t=>`
+    <div class="temp-task-card">
+      <span class="temp-task-badge">⚡ מיידי</span>
+      <div class="temp-task-text">${t.task_text}</div>
+      <button class="temp-task-done-btn" onclick="completeTempTask('${t.id}')">✓ בוצע</button>
+    </div>`).join('');
+}
+
+async function completeTempTask(id){
+  await fetch(SB_URL+'/temp_tasks?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({completed_at:new Date().toISOString()})});
+  toast('המשימה סומנה כבוצעה ✓');
+  loadManagerTempTasks();
+}
+
+async function addTempTask(){
+  const mgr=document.getElementById('tempTaskManager').value;
+  const text=document.getElementById('tempTaskText').value.trim();
+  if(!mgr){toast('בחר מנהל');return;}
+  if(!text){toast('הזן תיאור משימה');return;}
+  const res=await fetch(SB_URL+'/temp_tasks',{method:'POST',headers:H,body:JSON.stringify({
+    manager_name:mgr,task_text:text,created_by:currentManager.name
+  })});
+  if(res.ok||res.status===201){
+    document.getElementById('tempTaskText').value='';
+    toast('משימה זמנית נוספה ✓');
+    loadTempTasksAdmin();
+  } else {const e=await res.json();toast('שגיאה: '+JSON.stringify(e));}
+}
+
+async function loadTempTasksAdmin(){
+  const pendingEl=document.getElementById('tempTasksPending');
+  const doneEl=document.getElementById('tempTasksDone');
+  const [pending,done]=await Promise.all([
+    sb('/temp_tasks?select=*&completed_at=is.null&order=created_at.asc'),
+    sb('/temp_tasks?select=*&completed_at=not.is.null&order=completed_at.desc&limit=50')
+  ]);
+  pendingEl.innerHTML=(Array.isArray(pending)&&pending.length)?pending.map(t=>`
+    <tr>
+      <td style="font-weight:700">${t.manager_name}</td>
+      <td>${t.task_text}</td>
+      <td style="font-size:12px;color:#888">${fmtDateTime(t.created_at)}</td>
+      <td><button class="del-btn" onclick="deleteTempTask('${t.id}')">מחק</button></td>
+    </tr>`).join(''):'<tr><td colspan="4" class="empty-msg">אין משימות ממתינות</td></tr>';
+  doneEl.innerHTML=(Array.isArray(done)&&done.length)?done.map(t=>`
+    <tr>
+      <td style="font-weight:700">${t.manager_name}</td>
+      <td>${t.task_text}</td>
+      <td>${formatDateHe(t.completed_at.slice(0,10))}</td>
+      <td style="font-size:12px;color:#888">${new Date(t.completed_at).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</td>
+    </tr>`).join(''):'<tr><td colspan="4" class="empty-msg">אין משימות שהושלמו</td></tr>';
+}
+
+async function deleteTempTask(id){
+  if(!confirm('למחוק משימה זמנית זו?')) return;
+  await fetch(SB_URL+'/temp_tasks?id=eq.'+id,{method:'DELETE',headers:H});
+  toast('נמחק');
+  loadTempTasksAdmin();
+}
 
 async function addClSelfItem(){
   const time=document.getElementById('clSelfTime').value.trim()||null;
