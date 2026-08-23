@@ -414,6 +414,10 @@ async function doLogin(){
     return;
   }
   currentManager=data[0];
+  try{ localStorage.setItem('history_session', JSON.stringify(currentManager)); }catch(e){}
+  enterApp();
+}
+function enterApp(){
   document.getElementById('loginOverlay').classList.add('hidden');
   document.getElementById('app').style.display='block';
   document.getElementById('currentManagerName').textContent=currentManager.name;
@@ -424,8 +428,20 @@ async function doLogin(){
   }
   loadHistory();
 }
+function tryRestoreSession(){
+  try{
+    const saved=localStorage.getItem('history_session');
+    if(!saved) return false;
+    const mgr=JSON.parse(saved);
+    if(!mgr||!mgr.id||!mgr.name) return false;
+    currentManager=mgr;
+    enterApp();
+    return true;
+  }catch(e){ return false; }
+}
 function doLogout(){
   currentManager=null;
+  try{ localStorage.removeItem('history_session'); }catch(e){}
   document.getElementById('loginOverlay').classList.remove('hidden');
   document.getElementById('app').style.display='none';
   document.getElementById('pinInput').value='';
@@ -989,6 +1005,7 @@ async function loadChart(){
 }
 
 loadManagers();
+tryRestoreSession();
 </script>
 </body>
 </html>
