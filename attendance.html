@@ -1490,6 +1490,10 @@ function editAgent(btn){
   document.getElementById('editModalTitle').textContent='עריכת נציג — '+name;
   document.getElementById('editModalBody').innerHTML=`
     <div class="form-group" style="margin-bottom:.75rem">
+      <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">שם מלא</label>
+      <input class="form-input" id="editAgentName" value="${name}" placeholder="שם הנציג"/>
+    </div>
+    <div class="form-group" style="margin-bottom:.75rem">
       <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">מספר ת"ז</label>
       <input class="form-input" id="editAgentIdNum" value="${idNum}" placeholder="123456789" inputmode="numeric"/>
     </div>
@@ -1513,10 +1517,12 @@ async function saveEdit(){
     await fetch(SB_URL+'/managers?id=eq.'+editState.id,{method:'PATCH',headers:H,body:JSON.stringify({activity,phone})});
     toast('עודכן ✓'); closeEditModal(); loadManagersTable(); loadManagers();
   } else if(editState.type==='agent'){
+    const name=document.getElementById('editAgentName').value.trim();
     const email=document.getElementById('editAgentEmail').value.trim();
     const activity=document.getElementById('editAgentActivity').value;
     const idNum=document.getElementById('editAgentIdNum')?.value.trim()||null;
-    await fetch(SB_URL+'/agents_roster?id=eq.'+editState.id,{method:'PATCH',headers:H,body:JSON.stringify({email,activity,id_number:idNum})});
+    if(!name){toast('הזן שם מלא');return;}
+    await fetch(SB_URL+'/agents_roster?id=eq.'+editState.id,{method:'PATCH',headers:H,body:JSON.stringify({name,email,activity,id_number:idNum})});
     toast('עודכן ✓'); closeEditModal();
     await loadAllAgents(); await loadTodayHours(getToday()); renderAll(getToday()); loadAgentsTable();
   }
