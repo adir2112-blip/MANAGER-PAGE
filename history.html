@@ -364,6 +364,8 @@ function fmtDate(d){
   const days=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
   return days[dt.getDay()]+' '+dt.getDate()+'/'+(dt.getMonth()+1)+'/'+dt.getFullYear();
 }
+function escHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
 function fmtDateTime(iso){
   if(!iso) return '—';
   return new Date(iso).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
@@ -654,7 +656,7 @@ async function loadClHistory(){
   const mgrFilter=FULL_ADMIN.includes(currentManager.name)
     ?(document.getElementById('clHistManager')?.value||'')
     :currentManager.name;
-  let compsQ=`/checklist_completions?select=manager_name,work_date,item_id,notes,completed_at&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,manager_name.asc`;
+  let compsQ=`/checklist_completions?select=manager_name,work_date,item_id,notes,completed_at,status,not_done_reason&work_date=gte.${from}&work_date=lte.${to}&order=work_date.desc,manager_name.asc`;
   if(mgrFilter) compsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
   let itemsQ='/checklist_items?select=id,manager_name,task_time,task_text,day_of_week&active=eq.true&order=task_time.asc.nullslast';
   if(mgrFilter) itemsQ+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
@@ -673,7 +675,7 @@ async function loadClHistory(){
   comps.forEach(c=>{
     const key=c.work_date+'__'+c.manager_name;
     if(!grouped[key]) grouped[key]={date:c.work_date,manager:c.manager_name,done:new Map()};
-    grouped[key].done.set(c.item_id,{completed_at:c.completed_at,notes:c.notes||''});
+    grouped[key].done.set(c.item_id,{completed_at:c.completed_at,notes:c.notes||'',status:c.status||'done',reason:c.not_done_reason||''});
   });
   let html=''; let count=0;
   Object.values(grouped).sort((a,b)=>b.date.localeCompare(a.date)||a.manager.localeCompare(b.manager,'he')).forEach(g=>{
@@ -681,7 +683,7 @@ async function loadClHistory(){
     const dow=new Date(g.date+'T12:00:00').getDay();
     const dayItems=allItems.filter(i=>(i.day_of_week===null||i.day_of_week===dow)&&dow!==5&&dow!==6);
     const total=dayItems.length;
-    const done=g.done.size;
+    const done=[...g.done.values()].filter(c=>c.status!=='not_done').length;
     const pct=total?Math.round(done/total*100):0;
     const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
     const uid=(g.date+'_'+g.manager).replace(/[^a-zA-Z0-9]/g,'_');
@@ -698,7 +700,8 @@ async function loadClHistory(){
       <td colspan="6" style="padding:0">
         ${dayItems.map(item=>{
           const c=g.done.get(item.id);
-          const isDone=!!c;
+          const isNotDone=!!c&&c.status==='not_done';
+          const isDone=!!c&&!isNotDone;
           const cls='cl-task'+(isDone?' done':' overdue');
           const checkCls='cl-check'+(isDone?' done':'');
           return`<div class="${cls}">
@@ -708,6 +711,7 @@ async function loadClHistory(){
               <div class="cl-text">${item.task_text}</div>
               ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(c.completed_at)}</span>`:`<span class="cl-overdue-badge">✗ לא בוצע</span>`}
             </div>
+            ${isNotDone?`<div class="cl-note" style="background:#FFE4E6;border-color:#FECACA;color:#9F1239">❌ סיבה: ${escHtml(c.reason)}</div>`:''}
             ${c&&c.notes?`<div class="cl-note">📝 ${c.notes}</div>`:''}
           </div>`;
         }).join('')}
@@ -764,16 +768,23 @@ async function exportClPDF(mode='detailed'){
     itemsByMgr[i.manager_name].push(i);
   });
 
-  let query=`/checklist_completions?select=manager_name,work_date,item_id&work_date=gte.${from}&work_date=lte.${to}&order=work_date.asc,manager_name.asc`;
+  let query=`/checklist_completions?select=manager_name,work_date,item_id,status,not_done_reason&work_date=gte.${from}&work_date=lte.${to}&order=work_date.asc,manager_name.asc`;
   if(mgrFilter) query+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
   const comps=await sb(query);
   if(!Array.isArray(comps)||!comps.length){toast('אין נתונים לייצוא');return;}
 
   // קבץ לפי מנהל + תאריך
   const grouped={};
+  const notDoneReasons={};
   comps.forEach(c=>{
     if(!grouped[c.manager_name]) grouped[c.manager_name]={};
     if(!grouped[c.manager_name][c.work_date]) grouped[c.manager_name][c.work_date]=new Set();
+    if(c.status==='not_done'){
+      // "לא בוצע" — לא נספר כביצוע, אבל שומרים את הסיבה לדוח
+      if(!notDoneReasons[c.manager_name]) notDoneReasons[c.manager_name]={};
+      notDoneReasons[c.manager_name][c.work_date+'_'+c.item_id]=c.not_done_reason||'';
+      return;
+    }
     grouped[c.manager_name][c.work_date].add(c.item_id);
   });
 
@@ -803,10 +814,11 @@ async function exportClPDF(mode='detailed'){
       const dayLabel='יום '+DAYS[dow]+', '+dt.getDate()+' ב'+MONTHS[dt.getMonth()]+' '+dt.getFullYear();
       const tasksHtml=dayItems.map(item=>{
         const isDone=doneSet.has(item.id);
+        const ndReason=notDoneReasons[mgrName]?.[date+'_'+item.id];
         return`<tr>
           <td style="width:30px;text-align:center;font-size:14px">${isDone?'✅':'❌'}</td>
           <td style="width:55px;color:#2563EB;font-weight:600;font-size:12px">${item.task_time||'—'}</td>
-          <td style="font-size:12px;color:${isDone?'#1A1A1A':'#888'}">${item.task_text}</td>
+          <td style="font-size:12px;color:${isDone?'#1A1A1A':'#888'}">${item.task_text}${ndReason!==undefined?`<div style="color:#9F1239;font-size:11px;margin-top:2px">סיבה: ${escHtml(ndReason)}</div>`:''}</td>
         </tr>`;
       }).join('');
       daysHtml+=`
@@ -940,7 +952,7 @@ async function loadChart(){
 
   const mgrFilter=document.getElementById('chartManager')?.value||'';
 
-  let query=`/checklist_completions?select=manager_name,work_date&work_date=gte.${from}&work_date=lte.${to}&order=work_date.asc`;
+  let query=`/checklist_completions?select=manager_name,work_date&work_date=gte.${from}&work_date=lte.${to}&status=eq.done&order=work_date.asc`;
   if(mgrFilter) query+=`&manager_name=eq.${encodeURIComponent(mgrFilter)}`;
   const comps=await sb(query);
 

@@ -173,6 +173,14 @@
     .cl-task.done .cl-text{text-decoration:line-through;color:#AAA}
     .cl-done-at{font-size:10.5px;color:#16A34A;font-weight:600;white-space:nowrap}
     .cl-overdue-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:#FEE2E2;color:#991B1B}
+    .cl-task.notdone{background:#FFF1F2}
+    .cl-task.notdone .cl-text{color:#9F1239}
+    .cl-x{width:26px;height:26px;border-radius:7px;border:2px solid #E8E4DC;background:#fff;color:#BBB;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s;font-size:13px;font-weight:900;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    .cl-x:hover{border-color:#DC2626;color:#DC2626}
+    .cl-x.notdone,.cl-check.notdone{background:#DC2626;border-color:#DC2626;color:#fff}
+    .cl-x.future{cursor:not-allowed;opacity:.4}
+    .cl-notdone-badge{font-size:10.5px;font-weight:700;color:#DC2626;white-space:nowrap}
+    .cl-notdone-reason{font-size:11.5px;color:#9F1239;background:#FFE4E6;border-radius:7px;padding:3px 9px;margin-top:3px;display:inline-block}
     .temp-task-card{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.2rem;margin:.6rem 1.2rem;border-radius:12px;background:#FFF7ED;border:2px solid #F59E0B;box-shadow:0 2px 8px rgba(245,158,11,.15)}
     .temp-task-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;background:#F59E0B;color:#fff;white-space:nowrap;flex-shrink:0}
     .temp-task-text{font-size:14px;font-weight:700;color:#1A1A1A;flex:1}
@@ -602,6 +610,16 @@
           </select>
           <span style="font-size:12px;color:#AAA" id="clOverviewDate"></span>
         </div>
+        <div class="summary-wrap" style="margin-bottom:1.2rem;border:2px solid #FECACA">
+          <div class="summary-header">
+            <i class="ti ti-circle-x" style="font-size:16px;color:#DC2626"></i>
+            <span class="summary-header-title">משימות שדווחו "לא בוצע" — עם סיבה</span>
+          </div>
+          <table class="summary-tbl">
+            <thead><tr><th>שם מנהל</th><th>שעה</th><th>משימה</th><th>סיבה</th><th>דווח ב</th></tr></thead>
+            <tbody id="clNotDoneSummaryBody"><tr><td colspan="5" class="loading-msg">טוען...</td></tr></tbody>
+          </table>
+        </div>
         <div class="summary-wrap" style="margin-bottom:1.2rem">
           <div class="summary-header">
             <i class="ti ti-alert-triangle" style="font-size:16px;color:#DC2626"></i>
@@ -935,6 +953,8 @@ function formatDateHe(d){
   const months=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   return 'יום '+days[dt.getDay()]+' · '+dt.getDate()+' '+months[dt.getMonth()]+' '+dt.getFullYear();
 }
+function escHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
 function linkifyNotes(text){
   if(!text) return '';
   // זיהוי URL אוטומטי והפיכה לקישור לחיץ
@@ -1607,8 +1627,8 @@ async function loadSubordinates(){
     if(!filtered.length) continue;
     const comps=await sb('/checklist_completions?select=*&manager_name=eq.'+encodeURIComponent(subName)+'&work_date=eq.'+today);
     const doneIds={};
-    if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]={completed_at:c.completed_at,notes:c.notes||''};});
-    const done=filtered.filter(i=>doneIds[i.id]).length;
+    if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]={completed_at:c.completed_at,notes:c.notes||'',status:c.status||'done',reason:c.not_done_reason||''};});
+    const done=filtered.filter(i=>doneIds[i.id]&&doneIds[i.id].status!=='not_done').length;
     const pct=filtered.length?Math.round(done/filtered.length*100):0;
     const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
     html+=`<div class="group" style="margin-top:1rem;opacity:.95">
@@ -1618,18 +1638,22 @@ async function loadSubordinates(){
       </div>
       <div class="cl-progress"><div class="cl-progress-bar" style="width:${pct}%;background:${color}"></div></div>
       ${filtered.map(item=>{
-        const isDone=!!doneIds[item.id];
-        const notes=doneIds[item.id]?.notes||'';
-        return`<div class="cl-task${isDone?' done':''}">
-          <div class="cl-check${isDone?' done':''}" style="cursor:default">
-            ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}
+        const c=doneIds[item.id];
+        const isNotDone=!!c&&c.status==='not_done';
+        const isDone=!!c&&!isNotDone;
+        const notes=c?.notes||'';
+        return`<div class="cl-task${isDone?' done':isNotDone?' notdone':''}">
+          <div class="cl-check${isDone?' done':isNotDone?' notdone':''}" style="cursor:default">
+            ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':isNotDone?'✕':''}
           </div>
           <span class="cl-time">${item.task_time||''}</span>
           <div class="cl-text" style="flex:1">
             ${item.task_text}
             ${item.link?`<a href="${item.link}" target="_blank" rel="noopener" style="font-size:11px;color:#1D4ED8;font-weight:600;text-decoration:none;margin-right:6px">🔗</a>`:''}
+            ${isNotDone?`<div class="cl-notdone-reason">❌ לא בוצע: ${escHtml(c.reason)}</div>`:''}
           </div>
-          ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id]?.completed_at)}</span>`:''}
+          ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(c.completed_at)}</span>`:''}
+          ${isNotDone?`<span class="cl-notdone-badge">✕ ${fmtDateTime(c.completed_at)}</span>`:''}
           ${notes?`<span style="font-size:11px;color:#2563EB;margin-right:6px">💬 ${notes}</span>`:''}
         </div>`;
       }).join('')}
@@ -1655,7 +1679,7 @@ async function loadClManager(){
   const filtered=Array.isArray(items)?items.filter(i=>(i.day_of_week===null||i.day_of_week===dow)&&dow!==5&&dow!==6):[];
   const comps=await sb('/checklist_completions?select=*&manager_name=eq.'+encodeURIComponent(currentManager.name)+'&work_date=eq.'+today);
   const doneIds={};
-  if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]={completed_at:c.completed_at,notes:c.notes||'',link:c.link||''};});
+  if(Array.isArray(comps)) comps.forEach(c=>{doneIds[c.item_id]={completed_at:c.completed_at,notes:c.notes||'',link:c.link||'',status:c.status||'done',reason:c.not_done_reason||''};});
   renderClManagerTasks(filtered,doneIds,today);
 }
 
@@ -1666,29 +1690,35 @@ function renderClManagerTasks(items,doneIds,today){
   let done=0;
   let html='';
   items.forEach(item=>{
-    const isDone=!!doneIds[item.id];
-    const existingNotes=doneIds[item.id]?.notes||'';
+    const c=doneIds[item.id];
+    const isNotDone=!!c&&c.status==='not_done';
+    const isDone=!!c&&!isNotDone;
+    const existingNotes=c?.notes||'';
     const requiresNote=item.requires_note||false;
     let taskMin=null;
     if(item.task_time){const[h,m]=(item.task_time+':00').split(':');taskMin=parseInt(h)*60+parseInt(m);}
     const isFuture=taskMin!==null&&taskMin>nowMin;
-    const isOverdue=taskMin!==null&&!isDone&&taskMin<=nowMin;
+    const isOverdue=taskMin!==null&&!isDone&&!isNotDone&&taskMin<=nowMin;
     if(isDone) done++;
-    let cls='cl-task'+(isDone?' done':isFuture?' future':isOverdue?' overdue':'');
+    let cls='cl-task'+(isDone?' done':isNotDone?' notdone':isFuture?' future':isOverdue?' overdue':'');
     const checkCls='cl-check'+(isDone?' done':isFuture?' future':'');
+    const xCls='cl-x'+(isNotDone?' notdone':isFuture?' future':'');
     const noteRequired=requiresNote&&!existingNotes&&!isFuture;
     html+=`<div class="${cls}" style="flex-wrap:wrap;gap:.5rem">
       <div style="display:flex;align-items:center;gap:.75rem;width:100%">
-        <div class="${checkCls}" onclick="${isFuture?'':(`toggleClItem('${item.id}','${today}',${isDone},${requiresNote})`)}">
+        <div class="${checkCls}" title="בוצע" onclick="${isFuture?'':(`toggleClItem('${item.id}','${today}',${isDone},${requiresNote})`)}">
           ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}
         </div>
+        <div class="${xCls}" title="לא בוצע" onclick="${isFuture?'':(`clickClNotDone('${item.id}','${today}',${isNotDone})`)}">✕</div>
         <span class="cl-time">${item.task_time||''}</span>
         <div class="cl-text" style="flex:1">
           ${item.task_text}
           ${requiresNote?'<span style="font-size:10px;font-weight:700;color:#D97706;margin-right:6px">★ דורש הערה</span>':''}
           ${item.link?`<a href="${item.link}" target="_blank" rel="noopener" style="font-size:11px;color:#1D4ED8;font-weight:600;text-decoration:none;display:inline-block;margin-right:6px">🔗 פתח קישור</a>`:''}
+          ${isNotDone?`<div class="cl-notdone-reason">❌ לא בוצע: ${escHtml(c.reason)}</div>`:''}
         </div>
-        ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id]?.completed_at||doneIds[item.id])}</span>`:''}
+        ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(c.completed_at)}</span>`:''}
+        ${isNotDone?`<span class="cl-notdone-badge">✕ דווח ${fmtDateTime(c.completed_at)}</span>`:''}
         ${isOverdue?'<span class="cl-overdue-badge">⚠ לא בוצע</span>':''}
       </div>
       <div style="display:flex;align-items:center;gap:.5rem;padding-right:2.5rem;width:100%">
@@ -1833,8 +1863,58 @@ async function toggleClItem(itemId,today,isDone,requiresNote){
       }
     }
     const notes=document.getElementById('clnote_'+itemId)?.value||'';
-    await fetch(SB_URL+'/checklist_completions',{method:'POST',headers:H,body:JSON.stringify({item_id:itemId,manager_name:currentManager.name,work_date:today,completed_at:new Date().toISOString(),notes})});
+    // אם סומן קודם כ"לא בוצע" — מחק את הסימון לפני סימון V
+    await fetch(SB_URL+'/checklist_completions?item_id=eq.'+itemId+'&work_date=eq.'+today,{method:'DELETE',headers:H});
+    await fetch(SB_URL+'/checklist_completions',{method:'POST',headers:H,body:JSON.stringify({item_id:itemId,manager_name:currentManager.name,work_date:today,completed_at:new Date().toISOString(),notes,status:'done'})});
   }
+  loadClManager();
+}
+
+// ── X — משימה לא בוצעה (חובה לציין סיבה) ──
+let notDoneState=null;
+async function clickClNotDone(itemId,today,isNotDone){
+  if(isNotDone){
+    // לחיצה חוזרת על X — ביטול הסימון
+    await fetch(SB_URL+'/checklist_completions?item_id=eq.'+itemId+'&work_date=eq.'+today,{method:'DELETE',headers:H});
+    toast('סימון "לא בוצע" בוטל');
+    loadClManager();
+    return;
+  }
+  notDoneState={itemId,today};
+  const ta=document.getElementById('notDoneReason');
+  ta.value='';
+  ta.style.borderColor='#E8E4DC';
+  document.getElementById('notDoneErr').style.display='none';
+  const row=document.getElementById('clnote_'+itemId)?.closest('.cl-task');
+  document.getElementById('notDoneTaskText').textContent=row?.querySelector('.cl-text')?.firstChild?.textContent.trim()||'';
+  document.getElementById('notDoneModal').style.display='flex';
+  setTimeout(()=>ta.focus(),50);
+}
+
+function closeNotDoneModal(){
+  document.getElementById('notDoneModal').style.display='none';
+  notDoneState=null;
+}
+
+async function saveNotDone(){
+  if(!notDoneState) return;
+  const ta=document.getElementById('notDoneReason');
+  const reason=ta.value.trim();
+  if(!reason){
+    ta.style.borderColor='#DC2626';
+    document.getElementById('notDoneErr').style.display='';
+    ta.focus();
+    return;
+  }
+  const {itemId,today}=notDoneState;
+  const notes=document.getElementById('clnote_'+itemId)?.value||'';
+  await fetch(SB_URL+'/checklist_completions?item_id=eq.'+itemId+'&work_date=eq.'+today,{method:'DELETE',headers:H});
+  const res=await fetch(SB_URL+'/checklist_completions',{method:'POST',headers:H,body:JSON.stringify({
+    item_id:itemId,manager_name:currentManager.name,work_date:today,completed_at:new Date().toISOString(),notes,status:'not_done',not_done_reason:reason
+  })});
+  if(!res.ok){toast('שגיאה בשמירה — נסה שוב');return;}
+  closeNotDoneModal();
+  toast('דווח כ"לא בוצע" — אדיר יקבל התראה');
   loadClManager();
 }
 
@@ -1861,6 +1941,7 @@ async function loadClOverview(){
   const managers=filterMgr?allManagers.filter(m=>m.name===filterMgr):allManagers;
   if(!managers.length){
     document.getElementById('clOverdueSummaryBody').innerHTML='<tr><td colspan="4" class="empty-msg">אין מנהלים</td></tr>';
+    document.getElementById('clNotDoneSummaryBody').innerHTML='<tr><td colspan="5" class="empty-msg">אין מנהלים</td></tr>';
     document.getElementById('clOverviewList').innerHTML='';
     return;
   }
@@ -1877,9 +1958,9 @@ async function loadClOverview(){
   const compsByMgr={};
   if(Array.isArray(allCompsData)) allCompsData.forEach(c=>{
     if(!compsByMgr[c.manager_name]) compsByMgr[c.manager_name]={};
-    compsByMgr[c.manager_name][c.item_id]={completed_at:c.completed_at,notes:c.notes||'',link:c.link||''};
+    compsByMgr[c.manager_name][c.item_id]={completed_at:c.completed_at,notes:c.notes||'',link:c.link||'',status:c.status||'done',reason:c.not_done_reason||''};
   });
-  let overdueRows='', overviewHtml='';
+  let overdueRows='', overviewHtml='', notDoneRows='';
   for(let mi=0;mi<managers.length;mi++){
     const mgr=managers[mi];
     const uid='mgr_'+mi;
@@ -1888,10 +1969,22 @@ async function loadClOverview(){
       .sort((a,b)=>(a.task_time||'99:99').localeCompare(b.task_time||'99:99'));
     if(!filtered.length) continue;
     const doneIds=compsByMgr[mgr.name]||{};
-    const done=filtered.filter(i=>doneIds[i.id]).length;
+    const notDone=filtered.filter(i=>doneIds[i.id]?.status==='not_done');
+    const done=filtered.filter(i=>doneIds[i.id]&&doneIds[i.id].status!=='not_done').length;
     const pct=filtered.length?Math.round(done/filtered.length*100):0;
     const color=pct>=80?'#16A34A':pct>=50?'#D97706':'#DC2626';
     const bg=pct>=80?'#DCFCE7':pct>=50?'#FEF9C3':'#FEE2E2';
+    notDone.forEach(i=>{
+      const c=doneIds[i.id];
+      notDoneRows+=`<tr style="background:#FFF1F2">
+        <td style="font-weight:700">${mgr.name}</td>
+        <td style="color:#2563EB;font-weight:700">${i.task_time||'—'}</td>
+        <td>${i.task_text}</td>
+        <td style="color:#9F1239;font-weight:600">${escHtml(c.reason)}</td>
+        <td style="font-size:12px;color:#888;white-space:nowrap">${fmtDateTime(c.completed_at)}</td>
+      </tr>`;
+    });
+    // משימה שדווחה "לא בוצע" לא נספרת כחריגה — היא מופיעה בטבלה הייעודית
     const overdue=filtered.filter(i=>{
       if(doneIds[i.id]||!i.task_time) return false;
       const[h,m]=(i.task_time+':00').split(':');
@@ -1915,6 +2008,7 @@ async function loadClOverview(){
           <i class="ti ti-chevron-left expand-icon" id="expic_${uid}"></i>
           <span style="font-weight:700;font-size:14px">${mgr.name}</span>
           ${overdue.length>0?`<span style="font-size:11px;font-weight:700;color:#DC2626;background:#FEE2E2;padding:2px 7px;border-radius:6px">⚠ ${overdue.length} בחריגה</span>`:''}
+          ${notDone.length>0?`<span style="font-size:11px;font-weight:700;color:#fff;background:#DC2626;padding:2px 7px;border-radius:6px">✕ ${notDone.length} לא בוצעו</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
           <div style="width:120px;height:6px;background:#F0EDE6;border-radius:999px;overflow:hidden">
@@ -1926,23 +2020,28 @@ async function loadClOverview(){
       </div>
       <div id="cle_${uid}" style="display:none">
         ${filtered.map(item=>{
-          const isDone=!!doneIds[item.id];
-          const notes=doneIds[item.id]?.notes||'';
-          return`<div class="cl-task${isDone?' done':''}">
-            <div class="cl-check${isDone?' done':''}">
-              ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':''}
+          const c=doneIds[item.id];
+          const isNotDone=!!c&&c.status==='not_done';
+          const isDone=!!c&&!isNotDone;
+          const notes=c?.notes||'';
+          return`<div class="cl-task${isDone?' done':isNotDone?' notdone':''}">
+            <div class="cl-check${isDone?' done':isNotDone?' notdone':''}">
+              ${isDone?'<i class="ti ti-check" style="font-size:12px"></i>':isNotDone?'✕':''}
             </div>
             <span class="cl-time">${item.task_time||''}</span>
             <div style="flex:1">
               <div class="cl-text">${item.task_text}</div>
+              ${isNotDone?`<div class="cl-notdone-reason">❌ לא בוצע: ${escHtml(c.reason)}</div>`:''}
               ${notes?`<div style="font-size:11px;color:#2563EB;margin-top:2px">💬 ${linkifyNotes(notes)}</div>`:''}
               ${doneIds[item.id]?.link?`<a href="${doneIds[item.id].link}" target="_blank" rel="noopener" style="font-size:11px;color:#1D4ED8;display:inline-flex;align-items:center;gap:3px;margin-top:2px">🔗 פתח קישור</a>`:''}            </div>
-            ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(doneIds[item.id]?.completed_at)}</span>`:''}
+            ${isDone?`<span class="cl-done-at">✓ ${fmtDateTime(c.completed_at)}</span>`:''}
+            ${isNotDone?`<span class="cl-notdone-badge">✕ ${fmtDateTime(c.completed_at)}</span>`:''}
           </div>`;
         }).join('')}
       </div>
     </div>`;
   }
+  document.getElementById('clNotDoneSummaryBody').innerHTML=notDoneRows||'<tr><td colspan="5" style="text-align:center;color:#16A34A;padding:1rem;font-weight:700">✓ אף משימה לא דווחה כ"לא בוצע" היום</td></tr>';
   document.getElementById('clOverdueSummaryBody').innerHTML=overdueRows||'<tr><td colspan="4" style="text-align:center;color:#16A34A;padding:1rem;font-weight:700">✓ אין חריגות כרגע</td></tr>';
   document.getElementById('clOverviewList').innerHTML=overviewHtml||'<div class="empty-msg">אין מנהלים עם צ׳ק ליסט</div>';
 }
@@ -2646,6 +2745,7 @@ function checkTaskAlerts(){
     const taskMin=parseInt(h)*60+parseInt(m);
     const key=timeStr+'_'+textEl.textContent;
     // בדיוק כשהשעה מגיעה (תוך דקה)
+    if(el.classList.contains('notdone')) return;
     if(taskMin<=nowMin&&taskMin>nowMin-1&&!alertedTasks.has(key)&&!el.classList.contains('done')){
       alertedTasks.add(key);
       playBeep();
@@ -2665,6 +2765,58 @@ function checkTaskAlerts(){
 
 // בדוק התראות כל 30 שניות
 setInterval(checkTaskAlerts,30000);
+
+// ── התראה לאדיר: מנהל דיווח שמשימה לא בוצעה ──
+// שאילתה קלה (רק שורות not_done של היום) כל 2 דקות, בכל טאב
+async function checkNotDoneAlerts(){
+  if(!currentManager||!FULL_ADMIN.includes(currentManager.name)) return;
+  const today=getToday();
+  const rows=await sb('/checklist_completions?select=id,item_id,manager_name,not_done_reason,completed_at&work_date=eq.'+today+'&status=eq.not_done&order=completed_at.asc');
+  if(!Array.isArray(rows)) return;
+  const tab=document.getElementById('tab-checklist');
+  if(tab){
+    tab.querySelector('.nd-badge')?.remove();
+    if(rows.length) tab.insertAdjacentHTML('beforeend',`<span class="nd-badge" style="background:#DC2626;color:#fff;font-size:10px;font-weight:800;border-radius:999px;padding:1px 6px;margin-right:4px">${rows.length} ✕</span>`);
+  }
+  const seenKey='nd_seen_'+today;
+  let seen=[];
+  try{seen=JSON.parse(localStorage.getItem(seenKey)||'[]');}catch(e){}
+  const fresh=rows.filter(r=>!seen.includes(r.id));
+  if(!fresh.length) return;
+  try{localStorage.setItem(seenKey,JSON.stringify(rows.map(r=>r.id)));}catch(e){}
+  const items=await sb('/checklist_items?select=id,task_text,task_time&id=in.('+fresh.map(r=>r.item_id).join(',')+')');
+  const textById={};
+  if(Array.isArray(items)) items.forEach(i=>textById[i.id]=i.task_text);
+  const r=fresh[fresh.length-1];
+  const more=fresh.length>1?` (+${fresh.length-1} נוספות)`:'';
+  playBeep();
+  startTabBlink('❌ '+r.manager_name+' — משימה לא בוצעה');
+  showNotDoneBanner(r.manager_name,textById[r.item_id]||'',r.not_done_reason||'',more);
+  if(document.getElementById('content-checklist')?.classList.contains('active')) loadClOverview();
+}
+
+function showNotDoneBanner(mgrName,taskText,reason,more){
+  document.getElementById('clNotDoneBanner')?.remove();
+  const banner=document.createElement('div');
+  banner.id='clNotDoneBanner';
+  banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#9F1239;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;font-family:Heebo,sans-serif;direction:rtl;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+  banner.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:22px">❌</span>
+      <div>
+        <div style="font-size:15px;font-weight:900">${escHtml(mgrName)} דיווח/ה שמשימה לא בוצעה${more}</div>
+        <div style="font-size:13px;opacity:.95">${escHtml(taskText)} — <b>סיבה:</b> ${escHtml(reason)}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button onclick="document.getElementById('clNotDoneBanner').remove();switchTab('checklist')" style="background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:Heebo,sans-serif">לצ'ק ליסט ←</button>
+      <button onclick="document.getElementById('clNotDoneBanner').remove()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:Heebo,sans-serif">✕</button>
+    </div>`;
+  document.body.appendChild(banner);
+}
+
+setInterval(checkNotDoneAlerts,120000);
+setTimeout(checkNotDoneAlerts,5000);
 
 // רענון אוטומטי כל 30 שניות — שומר על מה שהמשתמש הזין
 setInterval(async ()=>{
@@ -2697,6 +2849,22 @@ setInterval(async ()=>{
     <div style="display:flex;gap:.75rem;margin-top:1.2rem">
       <button class="add-btn green" style="flex:1" onclick="saveEdit()"><i class="ti ti-check"></i> שמור</button>
       <button class="add-btn" style="background:#888;flex:1" onclick="closeEditModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- מודל: משימה לא בוצעה — סיבה חובה -->
+<div id="notDoneModal" onclick="if(event.target===this)closeNotDoneModal()" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:18px;padding:1.8rem;width:420px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.15)">
+    <div style="font-size:16px;font-weight:800;color:#DC2626;margin-bottom:.4rem">❌ המשימה לא בוצעה</div>
+    <div style="font-size:13px;color:#555;margin-bottom:1rem" id="notDoneTaskText"></div>
+    <label for="notDoneReason" style="font-size:13px;font-weight:700;color:#1A1A1A">מדוע המשימה לא בוצעה? <span style="color:#DC2626">*</span></label>
+    <textarea id="notDoneReason" rows="4" placeholder="פרט את הסיבה (שדה חובה)" style="width:100%;margin-top:.4rem;border:1.5px solid #E8E4DC;border-radius:10px;padding:8px 12px;font-size:13px;font-family:'Heebo',sans-serif;resize:vertical;outline:none;box-sizing:border-box"></textarea>
+    <div id="notDoneErr" style="display:none;font-size:12px;color:#DC2626;font-weight:600;margin-top:.3rem">חובה לציין סיבה</div>
+    <div style="font-size:11.5px;color:#888;margin-top:.5rem">הדיווח יישלח לאדיר לוי</div>
+    <div style="display:flex;gap:.75rem;margin-top:1.2rem">
+      <button class="add-btn" style="flex:1;background:#DC2626" onclick="saveNotDone()">שלח דיווח</button>
+      <button class="add-btn" style="background:#888;flex:1" onclick="closeNotDoneModal()">ביטול</button>
     </div>
   </div>
 </div>
