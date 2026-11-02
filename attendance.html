@@ -346,7 +346,7 @@
     <div class="nav-tab" onclick="switchTab('tasks')" id="tab-tasks">⭐ משימות מיוחדות</div>
     <div class="nav-tab" onclick="switchTab('checklist')" id="tab-checklist" style="display:none">✅ צ'ק ליסט</div>
     <div class="nav-tab" onclick="window.open('history.html','_blank')" id="tab-history">📊 היסטוריה</div>
-    <div class="nav-tab" onclick="window.open('handover.html','_blank')" id="tab-handover">🤝 חפיפה מובמנט</div>
+    <div class="nav-tab" onclick="window.open('handover.html','_blank')" id="tab-handover" style="display:none">🤝 חפיפה מובמנט</div>
     <div class="nav-tab admin-tab" onclick="switchTab('admin')" id="tab-admin" style="display:none">⚙️ מנהלים</div>
   </div>
 
@@ -1043,6 +1043,7 @@ function enterApp(){
   document.getElementById('app').style.display='block';
   document.getElementById('currentManagerName').textContent=currentManager.name;
   if(FULL_ADMIN.includes(currentManager.name)) document.getElementById('tab-admin').style.display='';
+  if(FULL_ADMIN.includes(currentManager.name)) document.getElementById('tab-handover').style.display='';
   document.getElementById('tab-checklist').style.display='';
   if(SUMMARY_MANAGERS.includes(currentManager.name)) document.getElementById('summarySection').style.display='';
   if(CALLS_MANAGERS.includes(currentManager.name)){
