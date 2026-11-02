@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>חפיפה מובמנט — 10 ימים</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Heebo',sans-serif;direction:rtl;background:#F0EDE6;color:#1A1A1A;min-height:100vh}
+.hero{background:#1A1A1A;color:#fff;padding:1.6rem 2rem 1.3rem}
+.hero h1{font-size:22px;font-weight:800;letter-spacing:-.4px}
+.hero p{font-size:13px;color:#999;margin-top:4px;line-height:1.6}
+.apps{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.app{background:#2A2A2A;border:1px solid #3A3A3A;border-radius:999px;padding:4px 12px;font-size:12px;color:#ddd;font-weight:500}
+.bar{background:#fff;border-bottom:1px solid #E0DDD6;padding:.8rem 2rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.bar label{font-size:12.5px;color:#666;font-weight:600;display:flex;align-items:center;gap:6px}
+.bar input,.bar select{font-family:Heebo;font-size:13px;border:1.5px solid #E0DDD6;border-radius:8px;padding:5px 8px;background:#FAFAF8}
+.btn{font-family:Heebo;font-size:12.5px;font-weight:700;border:1.5px solid #E0DDD6;background:#F5F3EF;border-radius:8px;padding:6px 12px;cursor:pointer}
+.btn:hover{background:#E8E4DC}
+.btn.dark{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+.src{font-size:11px;color:#AAA;margin-inline-start:auto}
+.wrap{max-width:1180px;margin:0 auto;padding:1.4rem 1.2rem 3rem}
+.method{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:1.3rem}
+.mcard{background:#fff;border:1px solid #E8E4DC;border-radius:14px;padding:.8rem 1rem}
+.mcard b{display:block;font-size:13px;margin-bottom:3px}
+.mcard span{font-size:12px;color:#888;line-height:1.5}
+.week-title{font-size:12px;font-weight:800;letter-spacing:1.5px;color:#9A968E;margin:1.6rem 0 .6rem}
+.overview{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid #E8E4DC;border-radius:16px;overflow:hidden;margin-bottom:1.2rem}
+.overview th{background:#F8F6F2;font-size:12px;color:#888;text-align:right;padding:.6rem .8rem;border-bottom:1px solid #EEE}
+.overview td{padding:.6rem .8rem;border-bottom:1px solid #F3F1ED;font-size:13px;vertical-align:top}
+.overview tr:last-child td{border-bottom:none}
+.overview tr{cursor:pointer}
+.overview tr:hover td{background:#FAFAF8}
+.prog{display:inline-block;min-width:44px;text-align:center;font-weight:800;font-size:12px;padding:2px 8px;border-radius:999px;background:#F0EDE6}
+.prog.full{background:#DCFCE7;color:#166534}
+.day{background:#fff;border:1.5px solid #E8E4DC;border-radius:18px;margin-bottom:1.2rem;overflow:hidden;scroll-margin-top:70px}
+.day-head{padding:1rem 1.3rem;border-bottom:1.5px solid #F0EDE6;display:flex;gap:1rem;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.day-num{font-size:11px;font-weight:800;letter-spacing:1.4px;color:#AAA}
+.day-title{font-size:18px;font-weight:800;margin-top:2px}
+.day-date{font-size:12.5px;color:#888;margin-top:2px}
+.day-goal{font-size:13px;color:#444;line-height:1.6;margin-top:6px;max-width:760px}
+.focus{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:#EEF2FF;color:#3730A3;white-space:nowrap}
+table.tasks{width:100%;border-collapse:collapse}
+.tasks th{font-size:11.5px;color:#999;text-align:right;padding:.55rem .8rem;background:#FAFAF8;border-bottom:1px solid #EEE;white-space:nowrap}
+.tasks td{font-size:13px;padding:.55rem .8rem;border-bottom:1px solid #F5F3EF;vertical-align:top;line-height:1.55}
+.tasks tr.done td{background:#F6FBF7}
+.tasks tr.done .ttext{color:#7A8A7E}
+.t-time{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;width:58px}
+.own{font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;white-space:nowrap;display:inline-block}
+.own-h{background:#FCE7F3;color:#9D174D}
+.own-b{background:#E0F2FE;color:#075985}
+.own-t{background:#FEF3C7;color:#92400E}
+.mode{font-size:11px;font-weight:700;padding:2px 9px;border-radius:6px;white-space:nowrap;display:inline-block;border:1px solid #E5E1D8;color:#555;background:#FAFAF8}
+.mode.m1{border-color:#D6D3D1}
+.mode.m2{border-color:#FCD34D;background:#FFFBEB;color:#92400E}
+.mode.m3{border-color:#93C5FD;background:#EFF6FF;color:#1E40AF}
+.mode.m4{border-color:#86EFAC;background:#F0FDF4;color:#166534}
+.mode.mb{border-color:#BAE6FD;background:#F0F9FF;color:#0369A1}
+.chk{width:18px;height:18px;cursor:pointer;accent-color:#16A34A}
+.day-foot{padding:.9rem 1.3rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem;background:#FAFAF8;border-top:1px solid #F0EDE6}
+.day-foot h4{font-size:12px;color:#888;margin-bottom:5px}
+.day-foot ul{padding-inline-start:18px;font-size:12.5px;line-height:1.7;color:#333}
+.day-foot textarea{width:100%;min-height:70px;font-family:Heebo;font-size:13px;border:1.5px solid #E0DDD6;border-radius:10px;padding:8px;resize:vertical;background:#fff}
+.legend{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;font-size:12px;color:#777;align-items:center}
+@media(max-width:760px){
+  .hero{padding:1.2rem 16px}.bar{padding:.7rem 16px}.wrap{padding:1rem 16px 2rem}
+  .method{grid-template-columns:1fr 1fr}.day-foot{grid-template-columns:1fr}
+  .tasks th:nth-child(4),.tasks td:nth-child(4){display:none}
+  .overview td:nth-child(4),.overview th:nth-child(4){display:none}
+}
+@media print{
+  .bar,.btn{display:none!important}
+  body{background:#fff}
+  .day{break-inside:avoid-page;page-break-before:always;border-color:#ccc}
+  .day textarea{border:1px solid #ccc}
+}
+</style>
+</head>
+<body>
+<div class="hero">
+  <h1>🤝 תוכנית חפיפה — ראש צוות מובמנט</h1>
+  <p>10 ימי עבודה (ראשון–חמישי × 2) · ראש צוות חדשה שמחליפה את הודיה מזרחי · הצ'ק ליסט נטען בזמן אמת מהמערכת (הודיה + בקי)</p>
+  <div class="apps">
+    <span class="app">כללית אקטיב</span><span class="app">עובדים בריא</span><span class="app">לאומית FIT</span><span class="app">מעוף לעמית</span><span class="app">מאוחדת WOW</span>
+  </div>
+</div>
+
+<div class="bar">
+  <label>שם ראש הצוות החדשה <input id="newName" placeholder="שם..." style="width:140px"/></label>
+  <label>תאריך התחלה (יום ראשון) <input type="date" id="startDate"/></label>
+  <label>הצג משימות <select id="ownerFilter"><option value="all">הכל</option><option value="h">הודיה + חפיפה</option><option value="b">בקי</option></select></label>
+  <button class="btn" onclick="window.print()">🖨️ הדפסה / PDF</button>
+  <button class="btn" onclick="resetAll()">איפוס סימונים</button>
+  <span class="src" id="src">טוען...</span>
+</div>
+
+<div class="wrap">
+  <div class="method">
+    <div class="mcard"><b>👀 צפייה (ימים 1–2)</b><span>הודיה מבצעת ומסבירה, החדשה יושבת לידה ורושמת.</span></div>
+    <div class="mcard"><b>🤝 ביצוע משותף (ימים 3–5)</b><span>החדשה מבצעת עם הודיה ליד המקלדת, כל צעד מוסבר.</span></div>
+    <div class="mcard"><b>🎯 ביצוע בליווי (ימים 6–8)</b><span>החדשה מבצעת לבד, הודיה בודקת ומאשרת אחרי.</span></div>
+    <div class="mcard"><b>🚀 עצמאות (ימים 9–10)</b><span>החדשה מנהלת את המחלקה מלא, הודיה רק גיבוי.</span></div>
+  </div>
+  <div class="legend">
+    <span class="own own-h">הודיה</span> משימה מהצ'ק ליסט של הודיה — עוברת לחדשה ·
+    <span class="own own-b">בקי</span> משימה של בקי — החדשה לומדת להכיר ולגבות ·
+    <span class="own own-t">חפיפה</span> מפגש הדרכה ייעודי
+  </div>
+
+  <div class="week-title">מבט על — 10 ימים</div>
+  <table class="overview" id="overview"></table>
+
+  <div id="days"></div>
+</div>
+
+<script>
+const SB_URL='https://mxgqhzjhiepjchhofclc.supabase.co/rest/v1';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Z3FoempoaWVwamNoaG9mY2xjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMDQwNzYsImV4cCI6MjA5NzU4MDA3Nn0._1PRPhD6H0F7Cgm4VBp1Q0dn0DLpgnPre1KSusoZWhg';
+const H_NAME='הודיה מזרחי', B_NAME='בקי ביטון';
+const DOW=['ראשון','שני','שלישי','רביעי','חמישי'];
+
+/* snapshot fallback — used only if live load fails */
+const SNAPSHOT=[{"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "09:01", "task_text": "בדיקת מייל אישי ( שאין מייל פתוח מיום האתמול )  + חלוקת נציגים יומית בהתאם לעומסים", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "09:15", "task_text": "רכישות חוץ מעוף", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "09:30", "task_text": "יעדים מעוף מכירות", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "09:35", "task_text": "סטטוס נוכחות לוודא כולם הגיעו + לשלוח לאדיר בקבוצה", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "09:45", "task_text": "הוצאת פניות בטיפול לצוות", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "11:05", "task_text": "בדיקת גלסיקס כולל מתוזמנות לכל מחלקה ווטסאפ ומיילים לוודא שאין מתוזמן מעל ל 3 ימים אם יש לתת פתרון לנציג במיידי + חלוקת נציגים יומית בהתאם לעומסים", "sort_order": 2}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "11:15", "task_text": "דוח דיגיטל", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "11:30", "task_text": "סטטיסטיקת נציגים", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "12:00", "task_text": "מערכת קבצים - מנהל - דשבורד - לבדוק האם יש חריגה ולטפל", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "12:15", "task_text": "בדיקת שיחות מנהל מעל עדי במידה ויש", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "12:30", "task_text": "בקרה יומית - 4 האזנות + שיחת משוב לנציג - לציין בהערות מי הנציג", "sort_order": 4}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "12:45", "task_text": "בדיקת מיילים \\ ווטסאפים ישנים ביותר ב CRM החדשה בגליון מיילים", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "13:15", "task_text": "בדיקת סטטוס קו מעוף לעמית לפני שנסגר ושיפור נתונים", "sort_order": 5}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "13:30", "task_text": "פניות בסיכון - מערכת CRM דשבורד - לוודא שהרשימה ריקה במידה ולא לתת לנציג מענה ולחזור ללקוח לסיום טיפול - נושא רגיש אלה לקוחות לפני תלונה", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "14:00", "task_text": "דוח דיגיטל", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "14:30", "task_text": "בדיקת מייל ישן ביותר במערכת ה CRM החדשה במלשונית מיילים - לרשום לאדיר במלל באיזה מחלקה ומה התאריך הישן ביותר", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "15:00", "task_text": "בדיקת מוניטור + שינוי אסטרטגיה במידת הצורך - לשים דגש על 180 של כל פעילות", "sort_order": 8}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "15:15", "task_text": "בדיקת סטטוס קו לאומית FIT לפני שנסגר ושיפור נתונים 15:15", "sort_order": 9}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "16:00", "task_text": "מעבר על קובץ ביטולים", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "16:00", "task_text": "בדיקת מייל אישי ( שאין פניות פתוחות מיום האתמול ) ", "sort_order": 10}, {"manager_name": "בקי ביטון", "day_of_week": null, "task_time": "17:00", "task_text": "ביצוע דוחות סוף יום", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 0, "task_time": "08:45", "task_text": "דוחות אורי", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 0, "task_time": "16:00", "task_text": "מצגת ליאת", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 1, "task_time": "11:45", "task_text": "מצגת ליאת יום א'", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 1, "task_time": "14:15", "task_text": "כתף בשטח - חיבור לנציג ל 15 דקות עם מפצל והאזנה ל2-3 שיחות + משוב אונליין - להסביר כיצד לצמצם זמני שיחה - הערה למי בוצע", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 2, "task_time": "11:45", "task_text": "מצגת ליאת יום א'", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 3, "task_time": "10:00", "task_text": "פיריון מעוף בקבוצה + לאדיר בפרטי בווטסאפ ( שם נציג , כמות מכירות מתחילת החודש , כמות שעות , פיריון )", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 3, "task_time": "11:45", "task_text": "מצגת ליאת יום א'", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 3, "task_time": "14:15", "task_text": "כתף בשטח - חיבור לנציג ל 15 דקות עם מפצל והאזנה ל2-3 שיחות + משוב אונליין - להסביר כיצד לצמצם זמני שיחה - הערה למי בוצע", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 4, "task_time": "09:30", "task_text": "לוודא עם אדיר ששלח סקרים עובדים בריא + לשים נציגה לטיפול", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 4, "task_time": "11:45", "task_text": "מצגת ליאת יום א'", "sort_order": 0}, {"manager_name": "בקי ביטון", "day_of_week": 4, "task_time": "15:00", "task_text": "לוודא שהמשימה של הסקרים טופלה לחלוטין וכל מי שדירג נמוך טופל", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "08:15", "task_text": "קובץ שיחות – קולטק כללית אקטיב + יום לפני לתיקיה טלפוניה כללית אקטיב", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "08:15", "task_text": "שליחת 120 בקבוצה", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "08:20", "task_text": "עדכון שעות עבודה", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "08:30", "task_text": "דוח CRM כללית אקטיב + דוח מרכזייה + גלסיקס ", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "08:45", "task_text": "עדכון סטטוס שיחות מנהל עדי במערכת", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "09:30", "task_text": "בדיקת מצב גלסיקס כולל בדיקת מתוזמנות ווטסאפ ומיילים לכל מחלקה לוודא שאין משהו תקוע מעל ל 3 ימים + הצפה לאדיר על פערים \\ חריגות ושינוי מיידי של אופן ניהול המחלקות", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "10:15", "task_text": "בדיקת מייל ישן ביותר במערכת ה CRM החדשה במלשונית מיילים - לרשום לאדיר במלל באיזה מחלקה ומה התאריך הישן ביותר", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "10:30", "task_text": "בדיקת מוניטור - שינוי אסטרטגיה ועליה באחוז מענה עד 180 שניות במידת הצורך", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "11:40", "task_text": "פניות בסיכון - מערכת CRM דשבורד - לוודא שהרשימה ריקה במידה ולא לתת לנציג מענה ולחזור ללקוח לסיום טיפול - נושא רגיש אלה לקוחות לפני תלונה", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "12:30", "task_text": "בדיקת מצב גלסיקס + טיפול במיילים מתוזמנים ישנים - מה התאריך התזמון הישר ביותר ? ( מערכת CRM חדשה גיליון מיילים ) ", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "13:30", "task_text": "בדיקת מוניטור - שינוי אסטרטגיה ועליה באחוז מענה עד 180 שניות במידת הצורך", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "13:30", "task_text": "בקרה יומית לנציג 4 שיחות + משוב נציג - רשמי בהערות מי הנציג שמושב", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "14:00", "task_text": "מערכת דוחות חדשה - בדיקת חריגה מסך דשבורד - לוודא שאין חריגה באף דוח עבודה", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "15:30", "task_text": "בדיקת מוניטור - שינוי אסטרטגיה ועליה באחוז מענה עד 180 שניות במידת הצורך", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": null, "task_time": "16:00", "task_text": "בדיקת מצב גלסיקס + הצפה לאדיר על פערים \\ חריגות ושינוי מיידי של אופן ניהול המחלקות", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 1, "task_time": "10:00", "task_text": "התחלת אישור אילוצים לנציגים", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 1, "task_time": "12:10", "task_text": "בדיקה במערכת סידור העבודה איזה נציגים עדיין לא הגישו אילוצים + לפנות אליהם בפרטי להגשת אילוצים", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 1, "task_time": "12:30", "task_text": "הורדת דוח גלסיקס תמיכה כללית אקטיב - בדיקה מה לא נענה לפי סיווגים ושליחת מייל לרוני אדיר וליאת עם סיווגים מהמחלקה שפתוחים , כמה זמן ממתינים למענה , ודוגמאות של לקוחות", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 2, "task_time": "11:15", "task_text": "כתף בשטח - חיבור לנציג ל 15 דקות עם מפצל והאזנה ל2-3 שיחות + משוב אונליין - להסביר כיצד לצמצם זמני שיחה - הערה למי בוצע", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 2, "task_time": "12:00", "task_text": "הוצאת סידור עבודה לשבוע הבא", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 2, "task_time": "13:00", "task_text": "שליחת סידור עבודה - לאחר מעבר והסטת עובדים ל 8:00 ו בדיקה שיש מספיק עד 18:00 בכל יום + ויסוט ימי חופשה וחלוקה בצורה שווה לפי ימים", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 3, "task_time": "12:00", "task_text": "3 שיחות שהועברו למנהל + משוב", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 4, "task_time": "10:00", "task_text": "לוודא שאדיר שלח סקרים בבוקר ולתת לנציג לטפל ולחזור לכל לקוח שדירג פחות מ 3 והשאיר טלפון בשיחה לטיפול ולשנות דירוג ל 5", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 4, "task_time": "11:15", "task_text": "כתף בשטח - חיבור לנציג ל 15 דקות עם מפצל והאזנה ל2-3 שיחות + משוב אונליין - להסביר כיצד לצמצם זמני שיחה - הערה למי בוצע", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 4, "task_time": "14:30", "task_text": "שליחת סיווגים עם תועלות במייל  - למנהלי פרוייקטים  ( כל מנהל מייל נפרד ) לכתב אותי ואת ליאת ( לדוגמא כללית חודש אחרון 617 פנויות זה המון ) לפתוח במערכת CRM לוודא מה על מה פנו להציע פתרונות ( אם לא ברור דברי איתי )", "sort_order": 0}, {"manager_name": "הודיה מזרחי", "day_of_week": 4, "task_time": "15:30", "task_text": "לוודא בקובץ סקרים שנציג סיים טיפול ושינה מ 1 ל 5 סקרים נמוכים לאחר טיפול", "sort_order": 0}];
+
+/* 10-day plan: dow 0=Sunday */
+const PLAN=[
+ {dow:0,title:'היכרות — פעילות מובמנט, המערכות והצוות',focus:'כללית אקטיב',
+  goal:'להבין את מבנה הפעילות, 5 האפליקציות, הצוות והמערכות. לראות יום עבודה מלא של הודיה מקצה לקצה.',
+  sessions:[['08:00','פגישת פתיחה עם אדיר — מבנה מובמנט, 5 האפליקציות (כללית אקטיב, עובדים בריא, לאומית FIT, מעוף לעמית, מאוחדת WOW), יעדים ומדדי הצלחה, ציפיות מראש צוות'],
+            ['10:45','סיור מערכות: גלסיקס, CRM החדשה (דשבורד, לשונית מיילים, פניות בסיכון), מרכזייה/קולטק, מערכת דוחות, מערכת ניהול הנציגים (שעות + צ\'ק ליסט) — כולל הרשאות וסיסמאות'],
+            ['12:45','כללית אקטיב לעומק — סוגי פניות, סיווגים נפוצים, תהליכי טיפול, אנשי קשר בלקוח'],
+            ['16:30','סיכום יום עם הודיה — שאלות פתוחות + רשימת מושגים']],
+  check:['מכירה את 5 האפליקציות ומה כל אחת עושה','יש לה גישה לכל המערכות','מבינה את מבנה יום העבודה של הודיה']},
+ {dow:1,title:'גלסיקס, CRM ואילוצים',focus:'כללית אקטיב',
+  goal:'ללמוד לזהות תקיעות בגלסיקס (מתוזמנות מעל 3 ימים), מיילים ישנים ופניות בסיכון. ללמוד את תהליך האילוצים של יום שני ודוח גלסיקס תמיכה כללית אקטיב.',
+  sessions:[['10:45','היכרות אישית עם הנציגים — מי עובד על איזו אפליקציה, חוזקות, נקודות לשיפור'],
+            ['15:00','עובדים בריא לעומק — תהליכים, סקרים, נקודות רגישות'],
+            ['16:30','סיכום יום — מה מסמנים כחריגה ומה מציפים לאדיר']],
+  check:['יודעת למצוא מתוזמנות ישנות בגלסיקס','יודעת לבדוק פניות בסיכון ב-CRM','מבינה את תהליך האילוצים']},
+ {dow:2,title:'מוניטור, 180 שניות וסידור עבודה',focus:'עובדים בריא',
+  goal:'מתחילים ביצוע משותף. ללמוד לקרוא את המוניטור ולשנות אסטרטגיה כדי לעמוד ב-180 שניות. לראות איך בונים ושולחים סידור עבודה (כיסוי 08:00–18:00, חלוקת חופשות).',
+  sessions:[['09:00','מוניטור ומדד 180 שניות — איך קוראים, מתי מזיזים נציגים בין אפליקציות, דוגמאות מהשבוע'],
+            ['15:00','לאומית FIT לעומק — יחד עם בקי לפני סגירת הקו ב-15:15'],
+            ['16:30','סיכום יום']],
+  check:['מבצעת בדיקת מוניטור עם הודיה ומסבירה מה ראתה','מבינה את חוקי סידור העבודה']},
+ {dow:3,title:'בקרת איכות ושיחות מנהל',focus:'לאומית FIT',
+  goal:'ללמוד את שיטת הבקרה: 4 האזנות + משוב, כתף בשטח, שיחות שהועברו למנהל. מבצעת עם הודיה את רוב משימות היום.',
+  sessions:[['09:00','בקרת איכות — מה מחפשים בהאזנה, מבנה שיחת משוב, איך מתעדים בהערות'],
+            ['15:00','מעוף לעמית — מכירות, יעדים ופיריון (עם בקי)'],
+            ['16:30','סיכום יום']],
+  check:['ביצעה האזנה ומשוב לנציג בליווי','מכירה את תהליך שיחות מנהל']},
+ {dow:4,title:'סקרים, סיווגים למנהלי פרויקטים וסיכום שבוע',focus:'מעוף לעמית + מאוחדת WOW',
+  goal:'ללמוד את תהליך הסקרים (טיפול בכל מי שדירג מתחת ל-3) ושליחת סיווגים עם תועלות למנהלי הפרויקטים. סיכום שבוע ראשון.',
+  sessions:[['09:00','מאוחדת WOW לעומק — תהליכים ונקודות רגישות'],
+            ['16:00','סיכום שבוע 1 עם אדיר + הודיה — מבחן ידע קצר על המערכות ו-5 האפליקציות, מה עדיין לא ברור']],
+  check:['מבינה את תהליך הסקרים מקצה לקצה','יודעת לנסח מייל סיווגים למנהל פרויקט','עברה את סיכום שבוע 1']},
+ {dow:0,title:'שבוע 2 — החדשה מבצעת, הודיה מלווה',focus:'כל 5 האפליקציות',
+  goal:'מהיום החדשה מבצעת את כל הצ\'ק ליסט של הודיה בעצמה, והודיה בודקת אחריה. דגש על הבוקר (08:15–10:30) בלי עזרה.',
+  sessions:[['08:00','תדריך שבוע 2 — מה עובר אלייך מהיום, מה עדיין עם הודיה'],
+            ['16:30','משוב יומי מהודיה — מה היה טוב, מה לתקן']],
+  check:['ביצעה את משימות הבוקר לבד','עדכנה סטטוסים במערכת בזמן']},
+ {dow:1,title:'אילוצים ודוח גלסיקס תמיכה — לבד',focus:'כללית אקטיב',
+  goal:'מבצעת את תהליך האילוצים ואת דוח גלסיקס תמיכה כללית אקטיב (כולל המייל לרוני, אדיר וליאת). הודיה עוברת על המייל לפני שליחה.',
+  sessions:[['16:30','משוב יומי מהודיה']],
+  check:['כל הנציגים הגישו אילוצים','מייל סיווגים נשלח ואושר']},
+ {dow:2,title:'סידור עבודה — בונה לבד',focus:'עובדים בריא + לאומית FIT',
+  goal:'בונה את סידור העבודה לשבוע הבא לבד. הודיה מאשרת לפני שליחה. כתף בשטח לבד.',
+  sessions:[['11:00','הכנת טיוטת סידור עבודה — בדיקה מול אילוצים וכיסוי 08:00–18:00'],
+            ['16:30','משוב יומי מהודיה']],
+  check:['סידור עבודה נשלח בזמן ובלי חורים','כתף בשטח בוצעה ותועדה']},
+ {dow:3,title:'יום עצמאי מלא + גיבוי לבקי',focus:'מעוף לעמית',
+  goal:'מנהלת את המחלקה מלא. הודיה זמינה לשאלות בלבד. בנוסף מבצעת 2–3 משימות של בקי בליווי בקי, כדי שתוכל לגבות אותה.',
+  sessions:[['09:00','יום גיבוי — בוחרת עם בקי 2–3 משימות מהצ\'ק ליסט שלה ומבצעת בליווי'],
+            ['16:30','משוב יומי']],
+  check:['ניהלה את היום בלי התערבות','יודעת לגבות את בקי במשימות הליבה']},
+ {dow:4,title:'יום עצמאי מלא + העברת מקל',focus:'כל 5 האפליקציות',
+  goal:'יום אחרון בחפיפה: סקרים וסיווגים לבד, ובסוף היום שיחת סיום עם אדיר והודיה. מעבירים את הצ\'ק ליסט של הודיה לשם של החדשה במערכת.',
+  sessions:[['16:00','שיחת סיום עם אדיר + הודיה — רשימת נושאים פתוחים, אנשי קשר, העברת הצ\'ק ליסט במערכת לשם החדשה']],
+  check:['ביצעה סקרים וסיווגים לבד','הצ\'ק ליסט הועבר לשמה במערכת','אין נושאים פתוחים']}
+];
+
+function modeFor(dayIdx,owner){
+  if(owner==='t') return ['חפיפה','m1'];
+  if(owner==='b') return dayIdx<5?['היכרות — צופה בבקי','mb']:['לדעת לגבות','mb'];
+  if(dayIdx<2) return ['👀 צפייה','m1'];
+  if(dayIdx<5) return ['🤝 ביצוע משותף','m2'];
+  if(dayIdx<8) return ['🎯 מבצעת · הודיה בודקת','m3'];
+  return ['🚀 עצמאית','m4'];
+}
+
+let ITEMS=[];
+const LS='movement_handover_v1_';
+function lsGet(k,d){try{const v=localStorage.getItem(LS+k);return v===null?d:v}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(LS+k,v)}catch(e){}}
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function hash(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return (h>>>0).toString(36)}
+
+function nextSunday(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+((7-d.getDay())%7||7));return d}
+function fmtISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function dayDate(i){
+  const v=document.getElementById('startDate').value; if(!v) return null;
+  const d=new Date(v+'T00:00:00'); d.setDate(d.getDate()+i+(i>=5?2:0)); return d;
+}
+function fmtDate(d){return d?d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear():''}
+
+function rowsForDay(i){
+  const p=PLAN[i], rows=[];
+  ITEMS.forEach(it=>{
+    if(it.day_of_week!==null && it.day_of_week!==p.dow) return;
+    const owner=it.manager_name===H_NAME?'h':'b';
+    rows.push({time:(it.task_time||'').slice(0,5),text:it.task_text,owner});
+  });
+  p.sessions.forEach(s=>rows.push({time:s[0],text:s[1],owner:'t'}));
+  rows.sort((a,b)=>(a.time||'99').localeCompare(b.time||'99')||('thb'.indexOf(a.owner)-'thb'.indexOf(b.owner)));
+  return rows;
+}
+
+function render(){
+  const filter=document.getElementById('ownerFilter').value;
+  let ov='<tr><th>יום</th><th>תאריך</th><th>נושא</th><th>פוקוס אפליקציה</th><th>שלב</th><th>התקדמות</th></tr>';
+  let html='';
+  PLAN.forEach((p,i)=>{
+    const rows=rowsForDay(i), d=dayDate(i);
+    let done=0;
+    const trs=rows.map(r=>{
+      const key='d'+i+'_'+hash(r.owner+r.time+r.text);
+      const on=lsGet(key,'')==='1'; if(on) done++;
+      if(filter==='h'&&r.owner==='b') return '';
+      if(filter==='b'&&r.owner!=='b') return '';
+      const [m,mc]=modeFor(i,r.owner);
+      const own=r.owner==='h'?'<span class="own own-h">הודיה</span>':r.owner==='b'?'<span class="own own-b">בקי</span>':'<span class="own own-t">חפיפה</span>';
+      return `<tr class="${on?'done':''}"><td class="t-time">${esc(r.time)}</td><td class="ttext">${esc(r.text)}</td><td>${own}</td><td><span class="mode ${mc}">${m}</span></td><td><input type="checkbox" class="chk" data-k="${key}" ${on?'checked':''}></td></tr>`;
+    }).join('');
+    const pct=rows.length?Math.round(done/rows.length*100):0;
+    const stage=modeFor(i,'h')[0];
+    ov+=`<tr onclick="document.getElementById('day${i}').scrollIntoView({behavior:'smooth'})"><td><b>יום ${i+1}</b> · ${DOW[p.dow]}</td><td>${fmtDate(d)}</td><td>${esc(p.title)}</td><td>${esc(p.focus)}</td><td>${stage}</td><td><span class="prog ${pct===100?'full':''}">${pct}%</span></td></tr>`;
+    if(i===0) html+='<div class="week-title">שבוע 1 — למידה וצפייה</div>';
+    if(i===5) html+='<div class="week-title">שבוע 2 — ביצוע ועצמאות</div>';
+    html+=`<section class="day" id="day${i}">
+      <div class="day-head"><div>
+        <div class="day-num">יום ${i+1} מתוך 10 · ${stage}</div>
+        <div class="day-title">יום ${DOW[p.dow]} — ${esc(p.title)}</div>
+        <div class="day-date">${fmtDate(d)} · ${done}/${rows.length} בוצעו</div>
+        <div class="day-goal">${esc(p.goal)}</div>
+      </div><span class="focus">🎯 ${esc(p.focus)}</span></div>
+      <table class="tasks"><tr><th>שעה</th><th>משימה</th><th>של מי</th><th>אופן החפיפה</th><th>✔</th></tr>${trs}</table>
+      <div class="day-foot">
+        <div><h4>✅ בסוף היום החדשה יודעת:</h4><ul>${p.check.map(c=>'<li>'+esc(c)+'</li>').join('')}</ul></div>
+        <div><h4>📝 הערות / שאלות פתוחות</h4><textarea data-n="note${i}" placeholder="מה למדנו, מה לא ברור, מה לבדוק מחר...">${esc(lsGet('note'+i,''))}</textarea></div>
+      </div></section>`;
+  });
+  document.getElementById('overview').innerHTML=ov;
+  document.getElementById('days').innerHTML=html;
+}
+
+document.addEventListener('change',e=>{
+  if(e.target.matches('.chk')){lsSet(e.target.dataset.k,e.target.checked?'1':'');render();}
+  if(e.target.id==='startDate'){lsSet('start',e.target.value);render();}
+  if(e.target.id==='ownerFilter'){render();}
+});
+document.addEventListener('input',e=>{
+  if(e.target.dataset&&e.target.dataset.n) lsSet(e.target.dataset.n,e.target.value);
+  if(e.target.id==='newName'){lsSet('name',e.target.value);document.title='חפיפה מובמנט — '+(e.target.value||'10 ימים');}
+});
+function resetAll(){
+  if(!confirm('לאפס את כל הסימונים וההערות?')) return;
+  try{Object.keys(localStorage).filter(k=>k.startsWith(LS+'d')||k.startsWith(LS+'note')).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  render();
+}
+
+async function init(){
+  document.getElementById('startDate').value=lsGet('start','')||fmtISO(nextSunday());
+  document.getElementById('newName').value=lsGet('name','');
+  try{
+    const q=`${SB_URL}/checklist_items?select=manager_name,day_of_week,task_time,task_text,sort_order&active=eq.true&manager_name=in.(${encodeURIComponent(H_NAME)},${encodeURIComponent(B_NAME)})&order=task_time.asc.nullslast,sort_order.asc`;
+    const r=await fetch(q,{headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}});
+    if(!r.ok) throw new Error(r.status);
+    ITEMS=await r.json();
+    document.getElementById('src').textContent='✓ צ\'ק ליסט חי מהמערכת · '+ITEMS.length+' משימות';
+  }catch(e){
+    ITEMS=SNAPSHOT;
+    document.getElementById('src').textContent='⚠ מוצג עותק שמור של הצ\'ק ליסט';
+  }
+  render();
+}
+init();
+</script>
+</body>
+</html>
