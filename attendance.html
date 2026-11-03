@@ -132,6 +132,13 @@
     .edit-btn{background:#F0EDE6;color:#555;border:none;border-radius:7px;padding:4px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif;margin-left:4px}
     .edit-btn:hover{background:#E8E4DC}
     .tab-content{display:none}
+    .tr-table th.tr-org,.tr-table td.tr-cell{text-align:center;white-space:nowrap}
+    .tr-check{width:30px;height:30px;border-radius:8px;border:1.5px solid #E8E4DC;background:#FAFAF8;color:transparent;font-size:16px;font-weight:900;cursor:pointer;font-family:'Heebo',sans-serif;transition:all .15s}
+    .tr-check:hover{border-color:#16A34A}
+    .tr-check.on{background:#16A34A;border-color:#16A34A;color:#fff}
+    .tr-check:disabled{opacity:.5;cursor:wait}
+    .tr-total{font-weight:900;font-size:14px;text-align:center}
+    .tr-table tfoot td{font-weight:800;color:#555;background:#F8F6F2;text-align:center}
     .tab-content.active{display:block}
     /* SPECIAL TASKS */
     .tasks-agent-select{background:#F8F6F2;border:1.5px solid #E8E4DC;border-radius:12px;padding:10px 14px;font-size:14px;font-family:'Heebo',sans-serif;color:#1A1A1A;outline:none;min-width:220px;cursor:pointer}
@@ -345,6 +352,7 @@
     <div class="nav-tab" onclick="switchTab('agents')" id="tab-agents">👥 נציגים</div>
     <div class="nav-tab" onclick="switchTab('tasks')" id="tab-tasks">⭐ משימות מיוחדות</div>
     <div class="nav-tab" onclick="switchTab('checklist')" id="tab-checklist" style="display:none">✅ צ'ק ליסט</div>
+    <div class="nav-tab" onclick="switchTab('trainings')" id="tab-trainings" style="display:none">🎓 הכשרות</div>
     <div class="nav-tab" onclick="window.open('history.html','_blank')" id="tab-history">📊 היסטוריה</div>
     <div class="nav-tab" onclick="window.open('handover.html','_blank')" id="tab-handover" style="display:none">🤝 חפיפה מובמנט</div>
     <div class="nav-tab admin-tab" onclick="switchTab('admin')" id="tab-admin" style="display:none">⚙️ מנהלים</div>
@@ -587,6 +595,30 @@
             </table>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAININGS TAB -->
+  <div class="tab-content main" id="content-trainings">
+    <div class="admin-section">
+      <div class="admin-section-title" style="justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+        <span><i class="ti ti-school"></i> הכשרות נציגים — מובמנט ומאוחדת</span>
+        <span style="display:flex;gap:.5rem;align-items:center">
+          <select class="form-select" id="trActFilter" style="width:150px;padding:6px 10px;font-size:12.5px" onchange="renderTrainings()">
+            <option value="הכל">הכל</option>
+            <option value="מובמנט">מובמנט</option>
+            <option value="מאוחדת">מאוחדת</option>
+          </select>
+          <input class="form-input" id="trSearch" placeholder="חיפוש שם..." style="width:150px;padding:6px 10px;font-size:12.5px" oninput="renderTrainings()"/>
+        </span>
+      </div>
+      <div class="admin-form" style="overflow-x:auto">
+        <table class="admin-table tr-table">
+          <thead id="trHead"></thead>
+          <tbody id="trBody"><tr><td class="loading-msg">טוען...</td></tr></tbody>
+          <tfoot id="trFoot"></tfoot>
+        </table>
       </div>
     </div>
   </div>
@@ -895,6 +927,9 @@ const SUPER_ADMIN='אדיר לוי';
 const SUMMARY_MANAGERS=['אדיר לוי','הודיה מזרחי','בקי ביטון','אליה ביטון'];
 const FULL_ADMIN=['אדיר לוי'];
 const CALLS_MANAGERS=['הודיה מזרחי','בקי ביטון'];
+const TRAINING_MANAGERS=['אדיר לוי','הודיה מזרחי','בקי ביטון'];
+const TRAINING_ORGS=['כללית אקטיב','עובדים בריא','לאומית FIT','מעוף לעמית','מאוחדת','כללית פריפיט'];
+const TRAINING_ACTS=['מובמנט','מאוחדת'];
 
 // הגדרות קבוצות ומחלק
 const GROUPS=[
@@ -1044,6 +1079,7 @@ function enterApp(){
   document.getElementById('currentManagerName').textContent=currentManager.name;
   if(FULL_ADMIN.includes(currentManager.name)) document.getElementById('tab-admin').style.display='';
   if(FULL_ADMIN.includes(currentManager.name)) document.getElementById('tab-handover').style.display='';
+  if(TRAINING_MANAGERS.includes(currentManager.name)) document.getElementById('tab-trainings').style.display='';
   document.getElementById('tab-checklist').style.display='';
   if(SUMMARY_MANAGERS.includes(currentManager.name)) document.getElementById('summarySection').style.display='';
   if(CALLS_MANAGERS.includes(currentManager.name)){
@@ -1107,6 +1143,7 @@ function switchTab(tab){
   document.getElementById('content-'+tab).classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='agents') loadAgentsTable();
+  if(tab==='trainings') loadTrainings();
   if(tab==='admin'){ loadManagersTable(); loadAlertSettings(); loadThresholds(); loadManagerReports(); loadAllManagers().then(populateReportsSelects); }
   if(tab==='checklist'){
     loadAllManagers().then(()=>{
@@ -2276,6 +2313,60 @@ async function delManagerReport(id){
   await fetch(SB_URL+'/manager_reports?id=eq.'+id,{method:'DELETE',headers:H});
   toast('הוסר ✓');
   loadManagerReports();
+}
+
+// ── Trainings (הכשרות) ──
+// נשמר ב-alert_settings: setting_key='training:<agent_id>', setting_value=JSON של רשימת ארגונים
+let trainingsMap={};
+async function loadTrainings(){
+  if(!TRAINING_MANAGERS.includes(currentManager.name)) return;
+  const [rows]=await Promise.all([
+    sb('/alert_settings?select=setting_key,setting_value&setting_key=like.training:*'),
+    allAgents.length?Promise.resolve():loadAllAgents()
+  ]);
+  trainingsMap={};
+  (Array.isArray(rows)?rows:[]).forEach(r=>{
+    try{ trainingsMap[r.setting_key.slice(9)]=JSON.parse(r.setting_value)||[]; }catch(e){ trainingsMap[r.setting_key.slice(9)]=[]; }
+  });
+  renderTrainings();
+}
+function renderTrainings(){
+  const act=document.getElementById('trActFilter').value;
+  const q=(document.getElementById('trSearch').value||'').trim();
+  const agents=allAgents.filter(a=>TRAINING_ACTS.includes(a.activity)&&(act==='הכל'||a.activity===act)&&(!q||a.name.includes(q)));
+  document.getElementById('trHead').innerHTML=`<tr><th>שם נציג</th><th>פעילות</th>${TRAINING_ORGS.map(o=>`<th class="tr-org">${escHtml(o)}</th>`).join('')}<th class="tr-org">סה״כ</th></tr>`;
+  const tbody=document.getElementById('trBody');
+  if(!agents.length){tbody.innerHTML=`<tr><td colspan="${TRAINING_ORGS.length+3}" class="empty-msg">אין נציגים</td></tr>`;document.getElementById('trFoot').innerHTML='';return;}
+  const colCounts=TRAINING_ORGS.map(()=>0);
+  tbody.innerHTML=agents.map((a,i)=>{
+    const known=trainingsMap[a.id]||[];
+    const total=TRAINING_ORGS.filter(o=>known.includes(o)).length;
+    return `<tr>
+      <td style="font-weight:700"><span style="color:#AAA;font-weight:400">${i+1}.</span> ${escHtml(a.name)}</td>
+      <td><span class="activity-tag">${escHtml(a.activity)}</span></td>
+      ${TRAINING_ORGS.map((o,j)=>{const on=known.includes(o);if(on)colCounts[j]++;
+        return `<td class="tr-cell"><button class="tr-check${on?' on':''}" data-agent="${a.id}" data-org="${escHtml(o)}" onclick="toggleTraining(this)">✓</button></td>`;}).join('')}
+      <td class="tr-total" id="trTotal_${a.id}" style="color:${total===TRAINING_ORGS.length?'#16A34A':total?'#1A1A1A':'#CCC'}">${total}/${TRAINING_ORGS.length}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('trFoot').innerHTML=`<tr><td colspan="2" style="text-align:right">סה״כ נציגים שיודעים (${agents.length} נציגים)</td>${colCounts.map(c=>`<td>${c}</td>`).join('')}<td></td></tr>`;
+}
+async function toggleTraining(btn){
+  const id=btn.dataset.agent, org=btn.dataset.org;
+  const prev=trainingsMap[id]||[];
+  const next=prev.includes(org)?prev.filter(o=>o!==org):[...prev,org];
+  btn.disabled=true;
+  const key='training:'+id, body={setting_value:JSON.stringify(next),updated_at:new Date().toISOString()};
+  try{
+    let res=await fetch(SB_URL+'/alert_settings?setting_key=eq.'+encodeURIComponent(key),{method:'PATCH',headers:H,body:JSON.stringify(body)});
+    let upd=res.ok?await res.json():null;
+    if(res.ok&&Array.isArray(upd)&&!upd.length){
+      res=await fetch(SB_URL+'/alert_settings',{method:'POST',headers:H,body:JSON.stringify({setting_key:key,...body})});
+    }
+    if(!res.ok) throw new Error(res.status);
+    trainingsMap[id]=next;
+    renderTrainings();
+  }catch(e){ btn.disabled=false; toast('שגיאה בשמירה'); }
 }
 
 // ── Alert Settings ──
