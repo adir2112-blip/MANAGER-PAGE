@@ -1190,32 +1190,33 @@ async function loadTodayHours(today){
   if(Array.isArray(data)) data.forEach(r=>{allHours[r.agent_id]=r;});
 }
 // עדכון סיכומים בלבד ללא rebuild
-function refreshTotals(today){
+function refreshTotals(){
+  if(!currentManager) return;
+  const inpVal=a=>{const inp=document.getElementById('h_'+a.id);return inp?(parseFloat(inp.value)||0):(parseFloat(allHours[a.id]?.hours)||0);};
+  const fmtH=n=>Math.round(n*100)/100;
   GROUPS.forEach(g=>{
     let vis=allAgents;
     if(currentManager.activity!=='הכל') vis=allAgents.filter(a=>a.activity===currentManager.activity);
     const allActs=g.subs.flatMap(s=>s.acts);
     const grpAgents=vis.filter(a=>allActs.includes(a.activity));
     if(!grpAgents.length) return;
+    // קרא ערכים מה-inputs (לא מה-allHours) כדי שהסיכום יתעדכן תוך כדי הקלדה
+    const grpHrs=grpAgents.reduce((s,a)=>s+inpVal(a),0);
+    const gh=document.getElementById('grh_'+g.id), gt=document.getElementById('grt_'+g.id);
+    if(gh) gh.textContent=fmtH(grpHrs);
+    if(gt) gt.textContent=(grpHrs/g.subs[0].divisor).toFixed(2);
     g.subs.forEach((sg,si)=>{
       const sgAgents=grpAgents.filter(a=>sg.acts.includes(a.activity));
       if(!sgAgents.length) return;
-      // קרא ערכים מה-inputs (לא מה-allHours) כדי לא לאפס מה שנכתב
-      const sgHrs=sgAgents.reduce((s,a)=>{
-        const inp=document.getElementById('h_'+a.id);
-        return s+(parseFloat(inp?.value)||0);
-      },0);
-      const sgTaqan=(sgHrs/sg.divisor).toFixed(2);
-      const lastSave=sgAgents.map(a=>allHours[a.id]).filter(r=>r?.updated_by).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at))[0];
-      // עדכן את כפתור השמירה עם saved-by אחרון
-      const btn=document.getElementById('sbtn_'+g.id+'_'+si);
-      if(btn&&lastSave){
-        const savedByEl=btn.closest('.save-bar')?.querySelector('.saved-by-text');
-        if(savedByEl) savedByEl.innerHTML=`<i class="ti ti-check" style="font-size:11px"></i>&nbsp;נשמר ע״י ${lastSave.updated_by} · ${fmtDateTime(lastSave.updated_at)}`;
-      }
+      const sgHrs=sgAgents.reduce((s,a)=>s+inpVal(a),0);
+      const sh=document.getElementById('sgh_'+g.id+'_'+si), st=document.getElementById('sgt_'+g.id+'_'+si);
+      if(sh) sh.textContent=fmtH(sgHrs);
+      if(st) st.textContent=(sgHrs/sg.divisor).toFixed(2);
     });
   });
 }
+// עדכון סיכומים חי בזמן הקלדת שעות
+document.addEventListener('input',e=>{ if(e.target.classList?.contains('hours-input')) refreshTotals(); });
 
 function renderAll(today){renderSummary();renderGroups(today);}
 
@@ -1287,8 +1288,8 @@ function renderGroups(today){
         <div class="group-title">${g.icon} ${g.title}</div>
         <div class="group-stats">
           <div class="group-stat"><div class="group-stat-val">${grpAgents.length}</div><div class="group-stat-label">נציגים</div></div>
-          <div class="group-stat"><div class="group-stat-val green">${grpHrs}</div><div class="group-stat-label">שעות</div></div>
-          <div class="group-stat"><div class="group-stat-val blue">${grpTaqan}</div><div class="group-stat-label">תקן יומי</div></div>
+          <div class="group-stat"><div class="group-stat-val green" id="grh_${g.id}">${grpHrs}</div><div class="group-stat-label">שעות</div></div>
+          <div class="group-stat"><div class="group-stat-val blue" id="grt_${g.id}">${grpTaqan}</div><div class="group-stat-label">תקן יומי</div></div>
         </div>
       </div>`;
 
@@ -1316,8 +1317,8 @@ function renderGroups(today){
       html+=`</tbody></table></div>
         <div class="save-bar">
           <div class="save-bar-stats">
-            <div class="totals-item"><div class="totals-num green">${sgHrs}</div><div class="totals-sub">שעות</div></div>
-            <div class="totals-item"><div class="totals-num blue">${sgTaqan}</div><div class="totals-sub">תקן יומי (÷${sg.divisor})</div></div>
+            <div class="totals-item"><div class="totals-num green" id="sgh_${g.id}_${si}">${sgHrs}</div><div class="totals-sub">שעות</div></div>
+            <div class="totals-item"><div class="totals-num blue" id="sgt_${g.id}_${si}">${sgTaqan}</div><div class="totals-sub">תקן יומי (÷${sg.divisor})</div></div>
             ${lastSave?`<div class="saved-by-text"><i class="ti ti-check" style="font-size:11px"></i>&nbsp;נשמר ע״י ${lastSave.updated_by} · ${fmtDateTime(lastSave.updated_at)}</div>`:''}
           </div>
           <button class="save-all-btn" id="sbtn_${g.id}_${si}"
@@ -1365,11 +1366,16 @@ async function saveSubGroup(btn){
     saveBtn.disabled=false;
   }
   // עדכן saved-by text ב-save-bar
-  const savedByEl=saveBtn?.closest('.save-bar')?.querySelector('.saved-by-text');
+  let savedByEl=saveBtn?.closest('.save-bar')?.querySelector('.saved-by-text');
+  if(!savedByEl){
+    const stats=saveBtn?.closest('.save-bar')?.querySelector('.save-bar-stats');
+    if(stats){ savedByEl=document.createElement('div'); savedByEl.className='saved-by-text'; stats.appendChild(savedByEl); }
+  }
   if(savedByEl){
     savedByEl.innerHTML=`<i class="ti ti-check" style="font-size:11px"></i>&nbsp;נשמר ע״י ${currentManager.name} · ${fmtDateTime(new Date().toISOString())}`;
   }
-  // עדכן סיכום בלבד
+  // עדכן סיכומים
+  refreshTotals();
   renderSummary();
   toast('נשמר ✓ — '+currentManager.name+' · '+fmtDateTime(new Date().toISOString()));
 }
