@@ -666,9 +666,23 @@
       </div>
       <div class="admin-form"><div id="brList" class="br-list"><div class="loading-msg">בחר מחלקה</div></div></div>
     </div>
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:1rem;flex-wrap:wrap">
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:.75rem;flex-wrap:wrap">
       <span style="font-size:12px;color:#888">ההודעות נשלחות בתור, בערך הודעה כל 30 שניות</span>
-      <button class="add-btn green" id="brSend" onclick="sendBriefing()"><i class="ti ti-send"></i> שלח תדריך</button>
+      <button class="add-btn blue" onclick="toggleBriefSchedule()"><i class="ti ti-clock"></i> תזמן הודעה</button>
+      <button class="add-btn green" id="brSend" onclick="sendBriefing()"><i class="ti ti-send"></i> שלח תדריך עכשיו</button>
+    </div>
+    <div class="admin-form" id="brSchedPanel" style="display:none;margin-top:.75rem">
+      <div style="display:flex;align-items:end;gap:.75rem;flex-wrap:wrap">
+        <div class="form-group"><label>תאריך ושעת שליחה</label>
+          <input class="form-input" type="datetime-local" id="brSchedAt" style="width:230px"/>
+        </div>
+        <button class="add-btn blue" id="brSchedBtn" onclick="scheduleBriefing()"><i class="ti ti-calendar-check"></i> אשר תזמון</button>
+      </div>
+      <div style="font-size:12px;color:#888;margin-top:.5rem">הבוט ישלח בזמן שנבחר לנציגים שמסומנים עכשיו, עם הנוסח שכתוב עכשיו.</div>
+    </div>
+    <div class="admin-section" style="margin-top:1.5rem">
+      <div class="admin-section-title"><i class="ti ti-calendar-time"></i> הודעות מתוזמנות שלי</div>
+      <div class="admin-form"><div id="brSchedList"><div class="empty-msg">אין הודעות מתוזמנות</div></div></div>
     </div>
   </div>
 
@@ -2395,6 +2409,7 @@ async function loadBriefings(){
     if(departments.includes(prev)) sel.value=prev;
     else if(departments.includes(currentManager.activity)) sel.value=currentManager.activity;
     loadBriefRecipients();
+    loadBriefScheduled();
   }catch(e){ sel.innerHTML='<option value="">שגיאה</option>'; document.getElementById('brList').innerHTML=`<div class="empty-msg">${escHtml(e.message)}</div>`; }
 }
 async function loadBriefTemplates(){
@@ -2461,7 +2476,7 @@ async function loadBriefRecipients(){
     const g=document.getElementById('brGroup'), gw=document.getElementById('brGroupWrap');
     g.disabled=!briefHasGroup; if(!briefHasGroup) g.checked=false;
     gw.classList.toggle('disabled',!briefHasGroup);
-    gw.querySelector('span').textContent=briefHasGroup?'שלח גם לקבוצת העדכונים של המחלקה':'למחלקה הזו לא מוגדרת קבוצת עדכונים';
+    gw.querySelector('span').textContent=briefHasGroup?('שלח גם לקבוצת "'+(d.groupName||'העדכונים של המחלקה')+'"'):'למחלקה הזו לא מוגדרת קבוצת עדכונים';
     updateBriefCount();
   }catch(e){ list.innerHTML=`<div class="empty-msg">${escHtml(e.message)}</div>`; }
 }
@@ -2471,12 +2486,8 @@ function updateBriefCount(){
   document.getElementById('brCount').textContent=`(${n} מתוך ${briefRecipients.length})`;
 }
 async function sendBriefing(){
-  const dept=document.getElementById('brDept').value, msg=document.getElementById('brMsg').value.trim();
-  const exclude=[...document.querySelectorAll('.br-chk:not(:checked)')].map(c=>c.value);
-  const n=document.querySelectorAll('.br-chk:checked').length, withGroup=document.getElementById('brGroup').checked;
-  if(!dept){toast('בחר מחלקה');return;}
-  if(!msg){toast('ההודעה ריקה');return;}
-  if(!n&&!withGroup){toast('לא נבחרו נמענים');return;}
+  const sel=briefSelection(); if(!sel) return;
+  const {dept,msg,exclude,n,withGroup}=sel;
   if(!confirm(`לשלוח את התדריך ל-${n} נציגים ב${dept}${withGroup?' + לקבוצת העדכונים':''}?`)) return;
   const btn=document.getElementById('brSend'); btn.disabled=true;
   try{
@@ -2484,6 +2495,64 @@ async function sendBriefing(){
     toast(`נשלח לתור ✓ ${r.sent} נציגים${r.group?' + קבוצה':''}`,4000);
   }catch(e){ toast(e.message,4000); }
   btn.disabled=false;
+}
+
+function briefSelection(){
+  const dept=document.getElementById('brDept').value, msg=document.getElementById('brMsg').value.trim();
+  const exclude=[...document.querySelectorAll('.br-chk:not(:checked)')].map(c=>c.value);
+  const n=document.querySelectorAll('.br-chk:checked').length, withGroup=document.getElementById('brGroup').checked;
+  if(!dept){toast('בחר מחלקה');return null;}
+  if(!msg){toast('ההודעה ריקה');return null;}
+  if(!n&&!withGroup){toast('לא נבחרו נמענים');return null;}
+  return {dept,msg,exclude,n,withGroup};
+}
+function toggleBriefSchedule(){
+  const p=document.getElementById('brSchedPanel'), inp=document.getElementById('brSchedAt');
+  const open=p.style.display==='none';
+  p.style.display=open?'':'none';
+  if(open&&!inp.value){
+    const d=new Date(Date.now()+60*60000); d.setMinutes(0,0,0);
+    const pad=n=>String(n).padStart(2,'0');
+    inp.value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  if(open) inp.focus();
+}
+function fmtBriefWhen(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'numeric'})+' · '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+}
+async function scheduleBriefing(){
+  const sel=briefSelection(); if(!sel) return;
+  const v=document.getElementById('brSchedAt').value;
+  if(!v){toast('בחר תאריך ושעה');return;}
+  const when=new Date(v);
+  if(isNaN(when)||when.getTime()<Date.now()+60000){toast('בחר זמן עתידי');return;}
+  if(!confirm(`לתזמן את התדריך ל${fmtBriefWhen(when.toISOString())}\nל-${sel.n} נציגים ב${sel.dept}${sel.withGroup?' + לקבוצה':''}?`)) return;
+  const btn=document.getElementById('brSchedBtn'); btn.disabled=true;
+  try{
+    await briefCall({action:'schedule',activity:sel.dept,message:sel.msg,includeGroup:sel.withGroup,exclude:sel.exclude,sendAt:when.toISOString()});
+    toast('התדריך תוזמן ✓ '+fmtBriefWhen(when.toISOString()),4000);
+    document.getElementById('brSchedPanel').style.display='none';
+    loadBriefScheduled();
+  }catch(e){ toast(e.message,4000); }
+  btn.disabled=false;
+}
+async function loadBriefScheduled(){
+  const box=document.getElementById('brSchedList');
+  try{
+    const {items=[]}=await briefCall({action:'listScheduled'});
+    box.innerHTML=items.length?`<table class="admin-table"><thead><tr><th>מתי</th><th>מחלקה</th><th>נוסח</th><th></th></tr></thead><tbody>${items.map(j=>`<tr>
+      <td style="white-space:nowrap;font-weight:700">${escHtml(fmtBriefWhen(j.sendAt))}</td>
+      <td><span class="activity-tag">${escHtml(j.activity)}</span>${j.includeGroup?' <span style="font-size:11px;color:#16A34A;font-weight:600">+ קבוצה</span>':''}</td>
+      <td style="font-size:12.5px;color:#555;white-space:pre-wrap">${escHtml(j.message.length>120?j.message.slice(0,120)+'…':j.message)}</td>
+      <td><button class="del-btn" onclick="cancelBriefScheduled('${escHtml(j.id)}')">בטל</button></td>
+    </tr>`).join('')}</tbody></table>`:'<div class="empty-msg">אין הודעות מתוזמנות</div>';
+  }catch(e){ box.innerHTML=`<div class="empty-msg">${escHtml(e.message)}</div>`; }
+}
+async function cancelBriefScheduled(id){
+  if(!confirm('לבטל את ההודעה המתוזמנת?')) return;
+  try{ await briefCall({action:'cancelScheduled',id}); toast('בוטל ✓'); }catch(e){ toast(e.message,4000); }
+  loadBriefScheduled();
 }
 
 // ── Trainings (הכשרות) ──
