@@ -132,6 +132,14 @@
     .edit-btn{background:#F0EDE6;color:#555;border:none;border-radius:7px;padding:4px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif;margin-left:4px}
     .edit-btn:hover{background:#E8E4DC}
     .tab-content{display:none}
+    .br-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+    .br-group{display:flex;align-items:center;gap:8px;margin-top:1rem;font-size:13.5px;font-weight:600;color:#1A1A1A;cursor:pointer}
+    .br-group input{width:18px;height:18px;accent-color:#16A34A}
+    .br-group.disabled{color:#BBB;cursor:not-allowed}
+    .br-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem}
+    .br-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1.5px solid #F0EDE6;border-radius:9px;font-size:13px;cursor:pointer;background:#FAFAF8}
+    .br-item input{accent-color:#16A34A}
+    @media(max-width:640px){.br-grid{grid-template-columns:1fr}}
     .tr-table th.tr-org,.tr-table td.tr-cell{text-align:center;white-space:nowrap}
     .tr-check{width:30px;height:30px;border-radius:8px;border:1.5px solid #E8E4DC;background:#FAFAF8;color:transparent;font-size:16px;font-weight:900;cursor:pointer;font-family:'Heebo',sans-serif;transition:all .15s}
     .tr-check:hover{border-color:#16A34A}
@@ -353,6 +361,7 @@
     <div class="nav-tab" onclick="switchTab('tasks')" id="tab-tasks">⭐ משימות מיוחדות</div>
     <div class="nav-tab" onclick="switchTab('checklist')" id="tab-checklist" style="display:none">✅ צ'ק ליסט</div>
     <div class="nav-tab" onclick="switchTab('trainings')" id="tab-trainings" style="display:none">🎓 הכשרות</div>
+    <div class="nav-tab" onclick="switchTab('briefings')" id="tab-briefings" style="display:none">📣 תדריכי עובדים</div>
     <div class="nav-tab" onclick="window.open('history.html','_blank')" id="tab-history">📊 היסטוריה</div>
     <div class="nav-tab" onclick="window.open('handover.html','_blank')" id="tab-handover" style="display:none">🤝 חפיפה מובמנט</div>
     <div class="nav-tab admin-tab" onclick="switchTab('admin')" id="tab-admin" style="display:none">⚙️ מנהלים</div>
@@ -620,6 +629,46 @@
           <tfoot id="trFoot"></tfoot>
         </table>
       </div>
+    </div>
+  </div>
+
+  <!-- BRIEFINGS TAB -->
+  <div class="tab-content main" id="content-briefings">
+    <div class="admin-section">
+      <div class="admin-section-title"><i class="ti ti-speakerphone"></i> שליחת תדריך לנציגי המחלקה</div>
+      <div class="admin-form">
+        <div class="br-grid">
+          <div class="form-group"><label>מחלקה</label>
+            <select class="form-select" id="brDept" onchange="loadBriefRecipients()"><option value="">טוען...</option></select>
+          </div>
+          <div class="form-group"><label>טמפלט</label>
+            <select class="form-select" id="brTpl" onchange="applyBriefTemplate()"></select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:.75rem"><label>נוסח ההודעה <span style="text-transform:none;letter-spacing:0;color:#AAA;font-weight:500">· {שם} יוחלף בשם הפרטי של כל נציג</span></label>
+          <textarea class="form-input" id="brMsg" rows="5" style="resize:vertical;line-height:1.6"></textarea>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem">
+          <button class="edit-btn" onclick="saveBriefTemplate(false)"><i class="ti ti-device-floppy"></i> שמור כטמפלט חדש</button>
+          <button class="edit-btn" id="brTplUpdate" onclick="saveBriefTemplate(true)" style="display:none"><i class="ti ti-pencil"></i> עדכן טמפלט נבחר</button>
+          <button class="del-btn" id="brTplDelete" onclick="deleteBriefTemplate()" style="display:none">מחק טמפלט</button>
+        </div>
+        <label class="br-group" id="brGroupWrap"><input type="checkbox" id="brGroup"/> <span>שלח גם לקבוצת העדכונים של המחלקה</span></label>
+      </div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-title" style="justify-content:space-between">
+        <span><i class="ti ti-users"></i> נמענים מסידור העבודה <span id="brCount" style="color:#888;font-weight:600"></span></span>
+        <span style="display:flex;gap:.4rem">
+          <button class="edit-btn" onclick="briefSelectAll(true)">סמן הכל</button>
+          <button class="edit-btn" onclick="briefSelectAll(false)">נקה הכל</button>
+        </span>
+      </div>
+      <div class="admin-form"><div id="brList" class="br-list"><div class="loading-msg">בחר מחלקה</div></div></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:1rem;flex-wrap:wrap">
+      <span style="font-size:12px;color:#888">ההודעות נשלחות בתור, בערך הודעה כל 30 שניות</span>
+      <button class="add-btn green" id="brSend" onclick="sendBriefing()"><i class="ti ti-send"></i> שלח תדריך</button>
     </div>
   </div>
 
@@ -1080,6 +1129,7 @@ function enterApp(){
   if(FULL_ADMIN.includes(currentManager.name)) document.getElementById('tab-admin').style.display='';
   if(FULL_ADMIN.includes(currentManager.name)) document.getElementById('tab-handover').style.display='';
   if(TRAINING_MANAGERS.includes(currentManager.name)) document.getElementById('tab-trainings').style.display='';
+  document.getElementById('tab-briefings').style.display='';
   document.getElementById('tab-checklist').style.display='';
   if(SUMMARY_MANAGERS.includes(currentManager.name)) document.getElementById('summarySection').style.display='';
   if(CALLS_MANAGERS.includes(currentManager.name)){
@@ -1144,6 +1194,7 @@ function switchTab(tab){
   document.getElementById('tab-'+tab).classList.add('active');
   if(tab==='agents') loadAgentsTable();
   if(tab==='trainings') loadTrainings();
+  if(tab==='briefings') loadBriefings();
   if(tab==='admin'){ loadManagersTable(); loadAlertSettings(); loadThresholds(); loadManagerReports(); loadAllManagers().then(populateReportsSelects); }
   if(tab==='checklist'){
     loadAllManagers().then(()=>{
@@ -2319,6 +2370,120 @@ async function delManagerReport(id){
   await fetch(SB_URL+'/manager_reports?id=eq.'+id,{method:'DELETE',headers:H});
   toast('הוסר ✓');
   loadManagerReports();
+}
+
+// ── Briefings (תדריכי עובדים) ──
+// שליחה דרך הבוט (/api/notify/team-briefing): השרת מאמת את המנהל ושולף בעצמו את הנציגים מסידור העבודה.
+// טמפלטים אישיים נשמרים ב-alert_settings: setting_key='brief_tpl:<manager_id>', setting_value=JSON [{name,text}]
+const BRIEF_API='https://whatsapp-bot-production-120a.up.railway.app/api/notify/team-briefing';
+const BRIEF_DEFAULT_TPL={name:'תדריך בוקר 08:50',text:'בוקר טוב {שם}, היום תדריך בוקר בשעה 08:50 נא להתחבר בזמן',builtin:true};
+let briefTemplates=[], briefRecipients=[], briefHasGroup=false;
+async function briefCall(body){
+  const res=await fetch(BRIEF_API,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({managerId:currentManager.id,pin:currentManager.id_last4,...body})});
+  let data={}; try{data=await res.json();}catch(e){}
+  if(!res.ok) throw new Error(data.error||('שגיאה '+res.status));
+  return data;
+}
+async function loadBriefings(){
+  const sel=document.getElementById('brDept');
+  await loadBriefTemplates();
+  try{
+    const {departments=[]}=await briefCall({});
+    const prev=sel.value;
+    sel.innerHTML=departments.length?departments.map(d=>`<option value="${escHtml(d)}">${escHtml(d)}</option>`).join(''):'<option value="">אין מחלקות משויכות אליך</option>';
+    if(departments.includes(prev)) sel.value=prev;
+    else if(departments.includes(currentManager.activity)) sel.value=currentManager.activity;
+    loadBriefRecipients();
+  }catch(e){ sel.innerHTML='<option value="">שגיאה</option>'; document.getElementById('brList').innerHTML=`<div class="empty-msg">${escHtml(e.message)}</div>`; }
+}
+async function loadBriefTemplates(){
+  const rows=await sb('/alert_settings?select=setting_value&setting_key=eq.'+encodeURIComponent('brief_tpl:'+currentManager.id));
+  let own=[]; try{ own=JSON.parse((Array.isArray(rows)&&rows[0]?.setting_value)||'[]')||[]; }catch(e){}
+  briefTemplates=[BRIEF_DEFAULT_TPL,...own];
+  const sel=document.getElementById('brTpl'), prev=sel.value;
+  sel.innerHTML=briefTemplates.map((t,i)=>`<option value="${i}">${escHtml(t.name)}</option>`).join('');
+  sel.value=(prev&&briefTemplates[prev])?prev:'0';
+  if(!document.getElementById('brMsg').value) applyBriefTemplate(); else updateBriefTplButtons();
+}
+function applyBriefTemplate(){
+  const t=briefTemplates[document.getElementById('brTpl').value];
+  if(t) document.getElementById('brMsg').value=t.text;
+  updateBriefTplButtons();
+}
+function updateBriefTplButtons(){
+  const t=briefTemplates[document.getElementById('brTpl').value];
+  const own=t&&!t.builtin;
+  document.getElementById('brTplUpdate').style.display=own?'':'none';
+  document.getElementById('brTplDelete').style.display=own?'':'none';
+}
+async function saveOwnTemplates(own){
+  const key='brief_tpl:'+currentManager.id, body={setting_value:JSON.stringify(own),updated_at:new Date().toISOString()};
+  let res=await fetch(SB_URL+'/alert_settings?setting_key=eq.'+encodeURIComponent(key),{method:'PATCH',headers:H,body:JSON.stringify(body)});
+  const upd=res.ok?await res.json():null;
+  if(res.ok&&Array.isArray(upd)&&!upd.length) res=await fetch(SB_URL+'/alert_settings',{method:'POST',headers:H,body:JSON.stringify({setting_key:key,...body})});
+  if(!res.ok) throw new Error('save failed');
+}
+async function saveBriefTemplate(update){
+  const text=document.getElementById('brMsg').value.trim();
+  if(!text){toast('כתוב נוסח קודם');return;}
+  const own=briefTemplates.filter(t=>!t.builtin).map(({name,text})=>({name,text}));
+  const idx=Number(document.getElementById('brTpl').value)-1;
+  if(update){ if(idx<0||!own[idx]) return; own[idx].text=text; }
+  else{
+    const name=(prompt('שם לטמפלט:')||'').trim();
+    if(!name) return;
+    own.push({name,text});
+  }
+  try{
+    await saveOwnTemplates(own);
+    await loadBriefTemplates();
+    document.getElementById('brTpl').value=String(update?idx+1:own.length);
+    updateBriefTplButtons();
+    toast(update?'הטמפלט עודכן ✓':'הטמפלט נשמר ✓');
+  }catch(e){toast('שגיאה בשמירה');}
+}
+async function deleteBriefTemplate(){
+  const idx=Number(document.getElementById('brTpl').value)-1;
+  const own=briefTemplates.filter(t=>!t.builtin).map(({name,text})=>({name,text}));
+  if(idx<0||!own[idx]||!confirm('למחוק את הטמפלט "'+own[idx].name+'"?')) return;
+  own.splice(idx,1);
+  try{ await saveOwnTemplates(own); document.getElementById('brTpl').value='0'; await loadBriefTemplates(); applyBriefTemplate(); toast('נמחק ✓'); }catch(e){toast('שגיאה במחיקה');}
+}
+async function loadBriefRecipients(){
+  const dept=document.getElementById('brDept').value, list=document.getElementById('brList');
+  if(!dept){list.innerHTML='<div class="empty-msg">אין מחלקה</div>';return;}
+  list.innerHTML='<div class="loading-msg">טוען נציגים...</div>';
+  try{
+    const d=await briefCall({activity:dept,dryRun:true});
+    briefRecipients=d.recipients||[]; briefHasGroup=!!d.hasGroup;
+    list.innerHTML=briefRecipients.length?briefRecipients.map(r=>`<label class="br-item"><input type="checkbox" class="br-chk" value="${escHtml(r.key)}" checked onchange="updateBriefCount()"/> ${escHtml(r.name)}</label>`).join(''):'<div class="empty-msg">אין נציגים עם טלפון במחלקה</div>';
+    const g=document.getElementById('brGroup'), gw=document.getElementById('brGroupWrap');
+    g.disabled=!briefHasGroup; if(!briefHasGroup) g.checked=false;
+    gw.classList.toggle('disabled',!briefHasGroup);
+    gw.querySelector('span').textContent=briefHasGroup?'שלח גם לקבוצת העדכונים של המחלקה':'למחלקה הזו לא מוגדרת קבוצת עדכונים';
+    updateBriefCount();
+  }catch(e){ list.innerHTML=`<div class="empty-msg">${escHtml(e.message)}</div>`; }
+}
+function briefSelectAll(on){ document.querySelectorAll('.br-chk').forEach(c=>c.checked=on); updateBriefCount(); }
+function updateBriefCount(){
+  const n=document.querySelectorAll('.br-chk:checked').length;
+  document.getElementById('brCount').textContent=`(${n} מתוך ${briefRecipients.length})`;
+}
+async function sendBriefing(){
+  const dept=document.getElementById('brDept').value, msg=document.getElementById('brMsg').value.trim();
+  const exclude=[...document.querySelectorAll('.br-chk:not(:checked)')].map(c=>c.value);
+  const n=document.querySelectorAll('.br-chk:checked').length, withGroup=document.getElementById('brGroup').checked;
+  if(!dept){toast('בחר מחלקה');return;}
+  if(!msg){toast('ההודעה ריקה');return;}
+  if(!n&&!withGroup){toast('לא נבחרו נמענים');return;}
+  if(!confirm(`לשלוח את התדריך ל-${n} נציגים ב${dept}${withGroup?' + לקבוצת העדכונים':''}?`)) return;
+  const btn=document.getElementById('brSend'); btn.disabled=true;
+  try{
+    const r=await briefCall({activity:dept,message:msg,includeGroup:withGroup,exclude});
+    toast(`נשלח לתור ✓ ${r.sent} נציגים${r.group?' + קבוצה':''}`,4000);
+  }catch(e){ toast(e.message,4000); }
+  btn.disabled=false;
 }
 
 // ── Trainings (הכשרות) ──
